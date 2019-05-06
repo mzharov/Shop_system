@@ -1,0 +1,5 @@
+CREATE USER 'system'@'localhost' IDENTIFIED BY 'system';
+
+CREATE SCHEMA MUSICDB;
+GRANT ALL PRIVILEGES ON MUSICDB . * TO 'system'@'localhost';
+FLUSH PRIVILEGES;
