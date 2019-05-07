@@ -2,10 +2,13 @@ package ts.tsc.system.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -26,11 +29,30 @@ public class DataServiceConfig {
 
     private final static Logger logger = LoggerFactory.getLogger(DataServiceConfig.class);
 
+    private final Environment environment;
+
+    @Autowired
+    public DataServiceConfig(Environment environment) {
+        this.environment = environment;
+    }
+
     @Bean
     public DataSource dataSource() {
+        /*
         try {
             EmbeddedDatabaseBuilder dbBuilder = new EmbeddedDatabaseBuilder();
             return dbBuilder.setType(EmbeddedDatabaseType.H2).build();
+        } catch (Exception e) {
+            logger.error("Embedded DataSource bean cannot be created!", e);
+            return null;
+        }*/
+        try {
+            DriverManagerDataSource dataSource = new DriverManagerDataSource();
+            dataSource.setDriverClassName("org.postgresql.Driver");
+            dataSource.setUrl(environment.getProperty("spring.datasource.url"));
+            dataSource.setUsername(environment.getProperty("spring.datasource.username"));
+            dataSource.setPassword(environment.getProperty("spring.datasource.password"));
+            return dataSource;
         } catch (Exception e) {
             logger.error("Embedded DataSource bean cannot be created!", e);
             return null;
@@ -40,8 +62,8 @@ public class DataServiceConfig {
     @Bean
     public Properties hibernateProperties() {
         Properties hibernateProp = new Properties();
-        hibernateProp.put("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
-        hibernateProp.put("hibernate.hbm2ddl.auto", "create-drop");
+        hibernateProp.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+        hibernateProp.put("hibernate.hbm2ddl.auto", "update");
         hibernateProp.put("hibernate.show_sql", true);
         hibernateProp.put("hibernate.max_fetch_depth", 3);
         hibernateProp.put("hibernate.jdbc.batch_size", 10);
