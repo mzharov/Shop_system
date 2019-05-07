@@ -3,8 +3,6 @@ package ts.tsc.system.config;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -22,14 +20,6 @@ import java.util.List;
 @ComponentScan(basePackages = {"ts.tsc.system"})
 public class WebConfig implements WebMvcConfigurer {
 
-    @Autowired
-    ApplicationContext ctx;
-
-    /**
-     * Setting the MappingJackson2HttpMessageConverter and configuring it
-     *
-     * @return
-     */
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
         MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter = new MappingJackson2HttpMessageConverter();

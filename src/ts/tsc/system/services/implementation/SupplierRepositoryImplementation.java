@@ -1,54 +1,54 @@
 package ts.tsc.system.services.implementation;
 
-import ts.tsc.system.entities.Shop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ts.tsc.system.repositories.ShopRepository;
+import ts.tsc.system.entities.Supplier;
+import ts.tsc.system.repositories.SupplierRepository;
 import ts.tsc.system.services.interfaces.EntityService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Service("shopService")
+@Service("supplierService")
 @Transactional
-public class ShopRepositoryImplementation implements EntityService<Shop> {
+public class SupplierRepositoryImplementation implements EntityService<Supplier> {
 
     private final
-    ShopRepository shopRepository;
+    SupplierRepository shopRepository;
 
     @Autowired
-    public ShopRepositoryImplementation(ShopRepository shopRepository) {
+    public SupplierRepositoryImplementation(SupplierRepository shopRepository) {
         this.shopRepository = shopRepository;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Shop> findAll() {
-        Iterable<Shop> iterable = shopRepository.findAll();
-        List<Shop> shops = new ArrayList<>();
+    public List<Supplier> findAll() {
+        Iterable<Supplier> iterable = shopRepository.findAll();
+        List<Supplier> shops = new ArrayList<>();
         iterable.forEach(shops::add);
         return shops;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Shop> findByName(String name) {
+    public List<Supplier> findByName(String name) {
         return shopRepository.findByName(name);
     }
 
     @Override
-    public Shop findById(Long id) {
+    public Supplier findById(Long id) {
         return shopRepository.findById(id).get();
     }
 
     @Override
-    public Shop save(Shop shop) {
+    public Supplier save(Supplier shop) {
         return shopRepository.save(shop);
     }
 
     @Override
-    public void delete(Shop shop) {
+    public void delete(Supplier shop) {
         shopRepository.delete(shop);
     }
 }

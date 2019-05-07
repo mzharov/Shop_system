@@ -2,7 +2,7 @@ package ts.tsc.system.config;
 
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-public class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
 
     @Override

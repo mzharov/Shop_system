@@ -13,14 +13,11 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-/**
- * Created by iuliana.cosmina on 6/17/17.
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RestClientConfig.class})
 public class RestClientTest {
 
-    final Logger logger = LoggerFactory.getLogger(RestClientTest.class);
+    private final static Logger logger = LoggerFactory.getLogger(RestClientTest.class);
     private static final String URL_GET_ALL_SHOPS = "http://localhost:8080";
 
 
@@ -33,6 +30,7 @@ public class RestClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testFindAll() {
         logger.info("--> Testing retrieve all shops");
         List<Shop> shops =

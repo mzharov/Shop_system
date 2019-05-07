@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ts.tsc.system.entities.Shop;
+import ts.tsc.system.entities.Supplier;
 import ts.tsc.system.repositories.ShopRepository;
+import ts.tsc.system.repositories.SupplierRepository;
 
 
 import javax.annotation.PostConstruct;
@@ -13,10 +15,16 @@ import javax.annotation.PostConstruct;
 @Service
 public class DBInitializer {
 
-    private Logger logger = LoggerFactory.getLogger(DBInitializer.class);
+    private final static Logger logger = LoggerFactory.getLogger(DBInitializer.class);
+
+    private final ShopRepository shopRepository;
+    private final SupplierRepository repository;
 
     @Autowired
-    ShopRepository shopRepository;
+    public DBInitializer(ShopRepository shopRepository, SupplierRepository repository) {
+        this.shopRepository = shopRepository;
+        this.repository = repository;
+    }
 
     @PostConstruct
     public void initDB() {
@@ -30,6 +38,12 @@ public class DBInitializer {
         shop2.setName("Moran");
         shop2.setBudget(10000L);
         shopRepository.save(shop2);
+
+
+        Supplier supplier = new Supplier();
+        supplier.setName("Avalon");
+        repository.save(supplier);
+
 
         logger.info("Database initialization finished.");
     }
