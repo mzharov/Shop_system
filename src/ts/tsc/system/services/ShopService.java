@@ -1,6 +1,6 @@
-package system.services;
+package ts.tsc.system.services;
 
-import system.entities.Shop;
+import ts.tsc.system.entities.Shop;
 
 import java.util.List;
 

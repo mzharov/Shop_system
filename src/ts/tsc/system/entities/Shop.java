@@ -1,4 +1,4 @@
-package system.entities;
+package ts.tsc.system.entities;
 
 import javax.persistence.*;
 import java.io.Serializable;

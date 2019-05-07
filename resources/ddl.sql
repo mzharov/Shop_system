@@ -1,5 +1,5 @@
-CREATE USER 'system'@'localhost' IDENTIFIED BY 'system';
+CREATE USER 'ts.tsc.system'@'localhost' IDENTIFIED BY 'ts.tsc.system';
 
 CREATE SCHEMA MUSICDB;
-GRANT ALL PRIVILEGES ON MUSICDB . * TO 'system'@'localhost';
+GRANT ALL PRIVILEGES ON MUSICDB . * TO 'ts.tsc.system'@'localhost';
 FLUSH PRIVILEGES;

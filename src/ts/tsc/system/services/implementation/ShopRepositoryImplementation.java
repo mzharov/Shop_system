@@ -1,11 +1,11 @@
-package system.services.implementation;
+package ts.tsc.system.services.implementation;
 
-import system.entities.Shop;
+import ts.tsc.system.entities.Shop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import system.repositories.ShopRepository;
-import system.services.ShopService;
+import ts.tsc.system.repositories.ShopRepository;
+import ts.tsc.system.services.ShopService;
 
 import java.util.ArrayList;
 import java.util.List;
