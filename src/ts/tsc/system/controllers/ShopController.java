@@ -9,7 +9,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.entities.Shop;
 import ts.tsc.system.repositories.ShopRepository;
-import ts.tsc.system.serialization.Shops;
 import ts.tsc.system.services.ShopService;
 
 import javax.xml.ws.Response;
@@ -31,11 +30,11 @@ public class ShopController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/list")
-    public Shops getShops() {
+    public List<Shop> getShops() {
         Iterable<Shop> iterable = shopService.findAll();
         List<Shop> shops = new ArrayList<>();
         iterable.forEach(shops::add);
-        return new Shops(shops);
+        return shops;
     }
 
     @GetMapping(value = "/{id}")

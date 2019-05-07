@@ -7,11 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
-import ts.tsc.system.serialization.Shops;
+import ts.tsc.system.entities.Shop;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * Created by iuliana.cosmina on 6/17/17.
@@ -35,14 +35,14 @@ public class RestClientTest {
     @Test
     public void testFindAll() {
         logger.info("--> Testing retrieve all shops");
-        Shops shops =
-                restTemplate.getForObject(URL_GET_ALL_SHOPS, Shops.class);
-        assertTrue(shops.getShops().size() == 1);
+        List<Shop> shops =
+                restTemplate.getForObject(URL_GET_ALL_SHOPS, List.class);
+        assertEquals(1, shops.size());
         listSingers(shops);
     }
 
 
-    private void listSingers(Shops singers) {
-        singers.getShops().forEach(s -> logger.info(s.getShopID() + " " + s.getName() + " " + s.getBudget()));
+    private void listSingers(List<Shop> singers) {
+        singers.forEach(s -> logger.info(s.getShopID() + " " + s.getName() + " " + s.getBudget()));
     }
 }
