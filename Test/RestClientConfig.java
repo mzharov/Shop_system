@@ -1,5 +1,3 @@
-package ts.tsc.system;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -41,7 +39,7 @@ public class RestClientConfig {
         return mappingJackson2HttpMessageConverter;
     }
 
-        @Bean
+    @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objMapper = new ObjectMapper();
         objMapper.enable(SerializationFeature.INDENT_OUTPUT);

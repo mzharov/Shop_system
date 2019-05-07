@@ -1,5 +1,6 @@
 package ts.tsc.system.services.implementation;
 
+import org.springframework.stereotype.Repository;
 import ts.tsc.system.entities.Shop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

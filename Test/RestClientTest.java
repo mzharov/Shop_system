@@ -1,5 +1,3 @@
-package ts.tsc.system;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class RestClientTest {
 
     final Logger logger = LoggerFactory.getLogger(RestClientTest.class);
-    private static final String URL_GET_ALL_SHOPS = "http://localhost:8080/trade/shop/list";
+    private static final String URL_GET_ALL_SHOPS = "http://localhost:8080";
 
 
     @Autowired
@@ -37,9 +35,10 @@ public class RestClientTest {
     @Test
     public void testFindAll() {
         logger.info("--> Testing retrieve all shops");
-        //Shops shops = restTemplate.getForObject(URL_GET_ALL_SHOPS, Shops.class);
-        //assertTrue(shops.getShops().size() == 1);
-        //listSingers(shops);
+        Shops shops =
+                restTemplate.getForObject(URL_GET_ALL_SHOPS, Shops.class);
+        assertTrue(shops.getShops().size() == 1);
+        listSingers(shops);
     }
 
 
