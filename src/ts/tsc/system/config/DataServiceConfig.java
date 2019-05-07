@@ -50,7 +50,7 @@ public class DataServiceConfig {
         hibernateProp.put("hibernate.max_fetch_depth", 3);
         hibernateProp.put("hibernate.jdbc.batch_size", 10);
         hibernateProp.put("hibernate.jdbc.fetch_size", 50);
-        hibernateProp.put("hibernate.jmx.enabled", true);
+        hibernateProp.put("hibernate.jmx.enabled", false);
         hibernateProp.put("hibernate.generate_statistics", true);
         hibernateProp.put("hibernate.session_factory_name", "sessionFactory");
         return hibernateProp;

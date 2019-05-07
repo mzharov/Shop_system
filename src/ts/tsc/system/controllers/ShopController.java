@@ -4,27 +4,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.entities.Shop;
+import ts.tsc.system.repositories.ShopRepository;
 import ts.tsc.system.serialization.Shops;
 import ts.tsc.system.services.ShopService;
 
+import javax.xml.ws.Response;
 import java.util.ArrayList;
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping(value = "/shop")
 public class ShopController {
 
     final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
+    private final ShopRepository shopService;
+
     @Autowired
-    ShopService shopService;
+    public ShopController(ShopRepository shopService) {
+        this.shopService = shopService;
+    }
 
     @ResponseStatus(HttpStatus.OK)
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/list")
     public Shops getShops() {
         Iterable<Shop> iterable = shopService.findAll();
         List<Shop> shops = new ArrayList<>();
@@ -32,30 +38,42 @@ public class ShopController {
         return new Shops(shops);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    @ResponseBody
-    public Shop findShopById(@PathVariable Long id) {
-        return shopService.findById(id);
-    }
-
-    @RequestMapping(value = "/", method = RequestMethod.POST)
-    @ResponseBody
-    public Shop create(@RequestBody Shop shop) {
-        shopService.save(shop);
-        return shop;
-    }
-
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    @ResponseBody
-    public void update(@RequestBody Shop shop, @PathVariable Long id) {
-        shopService.save(shop);
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<Shop> findShopById(@PathVariable Long id) {
+        return shopService.findById(id)
+                .map(record -> ResponseEntity.ok().body(record))
+                .orElse(ResponseEntity.notFound().build());
     }
 
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    @ResponseBody
-    public void delete(@PathVariable Long id) {
-        shopService.delete(shopService.findById(id));
+    @PostMapping(value = "/")
+    public ResponseEntity<?> create(@RequestBody Shop shop) {
+        try {
+            shopService.save(shop);
+            return ResponseEntity.ok().body(shop);
+        } catch (Exception e) {
+            return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<Shop> update(@PathVariable Long id, @RequestBody Shop shop) {
+        return shopService.findById(id)
+                .map(record -> {
+                    record.setName(shop.getName());
+                    record.setBudget(shop.getBudget());
+                    Shop updated = shopService.save(record);
+                    return ResponseEntity.ok().body(updated);
+                }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        return shopService.findById(id)
+                .map(record -> {
+                    shopService.deleteById(id);
+                    return ResponseEntity.ok().build();
+                }).orElse(ResponseEntity.notFound().build());
     }
 }
 

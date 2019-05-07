@@ -21,11 +21,15 @@ public class DBInitializer {
     @PostConstruct
     public void initDB() {
         logger.info("Starting database initialization...");
-        Shop singer = new Shop();
-        singer.setName("John");
-        singer.setBudget(1000L);
+        Shop shop1 = new Shop();
+        shop1.setName("John");
+        shop1.setBudget(1000L);
+        shopRepository.save(shop1);
 
-        shopRepository.save(singer);
+        Shop shop2 = new Shop();
+        shop2.setName("Moran");
+        shop2.setBudget(10000L);
+        shopRepository.save(shop2);
 
         logger.info("Database initialization finished.");
     }
