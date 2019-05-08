@@ -2,7 +2,7 @@ package ts.tsc.system.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import ts.tsc.system.json.serializer.SupplierStorageSerializer;
+import ts.tsc.system.json.serializer.ShopStorageSerializer;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -10,23 +10,26 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "supplier_storage")
-@JsonSerialize(using = SupplierStorageSerializer.class)
-public class SupplierStorage implements Serializable {
+@Table(name = "shop_storage")
+@JsonSerialize(using = ShopStorageSerializer.class)
+public class ShopStorage implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "type")
+    private int type;
+
     @ManyToOne
-    @JoinColumn(name = "supplier_id")
+    @JoinColumn(name = "shop_id")
     @JsonIgnore
-    private Supplier supplier;
+    private Shop shop;
 
     @OneToMany(mappedBy = "primaryKey.storage",
             fetch = FetchType.EAGER)
-    private Set<SupplierStorageProduct> products = new HashSet<>();
+    private Set<ShopStorageProduct> products = new HashSet<>();
 
     @Column(name = "total_space")
     private int totalSpace;
@@ -34,20 +37,20 @@ public class SupplierStorage implements Serializable {
     @Column(name = "free_space")
     private int freeSpace;
 
-    public Supplier getSupplier() {
-        return supplier;
+    public Shop getShop() {
+        return shop;
     }
 
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
+    public void setShop(Shop shop) {
+        this.shop = shop;
     }
 
-    public Long getId() {
-        return id;
+    public Set<ShopStorageProduct> getProducts() {
+        return products;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setProducts(Set<ShopStorageProduct> products) {
+        this.products = products;
     }
 
     public int getTotalSpace() {
@@ -66,11 +69,19 @@ public class SupplierStorage implements Serializable {
         this.freeSpace = freeSpace;
     }
 
-    public Set<SupplierStorageProduct> getProducts() {
-        return products;
+    public Long getId() {
+        return id;
     }
 
-    public void setProducts(Set<SupplierStorageProduct> products) {
-        this.products = products;
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
     }
 }

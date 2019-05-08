@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ts.tsc.system.entities.Product;
-import ts.tsc.system.entities.Shop;
 import ts.tsc.system.repositories.ProductRepository;
 
 import java.util.ArrayList;

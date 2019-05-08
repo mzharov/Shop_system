@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.entities.Shop;
-import ts.tsc.system.entities.SupplierStorage;
 import ts.tsc.system.repositories.ShopRepository;
 
 import java.util.ArrayList;

@@ -8,31 +8,30 @@ import javax.persistence.ManyToOne;
 import java.io.Serializable;
 
 @Embeddable
-public class SupplierStorageProductKey implements Serializable {
+public class ShopStorageProductPrimaryKey implements Serializable {
     @ManyToOne
     @JoinColumn(name = "storage_id")
     @JsonIgnore
-    private SupplierStorage storage;
+    private ShopStorage storage;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
     @JsonIgnore
     private Product product;
 
-    public SupplierStorageProductKey() {
+    public ShopStorageProductPrimaryKey() {
 
     }
-
-    public SupplierStorageProductKey(SupplierStorage storage,Product product) {
-        this.storage = storage;
+    public ShopStorageProductPrimaryKey(ShopStorage shopStorage, Product product) {
+        this.storage = shopStorage;
         this.product = product;
     }
 
-    public SupplierStorage getStorage() {
+    public ShopStorage getStorage() {
         return storage;
     }
 
-    public void setStorage(SupplierStorage storage) {
+    public void setStorage(ShopStorage storage) {
         this.storage = storage;
     }
 

@@ -1,7 +1,8 @@
 package ts.tsc.system.entities;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import ts.tsc.system.json.serializer.SupplierStorageProductKeySerializer;
+
+import ts.tsc.system.json.serializer.SupplierStorageProductPrimaryKeySerializer;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -12,8 +13,8 @@ import java.math.BigDecimal;
 public class SupplierStorageProduct implements Serializable {
 
     @EmbeddedId
-    @JsonSerialize(using = SupplierStorageProductKeySerializer.class)
-    private SupplierStorageProductKey primaryKey;
+    @JsonSerialize(using = SupplierStorageProductPrimaryKeySerializer.class)
+    private SupplierStorageProductPrimaryKey primaryKey;
 
     @Column(name = "price")
     private BigDecimal price;
@@ -21,11 +22,11 @@ public class SupplierStorageProduct implements Serializable {
     @Column(name = "count")
     private int count;
 
-    public SupplierStorageProductKey getPrimaryKey() {
+    public SupplierStorageProductPrimaryKey getPrimaryKey() {
         return primaryKey;
     }
 
-    public void setPrimaryKey(SupplierStorageProductKey primaryKey) {
+    public void setPrimaryKey(SupplierStorageProductPrimaryKey primaryKey) {
         this.primaryKey = primaryKey;
     }
 
