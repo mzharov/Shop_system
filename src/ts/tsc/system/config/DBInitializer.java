@@ -92,6 +92,7 @@ public class DBInitializer {
     private ShopStorage addStorageToShop(int totalSpace, int type, Shop shop) {
         ShopStorage shopStorage = new ShopStorage();
         shopStorage.setShop(shop);
+        shopStorage.setType(type);
         shopStorage.setTotalSpace(totalSpace);
         shopStorage.setFreeSpace(totalSpace);
         shopStorageRepository.save(shopStorage);
