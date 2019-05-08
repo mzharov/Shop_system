@@ -1,10 +1,15 @@
 package ts.tsc.system.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "suppliers")
-public class Supplier {
+public class Supplier implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -13,12 +18,18 @@ public class Supplier {
     @Column(name = "name")
     private String name;
 
+    @OneToMany(mappedBy = "supplier",
+            fetch = FetchType.EAGER,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private Set<SupplierStorage> storages = new HashSet<>();
+
     public Long getShopID() {
         return id;
     }
 
-    public void setShopID(Long shopID) {
-        this.id = shopID;
+    public void setShopID(Long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -29,4 +40,11 @@ public class Supplier {
         this.name = name;
     }
 
+    public Set<SupplierStorage> getStorages() {
+        return storages;
+    }
+
+    public void setStorages(Set<SupplierStorage> storages) {
+        this.storages = storages;
+    }
 }

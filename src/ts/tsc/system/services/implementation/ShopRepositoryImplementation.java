@@ -1,18 +1,19 @@
 package ts.tsc.system.services.implementation;
 
+import org.springframework.http.ResponseEntity;
 import ts.tsc.system.entities.Shop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.repositories.ShopRepository;
-import ts.tsc.system.services.interfaces.EntityService;
+import ts.tsc.system.services.interfaces.ShopService;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service("shopService")
 @Transactional
-public class ShopRepositoryImplementation implements EntityService<Shop> {
+public class ShopRepositoryImplementation implements ShopService<Shop> {
 
     private final
     ShopRepository shopRepository;
@@ -24,7 +25,7 @@ public class ShopRepositoryImplementation implements EntityService<Shop> {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Shop> findAll() {
+    public ResponseEntity<List<Shop>> findAll() {
         Iterable<Shop> iterable = shopRepository.findAll();
         List<Shop> shops = new ArrayList<>();
         iterable.forEach(shops::add);

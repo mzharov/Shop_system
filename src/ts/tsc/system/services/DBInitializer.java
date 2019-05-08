@@ -6,8 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ts.tsc.system.entities.Shop;
 import ts.tsc.system.entities.Supplier;
+import ts.tsc.system.entities.SupplierStorage;
 import ts.tsc.system.repositories.ShopRepository;
 import ts.tsc.system.repositories.SupplierRepository;
+import ts.tsc.system.repositories.SupplierStorageRepository;
 
 
 import javax.annotation.PostConstruct;
@@ -17,12 +19,16 @@ public class DBInitializer {
 
     private final static Logger logger = LoggerFactory.getLogger(DBInitializer.class);
     private final ShopRepository shopRepository;
-    private final SupplierRepository repository;
+    private final SupplierRepository supplierRepository;
+    private final SupplierStorageRepository supplierStorageRepository;
 
     @Autowired
-    public DBInitializer(ShopRepository shopRepository, SupplierRepository repository) {
+    public DBInitializer(ShopRepository shopRepository,
+                         SupplierRepository supplierRepository,
+                         SupplierStorageRepository supplierStorageRepository) {
         this.shopRepository = shopRepository;
-        this.repository = repository;
+        this.supplierRepository = supplierRepository;
+        this.supplierStorageRepository = supplierStorageRepository;
     }
 
     @PostConstruct
@@ -40,7 +46,18 @@ public class DBInitializer {
 
         Supplier supplier = new Supplier();
         supplier.setName("Avalon");
-        repository.save(supplier);
+        supplierRepository.save(supplier);
+
+        SupplierStorage supplierStorage = new SupplierStorage();
+        supplierStorage.setSupplier(supplier);
+        supplierStorage.setTotalSpace(1000);
+        supplierStorage.setFreeSpace(1000);
+        supplierStorageRepository.save(supplierStorage);
+        SupplierStorage supplierStorage2 = new SupplierStorage();
+        supplierStorage2.setSupplier(supplier);
+        supplierStorage2.setTotalSpace(10000);
+        supplierStorage2.setFreeSpace(1000);
+        supplierStorageRepository.save(supplierStorage2);
 
         logger.info("Database initialization finished.");
     }

@@ -27,7 +27,7 @@ public class ShopController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/list")
-    public List<Shop> getShops() {
+    public ResponseEntity<List<Shop>> findAll() {
         Iterable<Shop> iterable = repository.findAll();
         List<Shop> shops = new ArrayList<>();
         iterable.forEach(shops::add);

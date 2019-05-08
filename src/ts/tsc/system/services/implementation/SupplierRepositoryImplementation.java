@@ -5,14 +5,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entities.Supplier;
 import ts.tsc.system.repositories.SupplierRepository;
-import ts.tsc.system.services.interfaces.EntityService;
+import ts.tsc.system.services.interfaces.SupplierService;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service("supplierService")
 @Transactional
-public class SupplierRepositoryImplementation implements EntityService<Supplier> {
+public class SupplierRepositoryImplementation implements SupplierService<Supplier> {
 
     private final
     SupplierRepository shopRepository;
@@ -29,12 +29,6 @@ public class SupplierRepositoryImplementation implements EntityService<Supplier>
         List<Supplier> shops = new ArrayList<>();
         iterable.forEach(shops::add);
         return shops;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Supplier> findByName(String name) {
-        return shopRepository.findByName(name);
     }
 
     @Override
