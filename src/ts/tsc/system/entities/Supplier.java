@@ -24,6 +24,7 @@ public class Supplier implements Serializable {
             orphanRemoval = true)
     private Set<SupplierStorage> storages = new HashSet<>();
 
+
     public Long getId() {
         return id;
     }

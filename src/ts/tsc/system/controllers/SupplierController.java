@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.entities.Shop;
 import ts.tsc.system.entities.Supplier;
 import ts.tsc.system.entities.SupplierStorage;
+import ts.tsc.system.entities.SupplierStorageProduct;
 import ts.tsc.system.repositories.SupplierRepository;
+import ts.tsc.system.repositories.SupplierStorageProductRepository;
 import ts.tsc.system.repositories.SupplierStorageRepository;
 
 import javax.persistence.EntityManager;
@@ -29,15 +31,18 @@ public class SupplierController {
 
     private final SupplierRepository supplierRepository;
     private final SupplierStorageRepository supplierStorageRepository;
+    private final SupplierStorageProductRepository supplierStorageProductRepository;
 
     @PersistenceContext
     EntityManager entityManager;
 
     @Autowired
     public SupplierController(SupplierRepository supplierRepository,
-                              SupplierStorageRepository supplierRepositoryService) {
+                              SupplierStorageRepository supplierRepositoryService,
+                              SupplierStorageProductRepository supplierStorageProductRepository) {
         this.supplierRepository = supplierRepository;
         this.supplierStorageRepository = supplierRepositoryService;
+        this.supplierStorageProductRepository = supplierStorageProductRepository;
     }
 
     @ResponseStatus(HttpStatus.OK)
@@ -61,6 +66,19 @@ public class SupplierController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping(value = "/product/list")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<SupplierStorageProduct>> getProducts() {
+        Iterable<SupplierStorageProduct> iterable = supplierStorageProductRepository.findAll();
+        List<SupplierStorageProduct> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        if(list.size() > 0) {
+            return ResponseEntity.ok().body(list);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping(value = "/{id}")
     @Transactional(readOnly = true)
     public ResponseEntity<Supplier> findSupplierById(@PathVariable Long id) {
@@ -78,7 +96,7 @@ public class SupplierController {
         query.setParameter(1, id);
         List<SupplierStorage> storage = query.getResultList();
 
-        if(storage !=null) {
+        if(storage.size() > 0) {
             return ResponseEntity.ok().body(storage);
         } else {
             return ResponseEntity.notFound().build();

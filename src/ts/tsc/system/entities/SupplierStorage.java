@@ -1,12 +1,17 @@
 package ts.tsc.system.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import ts.tsc.system.json.serializer.SupplierStorageSerializer;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "suppliers_storages")
+@JsonSerialize(using = SupplierStorageSerializer.class)
 public class SupplierStorage implements Serializable {
 
     @Id
@@ -18,6 +23,10 @@ public class SupplierStorage implements Serializable {
     @JoinColumn(name = "supplier_id")
     @JsonIgnore
     private Supplier supplier;
+
+    @OneToMany(mappedBy = "primaryKey.storage",
+            fetch = FetchType.EAGER)
+    private Set<SupplierStorageProduct> products = new HashSet<>();
 
     @Column(name = "total_space")
     private int totalSpace;
@@ -55,5 +64,13 @@ public class SupplierStorage implements Serializable {
 
     public void setFreeSpace(int freeSpace) {
         this.freeSpace = freeSpace;
+    }
+
+    public Set<SupplierStorageProduct> getProducts() {
+        return products;
+    }
+
+    public void setProducts(Set<SupplierStorageProduct> products) {
+        this.products = products;
     }
 }

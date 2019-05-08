@@ -31,10 +31,10 @@ public class ShopController {
     @Transactional(readOnly = true)
     public ResponseEntity<List<Shop>> findAll() {
         Iterable<Shop> iterable = repository.findAll();
-        List<Shop> shops = new ArrayList<>();
-        iterable.forEach(shops::add);
-        if(shops.size() > 0) {
-            return ResponseEntity.ok().body(shops);
+        List<Shop> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        if(list.size() > 0) {
+            return ResponseEntity.ok().body(list);
         }else {
             return ResponseEntity.notFound().build();
         }

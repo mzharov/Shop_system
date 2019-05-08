@@ -18,18 +18,16 @@ public class Shop implements Serializable {
     @Column(name = "budget")
     private Long budget;
 
-    public Long getShopID() {
+    public Long getId() {
         return id;
     }
-
-    public void setShopID(Long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -37,7 +35,6 @@ public class Shop implements Serializable {
     public Long getBudget() {
         return budget;
     }
-
     public void setBudget(Long budget) {
         this.budget = budget;
     }

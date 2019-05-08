@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 public class RestClientTest {
 
     private final static Logger logger = LoggerFactory.getLogger(RestClientTest.class);
-    private static final String URL_GET_ALL_SHOPS = "http://localhost:8080";
+    private static final String URL_GET_ALL_SHOPS = "http://localhost:8080/shop/list";
 
 
     @Autowired
@@ -42,6 +42,6 @@ public class RestClientTest {
 
 
     private void listSingers(List<Shop> singers) {
-        singers.forEach(s -> logger.info(s.getShopID() + " " + s.getName() + " " + s.getBudget()));
+        singers.forEach(s -> logger.info(s.getId() + " " + s.getName() + " " + s.getBudget()));
     }
 }
