@@ -6,11 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -19,16 +18,16 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
+import java.util.Objects;
 import java.util.Properties;
-
 
 @Configuration
 @EnableJpaRepositories(basePackages = {"ts.tsc.system.repositories"})
 @ComponentScan(basePackages  = {"ts.tsc.system"} )
+@PropertySource("classpath:application.properties")
 public class DataServiceConfig {
 
     private final static Logger logger = LoggerFactory.getLogger(DataServiceConfig.class);
-
     private final Environment environment;
 
     @Autowired
@@ -47,14 +46,17 @@ public class DataServiceConfig {
             return null;
         }*/
         try {
+            logger.info("--> Инициализация БД");
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setDriverClassName("org.postgresql.Driver");
+            dataSource
+                    .setDriverClassName(Objects.requireNonNull(environment
+                            .getProperty("spring.datasource.driver-class-name")));
             dataSource.setUrl(environment.getProperty("spring.datasource.url"));
             dataSource.setUsername(environment.getProperty("spring.datasource.username"));
             dataSource.setPassword(environment.getProperty("spring.datasource.password"));
             return dataSource;
         } catch (Exception e) {
-            logger.error("Embedded DataSource bean cannot be created!", e);
+            logger.error("DataSource bean cannot be created!", e);
             return null;
         }
     }
@@ -62,15 +64,33 @@ public class DataServiceConfig {
     @Bean
     public Properties hibernateProperties() {
         Properties hibernateProp = new Properties();
-        hibernateProp.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        hibernateProp.put("hibernate.hbm2ddl.auto", "update");
-        hibernateProp.put("hibernate.show_sql", true);
-        hibernateProp.put("hibernate.max_fetch_depth", 3);
-        hibernateProp.put("hibernate.jdbc.batch_size", 10);
-        hibernateProp.put("hibernate.jdbc.fetch_size", 50);
-        hibernateProp.put("hibernate.jmx.enabled", false);
-        hibernateProp.put("hibernate.generate_statistics", true);
-        hibernateProp.put("hibernate.session_factory_name", "sessionFactory");
+        hibernateProp.put("hibernate.dialect",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.dialect")));
+        hibernateProp.put("hibernate.hbm2ddl.auto",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.hbm2ddl.auto")));
+        hibernateProp.put("hibernate.show_sql",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.show_sql")));
+        hibernateProp.put("hibernate.max_fetch_depth",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.max_fetch_depth")));
+        hibernateProp.put("hibernate.jdbc.batch_size",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.jdbc.batch_size")));
+        hibernateProp.put("hibernate.jdbc.fetch_size",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.jdbc.fetch_size")));
+        hibernateProp.put("hibernate.jmx.enabled",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.jmx.enabled")));
+        hibernateProp.put("hibernate.generate_statistics",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.generate_statistics")));
+        hibernateProp.put("hibernate.session_factory_name",
+                Objects.requireNonNull(
+                        environment.getProperty("spring.jpa.properties.hibernate.session_factory_name")));
         return hibernateProp;
     }
 
@@ -83,7 +103,6 @@ public class DataServiceConfig {
     public JpaVendorAdapter jpaVendorAdapter() {
         return new HibernateJpaVendorAdapter();
     }
-
 
     @Bean
     public EntityManagerFactory entityManagerFactory() {

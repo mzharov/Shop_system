@@ -35,6 +35,7 @@ public class RestClientTest {
         logger.info("--> Testing retrieve all shops");
         List<Shop> shops =
                 restTemplate.getForObject(URL_GET_ALL_SHOPS, List.class);
+        assert shops != null;
         assertEquals(1, shops.size());
         listSingers(shops);
     }

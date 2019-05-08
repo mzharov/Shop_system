@@ -16,7 +16,6 @@ import javax.annotation.PostConstruct;
 public class DBInitializer {
 
     private final static Logger logger = LoggerFactory.getLogger(DBInitializer.class);
-
     private final ShopRepository shopRepository;
     private final SupplierRepository repository;
 
@@ -39,11 +38,9 @@ public class DBInitializer {
         shop2.setBudget(10000L);
         shopRepository.save(shop2);
 
-
         Supplier supplier = new Supplier();
         supplier.setName("Avalon");
         repository.save(supplier);
-
 
         logger.info("Database initialization finished.");
     }

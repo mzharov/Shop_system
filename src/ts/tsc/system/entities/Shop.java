@@ -9,8 +9,8 @@ public class Shop implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "shop_id")
-    private Long shopID;
+    @Column(name = "id")
+    private Long id;
 
     @Column(name = "name")
     private String name;
@@ -19,11 +19,11 @@ public class Shop implements Serializable {
     private Long budget;
 
     public Long getShopID() {
-        return shopID;
+        return id;
     }
 
-    public void setShopID(Long shopID) {
-        this.shopID = shopID;
+    public void setShopID(Long id) {
+        this.id = id;
     }
 
     public String getName() {
