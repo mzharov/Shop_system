@@ -2,6 +2,7 @@ package ts.tsc.system.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.springframework.data.jpa.repository.Query;
 import ts.tsc.system.json.serializer.ShopStorageSerializer;
 
 import javax.persistence.*;
