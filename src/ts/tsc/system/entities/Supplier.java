@@ -24,18 +24,16 @@ public class Supplier implements Serializable {
             orphanRemoval = true)
     private Set<SupplierStorage> storages = new HashSet<>();
 
-    public Long getShopID() {
+    public Long getId() {
         return id;
     }
-
-    public void setShopID(Long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -43,7 +41,6 @@ public class Supplier implements Serializable {
     public Set<SupplierStorage> getStorages() {
         return storages;
     }
-
     public void setStorages(Set<SupplierStorage> storages) {
         this.storages = storages;
     }

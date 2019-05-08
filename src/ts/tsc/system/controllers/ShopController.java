@@ -5,8 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.entities.Shop;
+import ts.tsc.system.entities.SupplierStorage;
 import ts.tsc.system.repositories.ShopRepository;
 
 import java.util.ArrayList;
@@ -25,16 +27,28 @@ public class ShopController {
         this.repository = repository;
     }
 
-    @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/list")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Shop>> findAll() {
         Iterable<Shop> iterable = repository.findAll();
         List<Shop> shops = new ArrayList<>();
         iterable.forEach(shops::add);
-        return shops;
+        if(shops.size() > 0) {
+            return ResponseEntity.ok().body(shops);
+        }else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping(value = "/name/{name}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<Shop> findByName(@PathVariable String name) {
+        return repository.findByName(name).map(record -> ResponseEntity.ok().body(record))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping(value = "/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<Shop> findShopById(@PathVariable Long id) {
         return repository.findById(id)
                 .map(record -> ResponseEntity.ok().body(record))
@@ -51,6 +65,7 @@ public class ShopController {
             return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @PutMapping(value = "/{id}")
     public ResponseEntity<Shop> update(@PathVariable Long id, @RequestBody Shop shop) {

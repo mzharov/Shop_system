@@ -5,8 +5,9 @@ import org.springframework.stereotype.Repository;
 import ts.tsc.system.entities.Shop;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ShopRepository extends JpaRepository<Shop, Long> {
-    List<Shop> findByName(String name);
+    Optional<Shop> findByName(String name);
 }

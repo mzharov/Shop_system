@@ -25,20 +25,20 @@ public class SupplierStorage implements Serializable {
     @Column(name = "free_space")
     private int freeSpace;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Supplier getSupplier() {
         return supplier;
     }
 
     public void setSupplier(Supplier supplier) {
         this.supplier = supplier;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public int getTotalSpace() {
