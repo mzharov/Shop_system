@@ -63,12 +63,10 @@ public class SupplierController {
         return supplierService.findByName(name, supplierRepository);
     }
 
-
     @GetMapping(value = "/{id}")
     public ResponseEntity<Supplier> findSupplierById(@PathVariable Long id) {
         return supplierService.findById(id, supplierRepository);
     }
-
 
     @PostMapping(value = "/")
     public ResponseEntity<?> create(@RequestBody Supplier supplier) {
@@ -86,7 +84,7 @@ public class SupplierController {
                 }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping(value = "/storage/{id}")
+    @DeleteMapping(value = "/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         return supplierService.delete(id, supplierRepository);
     }
