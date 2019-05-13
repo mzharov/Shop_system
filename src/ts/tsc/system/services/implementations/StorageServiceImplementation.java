@@ -5,20 +5,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import ts.tsc.system.entities.BaseStorage;
-import ts.tsc.system.entities.Supplier;
-import ts.tsc.system.entities.SupplierStorage;
-import ts.tsc.system.entities.SupplierStorageProduct;
-import ts.tsc.system.services.interfaces.BaseService;
+import ts.tsc.system.entities.interfaces.BaseStorage;
 import ts.tsc.system.services.interfaces.StorageService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 

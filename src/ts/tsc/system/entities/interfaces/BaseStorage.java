@@ -1,4 +1,4 @@
-package ts.tsc.system.entities;
+package ts.tsc.system.entities.interfaces;
 
 import javax.persistence.MappedSuperclass;
 

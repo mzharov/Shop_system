@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import ts.tsc.system.entities.Shop;
 import ts.tsc.system.services.interfaces.BaseService;
 
@@ -22,9 +24,9 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
         Iterable<T> iterable = repository.findAll();
         List<T> list = new ArrayList<>();
         iterable.forEach(list::add);
-        if(list.size() > 0) {
+        if (list.size() > 0) {
             return ResponseEntity.ok().body(list);
-        }else {
+        } else {
             return ResponseEntity.notFound().build();
         }
     }

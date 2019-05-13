@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controllers.interfaces.ProductControllerInterface;
 import ts.tsc.system.entities.Product;
+import ts.tsc.system.entities.Shop;
 import ts.tsc.system.repositories.ProductRepository;
 import ts.tsc.system.services.interfaces.BaseService;
 import ts.tsc.system.services.interfaces.NamedService;
@@ -53,7 +54,13 @@ public class ProductController implements ProductControllerInterface {
     @Override
     @PutMapping(value = "/{id}")
     public ResponseEntity<Product> update(@PathVariable Long id, @RequestBody Product entity) {
-        return null; //todo
+        return productRepository.findById(id)
+                .map(record -> {
+                    record.setName(entity.getName());
+                    record.setCategory(entity.getCategory());
+                    Product updated = productRepository.save(record);
+                    return ResponseEntity.ok().body(updated);
+                }).orElse(ResponseEntity.notFound().build());
     }
 
     @Override

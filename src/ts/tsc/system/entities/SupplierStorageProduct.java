@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 public class SupplierStorageProduct implements Serializable {
 
     @EmbeddedId
-    @JsonSerialize(using = SupplierStorageProductPrimaryKeySerializer.class)
     private SupplierStorageProductPrimaryKey primaryKey;
 
     @Column(name = "price")

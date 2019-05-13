@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 public class ShopStorageProduct implements Serializable {
 
     @EmbeddedId
-    @JsonSerialize(using = ShopStorageProductPrimaryKeySerializer.class)
     private ShopStorageProductPrimaryKey primaryKey;
 
     @Column(name = "count")

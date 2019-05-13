@@ -1,6 +1,8 @@
 package ts.tsc.system.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import ts.tsc.system.json.serializer.SupplierStorageProductPrimaryKeySerializer;
 
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
@@ -8,6 +10,7 @@ import javax.persistence.ManyToOne;
 import java.io.Serializable;
 
 @Embeddable
+@JsonSerialize(using = SupplierStorageProductPrimaryKeySerializer.class)
 public class SupplierStorageProductPrimaryKey implements Serializable {
     @ManyToOne
     @JoinColumn(name = "storage_id")
