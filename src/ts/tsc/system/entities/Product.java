@@ -7,14 +7,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "product")
-public class Product implements Serializable {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+public class Product extends NamedEntity<Long> implements Serializable {
 
-    @Column(name = "name")
-    private String name;
 
     @Column(name = "category")
     private String category;
@@ -23,21 +17,6 @@ public class Product implements Serializable {
             fetch = FetchType.EAGER)
     private Set<SupplierStorageProduct> products = new HashSet<>();
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getCategory() {
         return category;

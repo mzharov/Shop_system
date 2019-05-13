@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ts.tsc.system.entities.Product;
 import ts.tsc.system.repositories.ProductRepository;
 import ts.tsc.system.services.interfaces.BaseService;
+import ts.tsc.system.services.interfaces.NamedService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,17 +18,16 @@ import java.util.List;
 @RequestMapping(value = "/product")
 public class ProductController {
 
-    private final BaseService<Product, Long> productService;
+    private final NamedService<Product, Long> productService;
     private final ProductRepository productRepository;
 
     @Autowired
-    ProductController(BaseService<Product, Long> productService, ProductRepository productRepository) {
+    ProductController(NamedService<Product, Long> productService, ProductRepository productRepository) {
         this.productService = productService;
         this.productRepository = productRepository;
     }
 
     @GetMapping(value = "/list")
-    @Transactional(readOnly = true)
     public ResponseEntity<List<Product>> findAll() {
         return productService.findAll(productRepository);
     }

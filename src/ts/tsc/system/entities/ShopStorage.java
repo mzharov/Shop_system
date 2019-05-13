@@ -13,7 +13,7 @@ import java.util.Set;
 @Entity
 @Table(name = "shop_storage")
 @JsonSerialize(using = ShopStorageSerializer.class)
-public class ShopStorage implements Serializable {
+public class ShopStorage implements Serializable, BaseStorage<Shop> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +37,11 @@ public class ShopStorage implements Serializable {
 
     @Column(name = "free_space")
     private int freeSpace;
+
+    @Override
+    public void setOwner(Shop shop) {
+        setShop(shop);
+    }
 
     public Shop getShop() {
         return shop;

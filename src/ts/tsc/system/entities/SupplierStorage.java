@@ -12,7 +12,7 @@ import java.util.Set;
 @Entity
 @Table(name = "supplier_storage")
 @JsonSerialize(using = SupplierStorageSerializer.class)
-public class SupplierStorage implements Serializable {
+public class SupplierStorage implements Serializable, BaseStorage<Supplier> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +36,11 @@ public class SupplierStorage implements Serializable {
 
     public Supplier getSupplier() {
         return supplier;
+    }
+
+    @Override
+    public void setOwner(Supplier supplier) {
+        setSupplier(supplier);
     }
 
     public void setSupplier(Supplier supplier) {

@@ -22,44 +22,34 @@ public class ShopController {
     final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
     private final ShopRepository repository;
-    private final BaseService<Shop, Long> service;
+    private final NamedService<Shop, Long> service;
 
     @Autowired
     public ShopController(ShopRepository repository,
-                          BaseService<Shop, Long> service) {
+                          NamedService<Shop, Long> service) {
         this.repository = repository;
         this.service = service;
     }
 
     @GetMapping(value = "/list")
-    @Transactional(readOnly = true)
     public ResponseEntity<List<Shop>> findAll() {
         return service.findAll(repository);
     }
 
     @GetMapping(value = "/name/{name}")
-    @Transactional(readOnly = true)
     public ResponseEntity<List<Shop>> findByName(@PathVariable String name) {
-        return null;
+        return service.findByName(name, repository);
     }
 
     @GetMapping(value = "/{id}")
-    @Transactional(readOnly = true)
-    public ResponseEntity<Shop> findShopById(@PathVariable Long id) {
-        return repository.findById(id)
-                .map(record -> ResponseEntity.ok().body(record))
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Shop> findById(@PathVariable Long id) {
+        return service.findById(id, repository);
     }
 
 
     @PostMapping(value = "/")
     public ResponseEntity<?> create(@RequestBody Shop shop) {
-        try {
-            repository.save(shop);
-            return ResponseEntity.ok().body(shop);
-        } catch (Exception e) {
-            return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return service.save(shop, repository);
     }
 
 
@@ -76,11 +66,7 @@ public class ShopController {
 
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return repository.findById(id)
-                .map(record -> {
-                    repository.deleteById(id);
-                    return ResponseEntity.ok().build();
-                }).orElse(ResponseEntity.notFound().build());
+        return service.delete(id, repository);
     }
 }
 

@@ -8,15 +8,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "shop")
-public class Shop implements Serializable {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
-
-    @Column(name = "name")
-    private String name;
+public class Shop extends NamedEntity<Long> implements Serializable {
 
     @OneToMany(mappedBy = "shop",
             fetch = FetchType.EAGER,
@@ -26,20 +18,6 @@ public class Shop implements Serializable {
 
     @Column(name = "budget")
     private BigDecimal budget;
-
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public BigDecimal getBudget() {
         return budget;
