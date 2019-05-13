@@ -1,4 +1,4 @@
-package ts.tsc.system.controllers;
+package ts.tsc.system.controllers.implementations;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ts.tsc.system.controllers.interfaces.ExtendedControllerInterface;
 import ts.tsc.system.entities.*;
 import ts.tsc.system.repositories.*;
 import ts.tsc.system.services.interfaces.BaseService;
@@ -16,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/shop")
-public class ShopController {
+public class ShopController implements ExtendedControllerInterface<Shop, ShopStorage, ShopStorageProduct> {
 
     final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
