@@ -31,6 +31,10 @@ public class SupplierStorage implements Serializable, BaseStorage<Supplier> {
     @JsonSerialize(using = ProductSerializer.class)
     private Set<SupplierStorageProduct> products = new HashSet<>();
 
+    @OneToMany(mappedBy = "supplierStorage",
+            fetch = FetchType.EAGER)
+    private Set<Delivery> deliveries = new HashSet<>();
+
     @Column(name = "total_space")
     private int totalSpace;
 
@@ -80,5 +84,13 @@ public class SupplierStorage implements Serializable, BaseStorage<Supplier> {
 
     public void setProducts(Set<SupplierStorageProduct> products) {
         this.products = products;
+    }
+
+    public Set<Delivery> getDeliveries() {
+        return deliveries;
+    }
+
+    public void setDeliveries(Set<Delivery> deliveries) {
+        this.deliveries = deliveries;
     }
 }

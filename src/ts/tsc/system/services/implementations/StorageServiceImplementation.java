@@ -26,7 +26,7 @@ public class StorageServiceImplementation<B, T extends BaseStorage<B>, ID>
     public ResponseEntity<List<T>> findById(Long id,
                                          String stringQuery,
                                          JpaRepository<T, ID> repository) {
-        Query query = entityManager.createNamedQuery(stringQuery)
+        Query query = entityManager.createQuery(stringQuery)
                 .setParameter(1, id);
         List<T> storage = query.getResultList();
 

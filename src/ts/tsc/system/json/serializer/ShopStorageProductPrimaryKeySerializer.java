@@ -3,7 +3,7 @@ package ts.tsc.system.json.serializer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import ts.tsc.system.entities.ShopStorageProductPrimaryKey;
+import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
 
 import java.io.IOException;
 

@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ts.tsc.system.entities.*;
+import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
+import ts.tsc.system.entities.keys.SupplierStorageProductPrimaryKey;
 import ts.tsc.system.repositories.*;
 
 

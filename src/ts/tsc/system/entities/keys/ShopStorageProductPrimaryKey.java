@@ -1,7 +1,9 @@
-package ts.tsc.system.entities;
+package ts.tsc.system.entities.keys;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import ts.tsc.system.entities.Product;
+import ts.tsc.system.entities.ShopStorage;
 import ts.tsc.system.json.serializer.ShopStorageProductPrimaryKeySerializer;
 
 import javax.persistence.Embeddable;

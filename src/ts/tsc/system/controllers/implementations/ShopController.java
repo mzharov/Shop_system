@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controllers.interfaces.ExtendedControllerInterface;
 import ts.tsc.system.entities.*;
+import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
 import ts.tsc.system.repositories.*;
 import ts.tsc.system.services.interfaces.BaseService;
 import ts.tsc.system.services.interfaces.NamedService;

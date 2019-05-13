@@ -1,8 +1,6 @@
 package ts.tsc.system.entities;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import ts.tsc.system.json.serializer.SupplierStorageProductPrimaryKeySerializer;
+import ts.tsc.system.entities.keys.SupplierStorageProductPrimaryKey;
 
 import javax.persistence.*;
 import java.io.Serializable;

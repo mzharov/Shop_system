@@ -1,5 +1,6 @@
 package ts.tsc.system.entities;
 
+import ts.tsc.system.entities.keys.DeliveryProductPrimaryKey;
 import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
 
 import javax.persistence.Column;
@@ -10,11 +11,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "ShopStoragesProduct")
-public class ShopStorageProduct implements Serializable {
-
+@Table(name = "deliveryProduct")
+public class DeliveryProduct implements Serializable {
     @EmbeddedId
-    private ShopStorageProductPrimaryKey primaryKey;
+    private DeliveryProductPrimaryKey primaryKey;
 
     @Column(name = "count")
     private int count;
@@ -22,11 +22,11 @@ public class ShopStorageProduct implements Serializable {
     @Column(name="price")
     private BigDecimal price;
 
-    public ShopStorageProductPrimaryKey getPrimaryKey() {
+    public DeliveryProductPrimaryKey getPrimaryKey() {
         return primaryKey;
     }
 
-    public void setPrimaryKey(ShopStorageProductPrimaryKey primaryKey) {
+    public void setPrimaryKey(DeliveryProductPrimaryKey primaryKey) {
         this.primaryKey = primaryKey;
     }
 

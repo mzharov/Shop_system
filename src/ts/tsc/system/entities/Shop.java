@@ -16,6 +16,12 @@ public class Shop extends NamedEntity<Long> implements Serializable {
             orphanRemoval = true)
     private Set<ShopStorage> storages = new HashSet<>();
 
+    @OneToMany(mappedBy = "shop",
+            fetch = FetchType.EAGER,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private Set<Purchase> purchases = new HashSet<>();
+
     @Column(name = "budget")
     private BigDecimal budget;
 
@@ -32,5 +38,13 @@ public class Shop extends NamedEntity<Long> implements Serializable {
 
     public void setStorages(Set<ShopStorage> storages) {
         this.storages = storages;
+    }
+
+    public Set<Purchase> getPurchases() {
+        return purchases;
+    }
+
+    public void setPurchases(Set<Purchase> purchases) {
+        this.purchases = purchases;
     }
 }

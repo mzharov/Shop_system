@@ -32,6 +32,10 @@ public class ShopStorage implements Serializable, BaseStorage<Shop> {
             fetch = FetchType.EAGER)
     private Set<ShopStorageProduct> products = new HashSet<>();
 
+    @OneToMany(mappedBy = "shopStorage",
+            fetch = FetchType.EAGER)
+    private Set<Delivery> deliveries = new HashSet<>();
+
     @Column(name = "total_space")
     private int totalSpace;
 
@@ -89,5 +93,13 @@ public class ShopStorage implements Serializable, BaseStorage<Shop> {
 
     public void setType(int type) {
         this.type = type;
+    }
+
+    public Set<Delivery> getDeliveries() {
+        return deliveries;
+    }
+
+    public void setDeliveries(Set<Delivery> deliveries) {
+        this.deliveries = deliveries;
     }
 }

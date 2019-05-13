@@ -3,7 +3,7 @@ package ts.tsc.system.repositories;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ts.tsc.system.entities.SupplierStorageProduct;
-import ts.tsc.system.entities.SupplierStorageProductPrimaryKey;
+import ts.tsc.system.entities.keys.SupplierStorageProductPrimaryKey;
 
 @Repository
 public interface SupplierStorageProductRepository
