@@ -90,7 +90,7 @@ public class SupplierController {
     @Transactional(readOnly = true)
     public ResponseEntity<List<SupplierStorage>> findStorageById(@PathVariable Long id) {
         TypedQuery<SupplierStorage> query = entityManager
-                .createQuery("select ss from SupplierStorage ss where ss.supplier.id = ?1",
+                .createQuery("select entity from SupplierStorage entity where entity.supplier.id = ?1",
                         SupplierStorage.class);
         query.setParameter(1, id);
         List<SupplierStorage> storage = query.getResultList();
