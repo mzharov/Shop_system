@@ -1,5 +1,9 @@
 package ts.tsc.system.entities;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import ts.tsc.system.json.serializer.ProductSerializer;
+import ts.tsc.system.json.serializer.SupplierStorageProductPrimaryKeySerializer;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -7,6 +11,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "product")
+@JsonSerialize(using = ProductSerializer.class)
 public class Product extends NamedEntity<Long> implements Serializable {
 
 
