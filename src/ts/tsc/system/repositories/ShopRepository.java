@@ -7,6 +7,5 @@ import ts.tsc.system.entities.Shop;
 import java.util.Optional;
 
 @Repository
-public interface ShopRepository extends JpaRepository<Shop, Long> {
-    Optional<Shop> findByName(String name);
+public interface ShopRepository extends JpaRepository<Shop, Long>, NamedRepository<Shop, Long> {
 }

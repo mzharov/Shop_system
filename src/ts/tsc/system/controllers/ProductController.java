@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ts.tsc.system.entities.Product;
 import ts.tsc.system.repositories.ProductRepository;
+import ts.tsc.system.services.interfaces.BaseService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,23 +17,18 @@ import java.util.List;
 @RequestMapping(value = "/product")
 public class ProductController {
 
+    private final BaseService<Product, Long> productService;
     private final ProductRepository productRepository;
 
     @Autowired
-    ProductController(ProductRepository productRepository) {
+    ProductController(BaseService<Product, Long> productService, ProductRepository productRepository) {
+        this.productService = productService;
         this.productRepository = productRepository;
     }
 
     @GetMapping(value = "/list")
     @Transactional(readOnly = true)
     public ResponseEntity<List<Product>> findAll() {
-        Iterable<Product> iterable = productRepository.findAll();
-        List<Product> list = new ArrayList<>();
-        iterable.forEach(list::add);
-        if(list.size() > 0) {
-            return ResponseEntity.ok().body(list);
-        }else {
-            return ResponseEntity.notFound().build();
-        }
+        return productService.findAll(productRepository);
     }
 }

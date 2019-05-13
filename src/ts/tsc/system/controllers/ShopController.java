@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.entities.Shop;
 import ts.tsc.system.repositories.ShopRepository;
+import ts.tsc.system.services.interfaces.BaseService;
+import ts.tsc.system.services.interfaces.NamedService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,30 +22,25 @@ public class ShopController {
     final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
     private final ShopRepository repository;
+    private final BaseService<Shop, Long> service;
 
     @Autowired
-    public ShopController(ShopRepository repository) {
+    public ShopController(ShopRepository repository,
+                          BaseService<Shop, Long> service) {
         this.repository = repository;
+        this.service = service;
     }
 
     @GetMapping(value = "/list")
     @Transactional(readOnly = true)
     public ResponseEntity<List<Shop>> findAll() {
-        Iterable<Shop> iterable = repository.findAll();
-        List<Shop> list = new ArrayList<>();
-        iterable.forEach(list::add);
-        if(list.size() > 0) {
-            return ResponseEntity.ok().body(list);
-        }else {
-            return ResponseEntity.notFound().build();
-        }
+        return service.findAll(repository);
     }
 
     @GetMapping(value = "/name/{name}")
     @Transactional(readOnly = true)
-    public ResponseEntity<Shop> findByName(@PathVariable String name) {
-        return repository.findByName(name).map(record -> ResponseEntity.ok().body(record))
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<List<Shop>> findByName(@PathVariable String name) {
+        return null;
     }
 
     @GetMapping(value = "/{id}")

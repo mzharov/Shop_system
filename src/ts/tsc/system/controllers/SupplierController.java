@@ -3,7 +3,6 @@ package ts.tsc.system.controllers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +13,7 @@ import ts.tsc.system.entities.SupplierStorageProduct;
 import ts.tsc.system.repositories.SupplierRepository;
 import ts.tsc.system.repositories.SupplierStorageProductRepository;
 import ts.tsc.system.repositories.SupplierStorageRepository;
+import ts.tsc.system.services.interfaces.BaseService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -29,6 +29,7 @@ public class SupplierController {
     final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
     private final SupplierRepository supplierRepository;
+    private final BaseService<Supplier, Long> supplierService;
     private final SupplierStorageRepository supplierStorageRepository;
     private final SupplierStorageProductRepository supplierStorageProductRepository;
 
@@ -38,24 +39,19 @@ public class SupplierController {
     @Autowired
     public SupplierController(SupplierRepository supplierRepository,
                               SupplierStorageRepository supplierRepositoryService,
-                              SupplierStorageProductRepository supplierStorageProductRepository) {
+                              SupplierStorageProductRepository supplierStorageProductRepository,
+                              BaseService<Supplier, Long> supplierService) {
         this.supplierRepository = supplierRepository;
         this.supplierStorageRepository = supplierRepositoryService;
         this.supplierStorageProductRepository = supplierStorageProductRepository;
+        this.supplierService = supplierService;
     }
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/list")
     @Transactional(readOnly = true)
-    public ResponseEntity<List<Supplier>> getSuppliers() {
-        Iterable<Supplier> iterable = supplierRepository.findAll();
-        List<Supplier> list = new ArrayList<>();
-        iterable.forEach(list::add);
-        if(list.size() > 0) {
-            return ResponseEntity.ok().body(list);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<List<Supplier>> findAll() {
+        return supplierService.findAll(supplierRepository);
     }
 
     @GetMapping(value = "/name/{name}")
