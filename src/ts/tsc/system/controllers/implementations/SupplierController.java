@@ -148,85 +148,86 @@ public class SupplierController implements SupplierControllerInterface {
                              @PathVariable List<Long> productIdList,
                              @PathVariable List<Integer> countList) {
 
-        if(!(productIdList.size() > 0
-                && productIdList.size() == countList.size())) {
+        if(productIdList.size() != countList.size()) {
             return new ResponseEntity<>("Неверное количество параметров", HttpStatus.BAD_REQUEST);
         }
 
         Optional<SupplierStorage> supplierStorageOptional
                 = supplierStorageRepository.findById(supplierID);
+        if(!supplierStorageOptional.isPresent()) {
+            return new ResponseEntity<>("Не найден склад поставщика с указанным id",
+                    HttpStatus.NOT_FOUND);
+        }
         Optional<ShopStorage> shopStorageOptional
                 = shopStorageRepository.findById(shopID);
+        if(!shopStorageOptional.isPresent()) {
+            return new ResponseEntity<>("Не найден склад поставщика с указанным id",
+                    HttpStatus.NOT_FOUND);
+        }
 
         int success = 0;
 
-        if(supplierStorageOptional.isPresent() && shopStorageOptional.isPresent()) {
-            SupplierStorage supplierStorage = supplierStorageOptional.get();
-            ShopStorage shopStorage = shopStorageOptional.get();
+        SupplierStorage supplierStorage = supplierStorageOptional.get();
+        ShopStorage shopStorage = shopStorageOptional.get();
 
-            Delivery delivery = new Delivery();
-            delivery.setStatus(Status.RECEIVED);
-            delivery.setShopStorage(shopStorage);
-            delivery.setSupplierStorage(supplierStorage);
-            deliveryRepository.save(delivery);
+        Delivery delivery = new Delivery();
+        delivery.setStatus(Status.RECEIVED);
+        delivery.setShopStorage(shopStorage);
+        delivery.setSupplierStorage(supplierStorage);
+        deliveryRepository.save(delivery);
 
-            for(int requestIterator = 0; requestIterator < productIdList.size(); requestIterator++) {
-                Long productID = productIdList.get(requestIterator);
-                int count = countList.get(requestIterator);
-                Optional<Product> productOptional
-                        = productRepository.findById(productID);
-                if(productOptional.isPresent()) {
-                    Product product = productOptional.get();
+        for(int requestIterator = 0; requestIterator < productIdList.size(); requestIterator++) {
+            Long productID = productIdList.get(requestIterator);
+            int count = countList.get(requestIterator);
+            Optional<Product> productOptional
+                    = productRepository.findById(productID);
+            if(productOptional.isPresent()) {
+                Product product = productOptional.get();
 
-                    try {
-                        TypedQuery<SupplierStorageProduct> productTypedQuery = entityManager.createQuery(
-                                "select p from SupplierStorageProduct p " +
-                                        "where  p.primaryKey.storage.id = ?1 " +
-                                        "and p.primaryKey.product.id = ?2 ",
-                                SupplierStorageProduct.class)
-                                .setParameter(1, supplierID).setParameter(2, productID);
+                try {
+                    TypedQuery<SupplierStorageProduct> productTypedQuery = entityManager.createQuery(
+                            "select p from SupplierStorageProduct p " +
+                                    "where  p.primaryKey.storage.id = ?1 " +
+                                    "and p.primaryKey.product.id = ?2 ",
+                            SupplierStorageProduct.class)
+                            .setParameter(1, supplierID).setParameter(2, productID);
 
-                        SupplierStorageProduct supplierStorageProduct
-                                = productTypedQuery.getSingleResult();
+                    SupplierStorageProduct supplierStorageProduct
+                            = productTypedQuery.getSingleResult();
 
-                        if (supplierStorageProduct.getCount() > 0) {
-                            if (supplierStorageProduct.getCount() < count) {
-                                count = supplierStorageProduct.getCount();
-                            }
-
-                            DeliveryProduct deliveryProduct = new DeliveryProduct();
-                            deliveryProduct
-                                    .setPrimaryKey(new DeliveryProductPrimaryKey(delivery, product));
-                            deliveryProduct.setCount(count);
-                            BigDecimal sum =
-                                    supplierStorageProduct.getPrice().multiply(new BigDecimal(count));
-                            deliveryProduct.setSumPrice(sum);
-                            deliveryProduct.setPrice(supplierStorageProduct.getPrice());
-
-                            try {
-                                deliveryProductRepository.save(deliveryProduct);
-                                success++;
-                            } catch (Exception e) {
-                                logger.error("Ошибка в ходе сохранения элемента заказа", e);
-                            }
+                    if (supplierStorageProduct.getCount() > 0) {
+                        if (supplierStorageProduct.getCount() < count) {
+                            count = supplierStorageProduct.getCount();
                         }
 
-                    } catch (Exception e) {
-                        logger.error("Ошибка в ходе запроса", e);
+                        DeliveryProduct deliveryProduct = new DeliveryProduct();
+                        deliveryProduct
+                                .setPrimaryKey(new DeliveryProductPrimaryKey(delivery, product));
+                        deliveryProduct.setCount(count);
+                        BigDecimal sum =
+                                supplierStorageProduct.getPrice().multiply(new BigDecimal(count));
+                        deliveryProduct.setSumPrice(sum);
+                        deliveryProduct.setPrice(supplierStorageProduct.getPrice());
+
+                        try {
+                            deliveryProductRepository.save(deliveryProduct);
+                            success++;
+                        } catch (Exception e) {
+                            logger.error("Ошибка в ходе сохранения элемента заказа", e);
+                        }
                     }
+
+                } catch (Exception e) {
+                    logger.error("Ошибка в ходе запроса", e);
                 }
             }
-            if(success > 0) {
-                deliveryRepository.save(delivery);
-                return new ResponseEntity<>(delivery, HttpStatus.OK);
-            } else {
-                deliveryRepository.delete(delivery);
-                return new ResponseEntity<>("Не удалось найти запрошенные товары на складе",
-                        HttpStatus.BAD_REQUEST);
-            }
+        }
+        if(success > 0) {
+            return new ResponseEntity<>(delivery, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Не удалось найти запрошенные данные",
-                    HttpStatus.NOT_FOUND);
+            deliveryRepository.delete(delivery);
+            return new ResponseEntity<>("Не удалось найти запрошенные товары на складе",
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
