@@ -1,6 +1,5 @@
 package ts.tsc.system.controllers.implementations;
 
-import com.sun.org.apache.regexp.internal.RE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +25,6 @@ import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/supplier")
@@ -39,6 +37,7 @@ public class SupplierController implements SupplierControllerInterface {
 
     private final SupplierRepository supplierRepository;
     private final NamedService<Supplier, Long> supplierService;
+    private final BaseService<Delivery, Long> deliveryService;
     private final ShopStorageRepository shopStorageRepository;
     private final StorageService<Supplier, SupplierStorage, Long> storageService;
     private final SupplierStorageRepository supplierStorageRepository;
@@ -51,6 +50,7 @@ public class SupplierController implements SupplierControllerInterface {
 
     @Autowired
     public SupplierController(SupplierRepository supplierRepository,
+                              @Qualifier(value = "baseService") BaseService<Delivery, Long> deliveryService,
                               ShopStorageRepository shopStorageRepository,
                               StorageService<Supplier, SupplierStorage, Long> storageService,
                               SupplierStorageRepository supplierStorageRepository,
@@ -61,6 +61,7 @@ public class SupplierController implements SupplierControllerInterface {
                               DeliveryRepository deliveryRepository,
                               DeliveryProductRepository deliveryProductRepository, ProductRepository productRepository, ShopStorageProductRepository shopStorageProductRepository) {
         this.supplierRepository = supplierRepository;
+        this.deliveryService = deliveryService;
         this.shopStorageRepository = shopStorageRepository;
         this.storageService = storageService;
         this.supplierStorageRepository = supplierStorageRepository;
@@ -216,6 +217,7 @@ public class SupplierController implements SupplierControllerInterface {
                 }
             }
             if(success > 0) {
+                deliveryRepository.save(delivery);
                 return new ResponseEntity<>(delivery, HttpStatus.OK);
             } else {
                 deliveryRepository.delete(delivery);
@@ -240,6 +242,11 @@ public class SupplierController implements SupplierControllerInterface {
             return cancelDelivery(id);
         }
         return new ResponseEntity<>("Unknown status", HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping(value = "/delivery/list")
+    public ResponseEntity<List<Delivery>> getDeliveries() {
+        return deliveryService.findAll(deliveryRepository);
     }
 
     @Override
