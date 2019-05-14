@@ -99,7 +99,6 @@ public class SupplierController implements SupplierControllerInterface {
         return supplierService.save(supplier, supplierRepository);
     }
 
-
     @Override
     @PutMapping(value = "/{id}")
     public ResponseEntity<Supplier> update(@PathVariable Long id, @RequestBody Supplier supplier) {
@@ -166,7 +165,7 @@ public class SupplierController implements SupplierControllerInterface {
                     HttpStatus.NOT_FOUND);
         }
 
-        int success = 0;
+        boolean success = true;
 
         SupplierStorage supplierStorage = supplierStorageOptional.get();
         ShopStorage shopStorage = shopStorageOptional.get();
@@ -177,14 +176,15 @@ public class SupplierController implements SupplierControllerInterface {
         }
 
         if(shopStorage.getFreeSpace() < productsCount) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGHT_SPACE, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE, HttpStatus.BAD_REQUEST);
         }
 
         Delivery delivery = new Delivery();
         delivery.setStatus(Status.RECEIVED);
         delivery.setShopStorage(shopStorage);
         delivery.setSupplierStorage(supplierStorage);
-        deliveryRepository.save(delivery);
+
+        List<DeliveryProduct> deliveryProductList = new LinkedList<>();
 
         for(int requestIterator = 0; requestIterator < productIdList.size(); requestIterator++) {
             Long productID = productIdList.get(requestIterator);
@@ -193,7 +193,6 @@ public class SupplierController implements SupplierControllerInterface {
                     = productRepository.findById(productID);
             if(productOptional.isPresent()) {
                 Product product = productOptional.get();
-
                 try {
                     TypedQuery<SupplierStorageProduct> productTypedQuery = entityManager.createQuery(
                             "select p from SupplierStorageProduct p " +
@@ -207,7 +206,8 @@ public class SupplierController implements SupplierControllerInterface {
 
                     if (supplierStorageProduct.getCount() > 0) {
                         if (supplierStorageProduct.getCount() < count) {
-                            count = supplierStorageProduct.getCount();
+                            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
+                                    HttpStatus.BAD_REQUEST);
                         }
 
                         DeliveryProduct deliveryProduct = new DeliveryProduct();
@@ -218,27 +218,28 @@ public class SupplierController implements SupplierControllerInterface {
                                 supplierStorageProduct.getPrice().multiply(new BigDecimal(count));
                         deliveryProduct.setSumPrice(sum);
                         deliveryProduct.setPrice(supplierStorageProduct.getPrice());
-
-                        try {
-                            deliveryProductRepository.save(deliveryProduct);
-                            success++;
-                        } catch (Exception e) {
-                            logger.error("Ошибка в ходе сохранения элемента заказа", e);
-                        }
+                        deliveryProductList.add(deliveryProduct);
+                    } else {
+                        return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
+                                HttpStatus.BAD_REQUEST);
                     }
 
                 } catch (Exception e) {
                     logger.error("Ошибка в ходе запроса", e);
+                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
+                            HttpStatus.BAD_REQUEST);
                 }
             }
         }
-        if(success > 0) {
-            return new ResponseEntity<>(delivery, HttpStatus.OK);
-        } else {
-            deliveryRepository.delete(delivery);
-            return new ResponseEntity<>("Не удалось найти запрошенные товары на складе",
-                    HttpStatus.BAD_REQUEST);
+        try {
+            deliveryRepository.save(delivery);
+            for(DeliveryProduct deliveryProduct : deliveryProductList) {
+                deliveryProductRepository.save(deliveryProduct);
+            }
+        } catch (Exception e) {
+            logger.error("ERROR_WHILE_SAVING", e);
         }
+        return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
 
     @PostMapping(value = "/delivery/status/{id}/{status}")
@@ -379,14 +380,14 @@ public class SupplierController implements SupplierControllerInterface {
             ShopStorageProduct shopStorageProduct;
             if(shopStorageProductOptional.isPresent()) {
                 shopStorageProduct = shopStorageProductOptional.get();
+                shopStorageProduct
+                        .setCount(shopStorageProduct.getCount()+deliveryProduct.getCount());
             } else  {
                 shopStorageProduct  = new ShopStorageProduct();
                 shopStorageProduct.setPrimaryKey(primaryKey);
                 shopStorageProduct.setCount(deliveryProduct.getCount());
                 shopStorageProduct.setPrice(deliveryProduct.getPrice());
             }
-            shopStorageProduct
-                    .setCount(shopStorageProduct.getCount()+deliveryProduct.getCount());
             shopStorage.setFreeSpace(shopStorage.getFreeSpace()-deliveryProduct.getCount());
             shopStorageProductRepository.save(shopStorageProduct);
         }
@@ -462,14 +463,14 @@ public class SupplierController implements SupplierControllerInterface {
                 supplierStorageProduct.setCount(deliveryProduct.getCount());
                 supplierStorageProduct.setPrice(deliveryProduct.getPrice());
                 supplierStorageProductList.add(supplierStorageProduct);
-
                 setFreeSpace(deliveryProduct, supplierStorage);
             }
 
         }
 
         if(supplierStorage.getFreeSpace() > supplierStorage.getTotalSpace()) {
-            return new ResponseEntity<>("На складе нет места для товаров", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("На складе нет места для товаров",
+                    HttpStatus.BAD_REQUEST);
         }
 
         try {
