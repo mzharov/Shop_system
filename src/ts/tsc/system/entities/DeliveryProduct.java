@@ -22,6 +22,9 @@ public class DeliveryProduct implements Serializable {
     @Column(name="price")
     private BigDecimal price;
 
+    @Column(name = "sumPrice")
+    private BigDecimal sumPrice;
+
     public DeliveryProductPrimaryKey getPrimaryKey() {
         return primaryKey;
     }
@@ -44,5 +47,13 @@ public class DeliveryProduct implements Serializable {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public BigDecimal getSumPrice() {
+        return sumPrice;
+    }
+
+    public void setSumPrice(BigDecimal sumPrice) {
+        this.sumPrice = sumPrice;
     }
 }

@@ -24,6 +24,7 @@ import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/supplier")
@@ -159,7 +160,7 @@ public class SupplierController implements SupplierControllerInterface {
                     "select p from SupplierStorageProduct p " +
                             "where  p.primaryKey.storage.id = ?1 " +
                             "and p.primaryKey.product.id = ?2 ",
-                    SupplierStorageProduct.class).setParameter(1, supplierID).setParameter(2, shopID);
+                    SupplierStorageProduct.class).setParameter(1, supplierID).setParameter(2, productID);
             SupplierStorageProduct supplierStorageProduct = productTypedQuery.getSingleResult();
 
 
@@ -178,22 +179,11 @@ public class SupplierController implements SupplierControllerInterface {
                 deliveryProduct.setPrimaryKey(new DeliveryProductPrimaryKey(delivery, product));
                 deliveryProduct.setCount(count);
                 BigDecimal sum = supplierStorageProduct.getPrice().multiply(new BigDecimal(count));
-                deliveryProduct.setPrice(sum);
+                deliveryProduct.setSumPrice(sum);
+                deliveryProduct.setPrice(supplierStorageProduct.getPrice());
 
 
                 try {
-                    BigDecimal price = supplierStorageProduct.getPrice();
-                    supplierStorageProduct.setCount(supplierStorageProduct.getCount()-count);
-                    supplierStorageProductRepository.save(supplierStorageProduct);
-                    supplierStorage.setFreeSpace(supplierStorage.getFreeSpace()+count);
-                    supplierStorageRepository.save(supplierStorage);
-
-                    if(supplierStorageProduct.getCount() == 0) {
-                        supplierStorageProductRepository.delete(supplierStorageProduct);
-                    } else {
-                        supplierStorageProductRepository.save(supplierStorageProduct);
-                    }
-
 
                     deliveryRepository.save(delivery);
                     deliveryProductRepository.save(deliveryProduct);
@@ -210,7 +200,7 @@ public class SupplierController implements SupplierControllerInterface {
                         shopStorageProduct  = new ShopStorageProduct();
                         shopStorageProduct.setPrimaryKey(primaryKey);
                         shopStorageProduct.setCount(count);
-                        shopStorageProduct.setPrice(price);
+                        shopStorageProduct.setPrice(deliveryProduct.getPrice());
                     }
 
                     shopStorageProductRepository.save(shopStorageProduct);
@@ -227,19 +217,47 @@ public class SupplierController implements SupplierControllerInterface {
         }
     }
 
+    @PostMapping(value = "/delivery/status/{id}")
+    public ResponseEntity<?> changeStatus(@PathVariable Status status, @PathVariable Long id) {
+        if(status.equals(Status.DELIVERING)) {
+            return transferDelivery(id);
+        }
+        if(status.equals(Status.COMPLETED)) {
+            return completeDelivery(id);
+        }
+        if(status.equals(Status.CANCELED)) {
+            return cancelDelivery(id);
+        }
+        return new ResponseEntity<>("Unknown status", HttpStatus.NOT_FOUND);
+    }
+
     @Override
     public ResponseEntity<?> transferDelivery(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
         if(deliveryOptional.isPresent()) {
             Delivery delivery = deliveryOptional.get();
-            if(delivery.getStatus().equals(Status.RECEIVED.toString())) {
-                delivery.setStatus(Status.DELIVERING);
+            delivery.setStatus(Status.DELIVERING);
 
-                return null; //todo
+            Optional<SupplierStorage> supplierStorageOptional
+                    = supplierStorageRepository.findById(delivery.getSupplierStorage().getId());
+            if(supplierStorageOptional.isPresent()) {
+                try {
+                    TypedQuery<DeliveryProduct> deliveryProductQuery =
+                            entityManager.createQuery(
+                                    "select p from DeliveryProduct p where p.primaryKey.delivery.id =?1",
+                                    DeliveryProduct.class)
+                                    .setParameter(1, delivery.getId());
 
+                    List<DeliveryProduct> deliveryProduct = deliveryProductQuery.getResultList();
+
+                } catch (Exception e) {
+                    return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
+                }
             } else {
                 return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
             }
+
+            return new ResponseEntity<>(delivery, HttpStatus.OK);
         } else {
             return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
         }
@@ -253,5 +271,14 @@ public class SupplierController implements SupplierControllerInterface {
     @Override
     public ResponseEntity<?> cancelDelivery(Long id) {
         return null;
+    }
+
+    @GetMapping(value = "/string/{name}")
+    public ResponseEntity<?> getName(@PathVariable List<String> name) {
+        String result ="";
+        for(String s : name) {
+            result+=s + " ";
+        }
+        return new ResponseEntity<>(result, HttpStatus.NOT_FOUND);
     }
 }
