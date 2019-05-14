@@ -224,8 +224,23 @@ public class ShopController implements
         }
     }
 
+    @PostMapping(value = "/order/status/{id}/{status}")
+    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
+        if(status.equals(Status.DELIVERING)) {
+            return deliverOrder(id);
+        }
+        if(status.equals(Status.COMPLETED)) {
+            return completeOrder(id);
+        }
+        if(status.equals(Status.CANCELED)) {
+            return cancelOrder(id);
+        }
+        return new ResponseEntity<>(ErrorStatus.UNKNOWN_DELIVER_STATUS, HttpStatus.BAD_REQUEST);
+    }
+
     @Override
     public ResponseEntity<?> deliverOrder(Long id) {
+        
         return null;
     }
 
@@ -236,11 +251,6 @@ public class ShopController implements
 
     @Override
     public ResponseEntity<?> cancelOrder(Long id) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<?> changeStatus(Long id, Status status) {
         return null;
     }
 }
