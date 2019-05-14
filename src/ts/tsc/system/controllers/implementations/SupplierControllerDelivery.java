@@ -7,7 +7,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controllers.interfaces.SupplierControllerInterface;
+import ts.tsc.system.controllers.interfaces.ExtendedControllerInterface;
+import ts.tsc.system.controllers.interfaces.SupplierControllerDeliveryInterface;
 import ts.tsc.system.controllers.status.enums.ErrorStatus;
 import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entities.*;
@@ -29,9 +30,11 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/supplier")
-public class SupplierController implements SupplierControllerInterface {
+public class SupplierControllerDelivery
+        implements SupplierControllerDeliveryInterface,
+        ExtendedControllerInterface<Supplier, SupplierStorage, SupplierStorageProduct> {
 
-    private final Logger logger = LoggerFactory.getLogger(SupplierController.class);
+    private final Logger logger = LoggerFactory.getLogger(SupplierControllerDelivery.class);
 
     @PersistenceContext
     EntityManager entityManager;
@@ -50,17 +53,17 @@ public class SupplierController implements SupplierControllerInterface {
     private final ShopStorageProductRepository shopStorageProductRepository;
 
     @Autowired
-    public SupplierController(SupplierRepository supplierRepository,
-                              @Qualifier(value = "baseService") BaseService<Delivery, Long> deliveryService,
-                              ShopStorageRepository shopStorageRepository,
-                              StorageService<Supplier, SupplierStorage, Long> storageService,
-                              SupplierStorageRepository supplierStorageRepository,
-                              NamedService<Supplier, Long> supplierService,
-                              SupplierStorageProductRepository supplierStorageProductRepository,
-                              @Qualifier(value = "baseService") BaseService<SupplierStorageProduct,
+    public SupplierControllerDelivery(SupplierRepository supplierRepository,
+                                      @Qualifier(value = "baseService") BaseService<Delivery, Long> deliveryService,
+                                      ShopStorageRepository shopStorageRepository,
+                                      StorageService<Supplier, SupplierStorage, Long> storageService,
+                                      SupplierStorageRepository supplierStorageRepository,
+                                      NamedService<Supplier, Long> supplierService,
+                                      SupplierStorageProductRepository supplierStorageProductRepository,
+                                      @Qualifier(value = "baseService") BaseService<SupplierStorageProduct,
                                       SupplierStorageProductPrimaryKey> productService,
-                              DeliveryRepository deliveryRepository,
-                              DeliveryProductRepository deliveryProductRepository, ProductRepository productRepository, ShopStorageProductRepository shopStorageProductRepository) {
+                                      DeliveryRepository deliveryRepository,
+                                      DeliveryProductRepository deliveryProductRepository, ProductRepository productRepository, ShopStorageProductRepository shopStorageProductRepository) {
         this.supplierRepository = supplierRepository;
         this.deliveryService = deliveryService;
         this.shopStorageRepository = shopStorageRepository;

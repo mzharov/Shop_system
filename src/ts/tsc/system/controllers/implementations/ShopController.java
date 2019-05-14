@@ -4,23 +4,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controllers.interfaces.ExtendedControllerInterface;
+import ts.tsc.system.controllers.interfaces.ShopControllerDeliveryInterface;
+import ts.tsc.system.controllers.status.enums.ErrorStatus;
+import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entities.*;
+import ts.tsc.system.entities.keys.PurchaseProductPrimaryKey;
 import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
 import ts.tsc.system.repositories.*;
 import ts.tsc.system.services.interfaces.BaseService;
 import ts.tsc.system.services.interfaces.NamedService;
 import ts.tsc.system.services.interfaces.StorageService;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+import java.math.BigDecimal;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/shop")
-public class ShopController implements ExtendedControllerInterface<Shop, ShopStorage, ShopStorageProduct> {
+public class ShopController implements
+        ShopControllerDeliveryInterface,
+        ExtendedControllerInterface<Shop, ShopStorage, ShopStorageProduct> {
 
     final Logger logger = LoggerFactory.getLogger(ShopController.class);
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     private final ShopRepository shopRepository;
     private final NamedService<Shop, Long> shopService;
@@ -28,6 +44,9 @@ public class ShopController implements ExtendedControllerInterface<Shop, ShopSto
     private final ShopStorageRepository storageRepository;
     private final ShopStorageProductRepository productRepository;
     private final BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService;
+    private final PurchaseRepository purchaseRepository;
+    private final PurchaseProductRepository purchaseProductRepository;
+    private final BaseService<Purchase, Long> purchaseService;
 
     @Autowired
     public ShopController(ShopRepository shopRepository,
@@ -35,14 +54,19 @@ public class ShopController implements ExtendedControllerInterface<Shop, ShopSto
                           StorageService<Shop, ShopStorage, Long> storageService,
                           ShopStorageRepository storageRepository,
                           ShopStorageProductRepository productRepository,
-                          @Qualifier(value = "baseService")
-                                      BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService) {
+                          @Qualifier(value = "baseService") BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService,
+                          PurchaseRepository purchaseRepository,
+                          PurchaseProductRepository purchaseProductRepository,
+                          @Qualifier(value = "baseService") BaseService<Purchase, Long> purchaseService) {
         this.shopRepository = shopRepository;
         this.shopService = shopService;
         this.storageService = storageService;
         this.storageRepository = storageRepository;
         this.productRepository = productRepository;
         this.productService = productService;
+        this.purchaseRepository = purchaseRepository;
+        this.purchaseProductRepository = purchaseProductRepository;
+        this.purchaseService = purchaseService;
     }
 
     @GetMapping(value = "/list")
@@ -102,6 +126,122 @@ public class ShopController implements ExtendedControllerInterface<Shop, ShopSto
     @GetMapping(value = "/storage/product/list")
     public ResponseEntity<List<ShopStorageProduct>> getProducts() {
         return productService.findAll(productRepository);
+    }
+
+    @GetMapping(value = "/order/list")
+    public ResponseEntity<?> getPurchases() {
+        return purchaseService.findAll(purchaseRepository);
+    }
+
+    @Override
+    @PostMapping(value = "/order/{shopID}/{productIdList}/{countList}")
+    public ResponseEntity<?> receiveOrder(@PathVariable Long shopID,
+                                          @PathVariable List<Long> productIdList,
+                                          @PathVariable List<Integer> countList) {
+
+        if(productIdList.size() != countList.size()) {
+            return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS,
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        Optional<Shop> shopOptional = shopRepository.findById(shopID);
+        if(!shopOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
+                    HttpStatus.NOT_FOUND);
+        }
+        Shop shop = shopOptional.get();
+
+        ShopStorage shopStorage;
+        try {
+            TypedQuery<ShopStorage> shopStorageTypedQuery =
+                    entityManager.createQuery(
+                            "select p from ShopStorage p " +
+                                    "where p.shop.id = ?1 " +
+                                    "and p.type = ?2",
+                            ShopStorage.class)
+                            .setParameter(1, shopID)
+                            .setParameter(2, 1);
+            shopStorage = shopStorageTypedQuery.getSingleResult();
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        List<ShopStorageProduct> shopStorageProductList = new LinkedList<>();
+        try {
+            for(int iterator = 0; iterator < productIdList.size(); iterator++) {
+                Long productId = productIdList.get(iterator);
+                Integer count = countList.get(iterator);
+
+                TypedQuery<ShopStorageProduct> shopStorageProductTypedQuery =
+                        entityManager.createQuery(
+                                "select p from ShopStorageProduct p " +
+                                        "where p.primaryKey.storage.id = ?1 " +
+                                        "and p.primaryKey.product.id = ?2",
+                                ShopStorageProduct.class)
+                                .setParameter(1, shopStorage.getId()).setParameter(2, productId);
+
+                ShopStorageProduct shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
+                if(shopStorageProduct.getCount() < count) {
+                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS, HttpStatus.NOT_FOUND);
+                }
+                shopStorageProductList.add(shopStorageProduct);
+            }
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        Purchase purchase = new Purchase();
+        purchase.setShop(shop);
+        purchase.setStatus(Status.RECEIVED);
+
+        List<PurchaseProduct> purchaseProductList = new LinkedList<>();
+        for(int iterator = 0; iterator < productIdList.size(); iterator++) {
+            ShopStorageProduct shopStorageProduct = shopStorageProductList.get(iterator);
+            Product product = shopStorageProduct.getPrimaryKey().getProduct();
+            Integer count = countList.get(iterator);
+            PurchaseProduct purchaseProduct = new PurchaseProduct();
+            purchaseProduct.setPrimaryKey(new PurchaseProductPrimaryKey(purchase, product));
+            purchaseProduct.setCount(count);
+            BigDecimal price = shopStorageProduct.getPrice();
+            purchaseProduct.setPrice(price);
+            BigDecimal sumPrice = price.multiply(new BigDecimal(count));
+            purchaseProduct.setSumPrice(sumPrice);
+            purchaseProductList.add(purchaseProduct);
+        }
+
+        try {
+            purchaseRepository.save(purchase);
+            for(PurchaseProduct purchaseProduct : purchaseProductList) {
+                purchaseProductRepository.save(purchaseProduct);
+            }
+            return new ResponseEntity<>(purchase, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ERROR_WHILE_SAVING.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> deliverOrder(Long id) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> completeOrder(Long id) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> cancelOrder(Long id) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<?> changeStatus(Long id, Status status) {
+        return null;
     }
 }
 

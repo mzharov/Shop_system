@@ -8,8 +8,7 @@ import ts.tsc.system.entities.SupplierStorageProduct;
 
 import java.util.List;
 
-public interface SupplierControllerInterface
-        extends ExtendedControllerInterface<Supplier, SupplierStorage, SupplierStorageProduct> {
+public interface SupplierControllerDeliveryInterface {
     ResponseEntity<?> receiveDelivery(Long supplierID,
                                       Long shopID,
                                       List<Long> productID,

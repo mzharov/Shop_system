@@ -21,6 +21,9 @@ public class PurchaseProduct implements Serializable {
     @Column(name = "price")
     private BigDecimal price;
 
+    @Column(name = "sumPrice")
+    private BigDecimal sumPrice;
+
     public PurchaseProductPrimaryKey getPrimaryKey() {
         return primaryKey;
     }
@@ -43,5 +46,13 @@ public class PurchaseProduct implements Serializable {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public BigDecimal getSumPrice() {
+        return sumPrice;
+    }
+
+    public void setSumPrice(BigDecimal sumPrice) {
+        this.sumPrice = sumPrice;
     }
 }

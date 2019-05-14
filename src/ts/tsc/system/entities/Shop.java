@@ -1,5 +1,7 @@
 package ts.tsc.system.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -20,6 +22,7 @@ public class Shop extends NamedEntity<Long> implements Serializable {
             fetch = FetchType.EAGER,
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @JsonIgnore
     private Set<Purchase> purchases = new HashSet<>();
 
     @Column(name = "budget")
