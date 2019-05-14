@@ -1,8 +1,7 @@
 package ts.tsc.system.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ts.tsc.system.controllers.status.Status;
-import ts.tsc.system.entities.keys.PurchaseProductPrimaryKey;
+import ts.tsc.system.controllers.status.enums.Status;
 
 import javax.persistence.*;
 import java.io.Serializable;

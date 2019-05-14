@@ -1,13 +1,11 @@
 package ts.tsc.system.controllers.interfaces;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import ts.tsc.system.controllers.status.Status;
+import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entities.Supplier;
 import ts.tsc.system.entities.SupplierStorage;
 import ts.tsc.system.entities.SupplierStorageProduct;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public interface SupplierControllerInterface

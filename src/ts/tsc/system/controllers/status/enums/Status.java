@@ -1,4 +1,4 @@
-package ts.tsc.system.controllers.status;
+package ts.tsc.system.controllers.status.enums;
 
 public enum Status {
     RECEIVED,

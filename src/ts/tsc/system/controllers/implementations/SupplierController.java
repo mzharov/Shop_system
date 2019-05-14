@@ -8,7 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controllers.interfaces.SupplierControllerInterface;
-import ts.tsc.system.controllers.status.Status;
+import ts.tsc.system.controllers.status.enums.ErrorStatus;
+import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entities.*;
 import ts.tsc.system.entities.keys.DeliveryProductPrimaryKey;
 import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
@@ -30,7 +31,7 @@ import java.util.Optional;
 @RequestMapping(value = "/supplier")
 public class SupplierController implements SupplierControllerInterface {
 
-    final Logger logger = LoggerFactory.getLogger(ShopController.class);
+    private final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
     @PersistenceContext
     EntityManager entityManager;
@@ -149,7 +150,7 @@ public class SupplierController implements SupplierControllerInterface {
                              @PathVariable List<Integer> countList) {
 
         if(productIdList.size() != countList.size()) {
-            return new ResponseEntity<>("Неверное количество параметров", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS, HttpStatus.BAD_REQUEST);
         }
 
         Optional<SupplierStorage> supplierStorageOptional
@@ -493,6 +494,6 @@ public class SupplierController implements SupplierControllerInterface {
         for(String s : name) {
             result+=s + " ";
         }
-        return new ResponseEntity<>(result, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }
