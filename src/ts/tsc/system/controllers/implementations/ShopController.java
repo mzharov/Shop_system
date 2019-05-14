@@ -23,9 +23,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/shop")
@@ -41,8 +43,8 @@ public class ShopController implements
     private final ShopRepository shopRepository;
     private final NamedService<Shop, Long> shopService;
     private final StorageService<Shop, ShopStorage, Long> storageService;
-    private final ShopStorageRepository storageRepository;
-    private final ShopStorageProductRepository productRepository;
+    private final ShopStorageRepository shopStorageRepository;
+    private final ShopStorageProductRepository shopStorageProductRepository;
     private final BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseProductRepository purchaseProductRepository;
@@ -52,8 +54,8 @@ public class ShopController implements
     public ShopController(ShopRepository shopRepository,
                           NamedService<Shop, Long> shopService,
                           StorageService<Shop, ShopStorage, Long> storageService,
-                          ShopStorageRepository storageRepository,
-                          ShopStorageProductRepository productRepository,
+                          ShopStorageRepository shopStorageRepository,
+                          ShopStorageProductRepository shopStorageProductRepository,
                           @Qualifier(value = "baseService") BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService,
                           PurchaseRepository purchaseRepository,
                           PurchaseProductRepository purchaseProductRepository,
@@ -61,8 +63,8 @@ public class ShopController implements
         this.shopRepository = shopRepository;
         this.shopService = shopService;
         this.storageService = storageService;
-        this.storageRepository = storageRepository;
-        this.productRepository = productRepository;
+        this.shopStorageRepository = shopStorageRepository;
+        this.shopStorageProductRepository = shopStorageProductRepository;
         this.productService = productService;
         this.purchaseRepository = purchaseRepository;
         this.purchaseProductRepository = purchaseProductRepository;
@@ -109,23 +111,23 @@ public class ShopController implements
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<List<ShopStorage>> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
-        return storageService.findById(id, stringQuery, storageRepository);
+        return storageService.findById(id, stringQuery, shopStorageRepository);
     }
 
 
     @GetMapping(value = "/storage/list")
     public ResponseEntity<List<ShopStorage>> findAllStorages() {
-        return storageService.findAll(storageRepository);
+        return storageService.findAll(shopStorageRepository);
     }
 
     @PostMapping(value = "/storage/{id}")
     public ResponseEntity<?> addStorage(@PathVariable Long id, @RequestBody ShopStorage storage) {
-        return storageService.addStorage(id, storage, shopRepository, storageRepository);
+        return storageService.addStorage(id, storage, shopRepository, shopStorageRepository);
     }
 
     @GetMapping(value = "/storage/product/list")
     public ResponseEntity<List<ShopStorageProduct>> getProducts() {
-        return productService.findAll(productRepository);
+        return productService.findAll(shopStorageProductRepository);
     }
 
     @GetMapping(value = "/order/list")
@@ -240,13 +242,93 @@ public class ShopController implements
 
     @Override
     public ResponseEntity<?> deliverOrder(Long id) {
-        
-        return null;
+        Optional<Purchase> purchaseOptional = purchaseRepository.findById(id);
+
+        if(!purchaseOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        Purchase purchase = purchaseOptional.get();
+        if(!purchase.getStatus().equals(Status.RECEIVED)) {
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
+        }
+
+        purchase.setStatus(Status.DELIVERING);
+        ShopStorage shopStorage;
+        try {
+            TypedQuery<ShopStorage> shopStorageTypedQuery =
+                    entityManager.createQuery(
+                            "select p from ShopStorage p " +
+                                    "where p.shop.id = ?1 " +
+                                    "and p.type = ?2",
+                            ShopStorage.class)
+                            .setParameter(1, purchase.getShop().getId())
+                            .setParameter(2, 1);
+            shopStorage = shopStorageTypedQuery.getSingleResult();
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        List<PurchaseProduct> purchaseProductList = new LinkedList<>(purchase
+                .getPurchaseProducts());
+        List<ShopStorageProduct> shopStorageProductList = new LinkedList<>();
+
+        for(PurchaseProduct purchaseProduct : purchaseProductList) {
+            try {
+                TypedQuery<ShopStorageProduct> shopStorageTypedQuery =
+                        entityManager.createQuery(
+                                "select p from ShopStorageProduct p " +
+                                        "where p.primaryKey.storage.id = ?1 " +
+                                        "and p.primaryKey.product.id =?2",
+                                ShopStorageProduct.class)
+                                .setParameter(1, shopStorage.getId())
+                                .setParameter(2, purchaseProduct.getPrimaryKey().getProduct().getId());
+
+                ShopStorageProduct shopStorageProduct = shopStorageTypedQuery.getSingleResult();
+                int storageCount = shopStorageProduct.getCount();
+                int orderCount = purchaseProduct.getCount();
+                if(orderCount > storageCount) {
+                    logger.error(ErrorStatus.NOT_ENOUGH_PRODUCTS.toString());
+                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS, HttpStatus.NOT_FOUND);
+                }
+
+                shopStorageProduct.setCount(storageCount-orderCount);
+                shopStorageProductList.add(shopStorageProduct);
+                shopStorage.setFreeSpace(shopStorage.getFreeSpace()+orderCount);
+
+            } catch (Exception e) {
+                logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            }
+        }
+        try {
+            purchaseRepository.save(purchase);
+            shopStorageRepository.save(shopStorage);
+            for(ShopStorageProduct shopStorageProduct : shopStorageProductList) {
+                shopStorageProductRepository.save(shopStorageProduct);
+            }
+            return new ResponseEntity<>(purchase, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ERROR_WHILE_SAVING.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING, HttpStatus.NOT_FOUND);
+        }
     }
 
     @Override
     public ResponseEntity<?> completeOrder(Long id) {
-        return null;
+        Optional<Purchase> purchaseOptional = purchaseRepository.findById(id);
+        if(!purchaseOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        Purchase purchase = purchaseOptional.get();
+
+        if(!purchase.getStatus().equals(Status.DELIVERING)) {
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.NOT_FOUND);
+        }
+        purchase.setStatus(Status.COMPLETED);
+        purchaseRepository.save(purchase);
+        return new ResponseEntity<>(purchase, HttpStatus.OK);
     }
 
     @Override
