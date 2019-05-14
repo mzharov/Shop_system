@@ -60,31 +60,26 @@ public class DBInitializer {
         Product product3 = addProduct("soap", "hygiene care");
         Product product4 = addProduct("apple juice", "drink");
 
-        addProductToSupplierStorage(100, new BigDecimal("68.34"),
-                new SupplierStorageProductPrimaryKey(supplierStorage1, product1));
-        addProductToSupplierStorage(10, new BigDecimal("145.99"),
-                new SupplierStorageProductPrimaryKey(supplierStorage1, product4));
+        addProductToSupplierStorage(100, new BigDecimal("68.34"), supplierStorage1, product1);
+        addProductToSupplierStorage(10, new BigDecimal("145.99"), supplierStorage1, product4);
 
-        addProductToSupplierStorage(1000, new BigDecimal("23.89"),
-                new SupplierStorageProductPrimaryKey(supplierStorage2, product3));
-        addProductToSupplierStorage(34, new BigDecimal("12.33"),
-                new SupplierStorageProductPrimaryKey(supplierStorage2, product2));
+        addProductToSupplierStorage(1000, new BigDecimal("23.89"),supplierStorage2, product3);
+        addProductToSupplierStorage(34, new BigDecimal("12.33"), supplierStorage2, product2);
 
-        addProductToSupplierStorage(1, new BigDecimal("34"),
-                new SupplierStorageProductPrimaryKey(supplierStorage3, product3));
+        addProductToSupplierStorage(1, new BigDecimal("34"),supplierStorage3, product3);
 
         ShopStorage shopStorage1 = addStorageToShop(100, 0, shop1);
         ShopStorage shopStorage2 = addStorageToShop(1000, 1, shop1);
         ShopStorage shopStorage3 = addStorageToShop(90, 0, shop2);
 
         addProductToShopStorage(33, new BigDecimal("68.34"),
-                new ShopStorageProductPrimaryKey(shopStorage1, product1));
+                shopStorage1, product1);
         addProductToShopStorage(47, new BigDecimal("168.34"),
-                new ShopStorageProductPrimaryKey(shopStorage1, product2));
+                shopStorage1, product2);
         addProductToShopStorage(33, new BigDecimal("68.34"),
-                new ShopStorageProductPrimaryKey(shopStorage2, product1));
+                shopStorage2, product1);
         addProductToShopStorage(33, new BigDecimal("68.34"),
-                new ShopStorageProductPrimaryKey(shopStorage3, product1));
+                shopStorage3, product1);
 
 
         logger.info("--> Инициализация БД завершена");
@@ -102,23 +97,35 @@ public class DBInitializer {
     }
     private void addProductToShopStorage(int count,
                                          BigDecimal price,
-                                         ShopStorageProductPrimaryKey productPrimaryKey) {
+                                         ShopStorage shopStorage,
+                                         Product product) {
+        ShopStorageProductPrimaryKey productPrimaryKey
+                = new ShopStorageProductPrimaryKey(shopStorage, product);
         ShopStorageProduct shopStorageProduct = new ShopStorageProduct();
         shopStorageProduct.setPrimaryKey(productPrimaryKey);
         shopStorageProduct.setCount(count);
         shopStorageProduct.setPrice(price);
+        shopStorage.setFreeSpace(shopStorage.getFreeSpace()-count);
+        shopStorageRepository.save(shopStorage);
         shopStorageProductRepository.save(shopStorageProduct);
     }
 
     private void addProductToSupplierStorage(int count,
                                              BigDecimal price,
-                                             SupplierStorageProductPrimaryKey primaryKey) {
+                                             SupplierStorage supplierStorage,
+                                             Product product) {
+        SupplierStorageProductPrimaryKey primaryKey
+                = new SupplierStorageProductPrimaryKey(supplierStorage, product);
         SupplierStorageProduct supplierStorageProduct = new SupplierStorageProduct();
         supplierStorageProduct.setPrimaryKey(primaryKey);
         supplierStorageProduct.setCount(count);
         supplierStorageProduct.setPrice(price);
+        int freeSpace = supplierStorage.getFreeSpace();
+        supplierStorage.setFreeSpace(freeSpace-count);
+        supplierStorageRepository.save(supplierStorage);
         supplierStorageProductRepository.save(supplierStorageProduct);
     }
+
     private Supplier addSupplier(String name) {
         Supplier supplier = new Supplier();
         supplier.setName("Avalon");

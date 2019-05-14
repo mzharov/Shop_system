@@ -1,5 +1,6 @@
 package ts.tsc.system.controllers.implementations;
 
+import com.sun.org.apache.regexp.internal.RE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -384,7 +385,98 @@ public class SupplierController implements SupplierControllerInterface {
 
     @Override
     public ResponseEntity<?> cancelDelivery(Long id) {
-        return null;
+
+        Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
+        if(!deliveryOptional.isPresent()) {
+            return new ResponseEntity<>("Заказ с указанным идентификатором не найден",
+                    HttpStatus.NOT_FOUND);
+        }
+
+        Delivery delivery = deliveryOptional.get();
+        List<SupplierStorageProduct> supplierStorageProductList = new LinkedList<>();
+
+        if(!(delivery.getStatus().equals(Status.RECEIVED)
+                || delivery.getStatus().equals(Status.DELIVERING))) {
+            return new ResponseEntity<>("Невозможно поменять статус заказа (он уже выполнен или отменен)",
+                    HttpStatus.BAD_REQUEST);
+        }
+        Status oldStatus = delivery.getStatus();
+        delivery.setStatus(Status.CANCELED);
+
+        if(oldStatus.equals(Status.RECEIVED)) {
+            try {
+                deliveryRepository.save(delivery);
+            } catch (Exception e) {
+                return new ResponseEntity<>("Не удалось отменить заказ",
+                        HttpStatus.BAD_REQUEST);
+            }
+            return ResponseEntity.ok(delivery);
+        }
+
+        Optional<SupplierStorage> supplierStorageOptional
+                = supplierStorageRepository.findById(delivery.getSupplierStorage().getId());
+        if (!supplierStorageOptional.isPresent()) {
+            return new ResponseEntity<>
+                    ("Не найден склад с указанным в заказе идентификатором",
+                            HttpStatus.NOT_FOUND);
+        }
+
+        SupplierStorage supplierStorage = supplierStorageOptional.get();
+
+        for(DeliveryProduct deliveryProduct : delivery.getDeliveryProducts()) {
+            try {
+                TypedQuery<SupplierStorageProduct> supplierStorageProductTypedQuery =
+                        entityManager.createQuery(
+                                "select p from SupplierStorageProduct p " +
+                                        "where p.primaryKey.storage.id = ?1 " +
+                                        "and p.primaryKey.product.id = ?2",
+                                SupplierStorageProduct.class)
+                                .setParameter(1, delivery.getSupplierStorage().getId())
+                                .setParameter(2, deliveryProduct.getPrimaryKey().getProduct().getId());
+                SupplierStorageProduct supplierStorageProduct
+                        = supplierStorageProductTypedQuery.getSingleResult();
+
+                supplierStorageProduct.setCount(supplierStorageProduct.getCount()+deliveryProduct.getCount());
+                supplierStorageProductList.add(supplierStorageProduct);
+                setFreeSpace(deliveryProduct, supplierStorage);
+
+            } catch (Exception e) {
+                SupplierStorageProduct supplierStorageProduct = new SupplierStorageProduct();
+                supplierStorageProduct
+                        .setPrimaryKey(new SupplierStorageProductPrimaryKey(delivery.getSupplierStorage(),
+                                deliveryProduct.getPrimaryKey().getProduct()));
+                supplierStorageProduct.setCount(deliveryProduct.getCount());
+                supplierStorageProduct.setPrice(deliveryProduct.getPrice());
+                supplierStorageProductList.add(supplierStorageProduct);
+
+                setFreeSpace(deliveryProduct, supplierStorage);
+            }
+
+        }
+
+        if(supplierStorage.getFreeSpace() > supplierStorage.getTotalSpace()) {
+            return new ResponseEntity<>("На складе нет места для товаров", HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            deliveryRepository.save(delivery);
+            supplierStorageRepository.save(supplierStorage);
+            for(SupplierStorageProduct supplierStorageProduct : supplierStorageProductList) {
+                supplierStorageProductRepository.save(supplierStorageProduct);
+            }
+        }
+        catch (Exception e) {
+            return new ResponseEntity<>("Ошибка в ходе сохранения данных",
+                    HttpStatus.OK);
+        }
+        return new ResponseEntity<>(delivery, HttpStatus.OK);
+    }
+
+
+    private void setFreeSpace(DeliveryProduct deliveryProduct, SupplierStorage supplierStorage) {
+        int count = deliveryProduct.getCount();
+        int freeSpace = supplierStorage.getFreeSpace();
+        supplierStorage.setFreeSpace(freeSpace-count);
     }
 
     @GetMapping(value = "/string/{name}")

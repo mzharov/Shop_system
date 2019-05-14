@@ -4,5 +4,5 @@ public enum Status {
     RECEIVED,
     DELIVERING,
     COMPLETED,
-    CANCELED;
+    CANCELED
 }
