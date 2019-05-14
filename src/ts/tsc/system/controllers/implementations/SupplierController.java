@@ -31,7 +31,7 @@ import java.util.Optional;
 @RequestMapping(value = "/supplier")
 public class SupplierController implements SupplierControllerInterface {
 
-    private final Logger logger = LoggerFactory.getLogger(ShopController.class);
+    private final Logger logger = LoggerFactory.getLogger(SupplierController.class);
 
     @PersistenceContext
     EntityManager entityManager;
@@ -120,7 +120,7 @@ public class SupplierController implements SupplierControllerInterface {
     @Override
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<List<SupplierStorage>> findStorageById(@PathVariable Long id) {
-        String stringQuery = "select entity from SupplierStorage entity where entity.supplier.id = ?1";
+        String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
         return storageService.findById(id, stringQuery, supplierStorageRepository);
     }
 
@@ -170,6 +170,15 @@ public class SupplierController implements SupplierControllerInterface {
 
         SupplierStorage supplierStorage = supplierStorageOptional.get();
         ShopStorage shopStorage = shopStorageOptional.get();
+
+        int productsCount =0;
+        for(int count : countList) {
+            productsCount+=count;
+        }
+
+        if(shopStorage.getFreeSpace() < productsCount) {
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGHT_SPACE, HttpStatus.BAD_REQUEST);
+        }
 
         Delivery delivery = new Delivery();
         delivery.setStatus(Status.RECEIVED);
@@ -254,80 +263,75 @@ public class SupplierController implements SupplierControllerInterface {
     @Override
     public ResponseEntity<?> transferDelivery(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
-        if(deliveryOptional.isPresent()) {
-            Delivery delivery = deliveryOptional.get();
+        if(!deliveryOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
 
-            if(!delivery.getStatus().equals(Status.RECEIVED)) {
-                return new ResponseEntity<>("Предыдущее состояние заказа должно быть RECEIVED " +
-                        "для перевода в DELIVERING",
+        Delivery delivery = deliveryOptional.get();
+        if(!delivery.getStatus().equals(Status.RECEIVED)) {
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
+        }
+
+        delivery.setStatus(Status.DELIVERING);
+        deliveryRepository.save(delivery);
+        int success = 0;
+
+        Optional<SupplierStorage> supplierStorageOptional
+                = supplierStorageRepository.findById(delivery.getSupplierStorage().getId());
+
+        if(!supplierStorageOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        SupplierStorage supplierStorage = supplierStorageOptional.get();
+        try {
+            TypedQuery<DeliveryProduct> deliveryProductQuery =
+                    entityManager.createQuery(
+                            "select p from DeliveryProduct p " +
+                                    "where p.primaryKey.delivery.id = ?1",
+                            DeliveryProduct.class)
+                            .setParameter(1, delivery.getId());
+
+            List<DeliveryProduct> deliveryProductList = deliveryProductQuery.getResultList();
+
+            for(DeliveryProduct deliveryProduct : deliveryProductList) {
+                try {
+                    TypedQuery<SupplierStorageProduct> supplierStorageProductTypedQuery =
+                            entityManager.createQuery(
+                                    "select p from SupplierStorageProduct p " +
+                                            "where p.primaryKey.storage.id = ?1 " +
+                                            "and p.primaryKey.product.id = ?2",
+                                    SupplierStorageProduct.class)
+                                    .setParameter(1, supplierStorage.getId())
+                                    .setParameter(2, deliveryProduct
+                                            .getPrimaryKey().getProduct().getId());
+
+                    SupplierStorageProduct supplierStorageProduct
+                            = supplierStorageProductTypedQuery.getSingleResult();
+
+                    supplierStorageProduct.setCount(supplierStorageProduct.getCount()
+                            -deliveryProduct.getCount());
+                    supplierStorageProductRepository.save(supplierStorageProduct);
+                    supplierStorage.setFreeSpace(supplierStorage.getFreeSpace()
+                            +deliveryProduct.getCount());
+
+                    supplierStorageRepository.save(supplierStorage);
+
+                    success++;
+
+                } catch (Exception e){
+                 logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+                }
+            }
+            if(success == delivery.getDeliveryProducts().size()) {
+                return new ResponseEntity<>(delivery, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Не удалось провести транзакцию",
                         HttpStatus.BAD_REQUEST);
             }
-            delivery.setStatus(Status.DELIVERING);
-            deliveryRepository.save(delivery);
-            int success = 0;
-
-            Optional<SupplierStorage> supplierStorageOptional
-                    = supplierStorageRepository.findById(delivery.getSupplierStorage().getId());
-
-            if(supplierStorageOptional.isPresent()) {
-                SupplierStorage supplierStorage = supplierStorageOptional.get();
-                try {
-                    TypedQuery<DeliveryProduct> deliveryProductQuery =
-                            entityManager.createQuery(
-                                    "select p from DeliveryProduct p " +
-                                            "where p.primaryKey.delivery.id = ?1",
-                                    DeliveryProduct.class)
-                                    .setParameter(1, delivery.getId());
-
-                    List<DeliveryProduct> deliveryProductList = deliveryProductQuery.getResultList();
-
-                    for(DeliveryProduct deliveryProduct : deliveryProductList) {
-                        try {
-                            TypedQuery<SupplierStorageProduct> supplierStorageProductTypedQuery =
-                                    entityManager.createQuery(
-                                            "select p from SupplierStorageProduct p " +
-                                                    "where p.primaryKey.storage.id = ?1 " +
-                                                    "and p.primaryKey.product.id = ?2",
-                                            SupplierStorageProduct.class)
-                                            .setParameter(1, supplierStorage.getId())
-                                            .setParameter(2, deliveryProduct
-                                                    .getPrimaryKey().getProduct().getId());
-
-                            SupplierStorageProduct supplierStorageProduct
-                                    = supplierStorageProductTypedQuery.getSingleResult();
-
-                            supplierStorageProduct.setCount(supplierStorageProduct.getCount()
-                                    -deliveryProduct.getCount());
-                            supplierStorageProductRepository.save(supplierStorageProduct);
-                            supplierStorage.setFreeSpace(supplierStorage.getFreeSpace()
-                                    +deliveryProduct.getCount());
-
-                            supplierStorageRepository.save(supplierStorage);
-
-                            if(supplierStorageProduct.getCount() == 0) {
-                                supplierStorageProductRepository.delete(supplierStorageProduct);
-                            } else {
-                                supplierStorageProductRepository.save(supplierStorageProduct);
-                            }
-
-                            success++;
-
-                        } catch (Exception e){}//todo;
-                    }
-                    if(success == delivery.getDeliveryProducts().size()) {
-                        return new ResponseEntity<>(delivery, HttpStatus.OK);
-                    } else {
-                        return new ResponseEntity<>("Не удалось провести транзакцию",
-                                HttpStatus.BAD_REQUEST);
-                    }
-                } catch (Exception e) {
-                    return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
-                }
-            } else {
-                return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
-            }
-        } else {
-            return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
     }
 
@@ -336,16 +340,13 @@ public class SupplierController implements SupplierControllerInterface {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
 
         if(!deliveryOptional.isPresent()) {
-            return new ResponseEntity<>("Не удалось найти заказ с указанным идентификатором",
-                    HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.BAD_REQUEST);
         }
 
         Delivery delivery = deliveryOptional.get();
 
         if(!delivery.getStatus().equals(Status.DELIVERING)) {
-            return new ResponseEntity<>("Предыдущее состояние заказа должно быть DELIVERING " +
-                    "для перевода в COMPLETED",
-                    HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
         }
 
         delivery.setStatus(Status.COMPLETED);
@@ -384,9 +385,13 @@ public class SupplierController implements SupplierControllerInterface {
                 shopStorageProduct.setCount(deliveryProduct.getCount());
                 shopStorageProduct.setPrice(deliveryProduct.getPrice());
             }
+            shopStorageProduct
+                    .setCount(shopStorageProduct.getCount()+deliveryProduct.getCount());
+            shopStorage.setFreeSpace(shopStorage.getFreeSpace()-deliveryProduct.getCount());
             shopStorageProductRepository.save(shopStorageProduct);
         }
 
+        shopStorageRepository.save(shopStorage);
         deliveryRepository.save(delivery);
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
