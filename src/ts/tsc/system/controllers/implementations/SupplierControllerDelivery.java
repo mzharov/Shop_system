@@ -243,7 +243,7 @@ public class SupplierControllerDelivery
                             .setPrimaryKey(new DeliveryProductPrimaryKey
                                     (delivery, supplierStorageProduct.getPrimaryKey().getProduct()));
                     deliveryProduct.setPrice(supplierStorageProduct.getPrice());
-                    deliveryProduct.setCount(supplierStorageProduct.getCount());
+                    deliveryProduct.setCount(count);
                     deliveryProduct
                             .setSumPrice(supplierStorageProduct.getPrice()
                                     .multiply(new BigDecimal(count)));
@@ -408,6 +408,12 @@ public class SupplierControllerDelivery
             new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
+        try {
+            deliveryRepository.save(delivery);
+        } catch (Exception e) {
+            logger.error("Error", e);
+            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
 
@@ -484,9 +490,10 @@ public class SupplierControllerDelivery
 
     @GetMapping(value = "/string/{name}")
     public ResponseEntity<?> getName(@PathVariable List<String> name) {
-        String result ="";
+        //todo delete
+        StringBuilder result = new StringBuilder();
         for(String s : name) {
-            result+=s + " ";
+            result.append(s).append(" ");
         }
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
