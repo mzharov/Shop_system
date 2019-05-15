@@ -103,10 +103,6 @@ public class ShopController implements
                 }).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping(value = "/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        return shopService.delete(id, shopRepository);
-    }
 
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<List<ShopStorage>> findStorageById(@PathVariable Long id) {
@@ -125,11 +121,6 @@ public class ShopController implements
         return storageService.addStorage(id, storage, shopRepository, shopStorageRepository);
     }
 
-    @Override
-    @DeleteMapping(value = "/storage/{id}")
-    public ResponseEntity<?> deleteStorage(@PathVariable Long id) {
-        return storageService.deleteStorage(id, shopStorageRepository, shopStorageBaseService);
-    }
 
     @GetMapping(value = "/storage/product/list")
     public ResponseEntity<?> getProducts() {

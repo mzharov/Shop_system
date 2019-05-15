@@ -60,11 +60,6 @@ public class ProductController implements ProductControllerInterface {
                 }).orElse(ResponseEntity.notFound().build());
     }
 
-    @Override
-    @DeleteMapping(value = "/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        return productService.delete(id, productRepository);
-    }
 
     @Override
     @GetMapping(value = "/category/{category}")

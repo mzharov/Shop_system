@@ -46,14 +46,4 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
             return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
-    @Override
-    public ResponseEntity<?> delete(ID id, JpaRepository<T, ID> repository) {
-        return repository.findById(id)
-                .map(record -> {
-                    repository.deleteById(id);
-                    return ResponseEntity.ok().build();
-                }).orElse(ResponseEntity.notFound().build());
-    }
 }

@@ -117,12 +117,6 @@ public class SupplierControllerDelivery
     }
 
     @Override
-    @DeleteMapping(value = "/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        return supplierService.delete(id, supplierRepository);
-    }
-
-    @Override
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<List<SupplierStorage>> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
@@ -141,11 +135,6 @@ public class SupplierControllerDelivery
         return storageService.addStorage(id, storage, supplierRepository, supplierStorageRepository);
     }
 
-    @Override
-    @DeleteMapping(value = "/storage/{id}")
-    public ResponseEntity<?> deleteStorage(@PathVariable Long id) {
-        return storageService.deleteStorage(id, supplierStorageRepository, supplierStorageBaseService);
-    }
 
     @Override
     @GetMapping(value = "/storage/product/list")

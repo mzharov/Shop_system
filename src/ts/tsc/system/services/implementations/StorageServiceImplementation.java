@@ -56,12 +56,4 @@ public class StorageServiceImplementation<B, T extends BaseStorage<B>, ID>
             return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    @Override
-    public ResponseEntity<?> deleteStorage(ID id,
-                                           JpaRepository<T, ID> storageRepository,
-                                           BaseService<T, ID> storageService) {
-        return storageService.delete(id, storageRepository);
-    }
-
 }

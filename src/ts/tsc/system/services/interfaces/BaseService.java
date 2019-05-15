@@ -9,5 +9,4 @@ public interface BaseService <T, ID> {
     ResponseEntity<?> findAll(JpaRepository<T, ID> repository);
     ResponseEntity<?> findById(ID id, JpaRepository<T, ID> repository);
     ResponseEntity<?> save(T entity, JpaRepository<T, ID> repository);
-    ResponseEntity<?> delete(ID id, JpaRepository<T, ID> repository);
 }

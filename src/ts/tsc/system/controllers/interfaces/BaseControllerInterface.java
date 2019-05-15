@@ -10,5 +10,4 @@ public interface BaseControllerInterface<T> {
     ResponseEntity<?> findById(Long id);
     ResponseEntity<?> create(T entity);
     ResponseEntity<?> update(Long id, T entity);
-    ResponseEntity<?> delete(Long id);
 }

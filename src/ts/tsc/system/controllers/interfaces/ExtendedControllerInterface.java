@@ -8,6 +8,5 @@ public interface ExtendedControllerInterface<T, S, P> extends BaseControllerInte
     ResponseEntity<?> findStorageById(Long id);
     ResponseEntity<?> findAllStorages();
     ResponseEntity<?> addStorage(Long id, S storage);
-    ResponseEntity<?> deleteStorage(Long id);
     ResponseEntity<?> getProducts();
 }
