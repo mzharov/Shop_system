@@ -26,19 +26,19 @@ public class ProductController implements ProductControllerInterface {
 
     @Override
     @GetMapping(value = "/list")
-    public ResponseEntity<List<Product>> findAll() {
+    public ResponseEntity<?> findAll() {
         return productService.findAll(productRepository);
     }
 
     @Override
     @GetMapping(value = "/name/{name}")
-    public ResponseEntity<List<Product>> findByName(@PathVariable String name) {
+    public ResponseEntity<?> findByName(@PathVariable String name) {
         return productService.findAll(productRepository);
     }
 
     @Override
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Product> findById(@PathVariable Long id) {
+    public ResponseEntity<?> findById(@PathVariable Long id) {
         return productService.findById(id, productRepository);
     }
 

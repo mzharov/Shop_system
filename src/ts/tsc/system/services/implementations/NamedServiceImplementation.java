@@ -17,7 +17,7 @@ public class NamedServiceImplementation<T extends NamedEntity,I>
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<List<T>> findByName(String name, NamedRepository<T, I> repository) {
+    public ResponseEntity<?> findByName(String name, NamedRepository<T, I> repository) {
         return repository.findByName(name).map(record -> ResponseEntity.ok().body(record))
                 .orElse(ResponseEntity.notFound().build());
     }

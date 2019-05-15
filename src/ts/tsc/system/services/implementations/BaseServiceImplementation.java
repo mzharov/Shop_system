@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ts.tsc.system.controllers.status.enums.ErrorStatus;
 import ts.tsc.system.services.interfaces.BaseService;
 
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<List<T>> findAll(JpaRepository<T, ID> repository) {
+    public ResponseEntity<?> findAll(JpaRepository<T, ID> repository) {
         Iterable<T> iterable = repository.findAll();
         List<T> list = new ArrayList<>();
         iterable.forEach(list::add);
@@ -30,7 +31,7 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<T> findById(ID id, JpaRepository<T, ID> repository) {
+    public ResponseEntity<?> findById(ID id, JpaRepository<T, ID> repository) {
         return repository.findById(id)
                 .map(record -> ResponseEntity.ok().body(record))
                 .orElse(ResponseEntity.notFound().build());

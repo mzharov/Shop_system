@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entities.interfaces.BaseStorage;
+import ts.tsc.system.services.interfaces.BaseService;
 import ts.tsc.system.services.interfaces.StorageService;
 
 import javax.persistence.EntityManager;
@@ -54,6 +55,13 @@ public class StorageServiceImplementation<B, T extends BaseStorage<B>, ID>
         } catch (Exception e) {
             return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    public ResponseEntity<?> deleteStorage(ID id,
+                                           JpaRepository<T, ID> storageRepository,
+                                           BaseService<T, ID> storageService) {
+        return storageService.delete(id, storageRepository);
     }
 
 }

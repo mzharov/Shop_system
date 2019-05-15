@@ -5,8 +5,9 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 public interface ExtendedControllerInterface<T, S, P> extends BaseControllerInterface<T>{
-    ResponseEntity<List<S>> findStorageById(Long id);
-    ResponseEntity<List<S>> findAllStorages();
+    ResponseEntity<?> findStorageById(Long id);
+    ResponseEntity<?> findAllStorages();
     ResponseEntity<?> addStorage(Long id, S storage);
-    ResponseEntity<List<P>> getProducts();
+    ResponseEntity<?> deleteStorage(Long id);
+    ResponseEntity<?> getProducts();
 }

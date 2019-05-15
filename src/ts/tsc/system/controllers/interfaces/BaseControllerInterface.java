@@ -5,10 +5,10 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 public interface BaseControllerInterface<T> {
-    ResponseEntity<List<T>> findAll();
-    ResponseEntity<List<T>> findByName(String name);
-    ResponseEntity<T> findById(Long id);
+    ResponseEntity<?> findAll();
+    ResponseEntity<?> findByName(String name);
+    ResponseEntity<?> findById(Long id);
     ResponseEntity<?> create(T entity);
-    ResponseEntity<T> update(Long id, T entity);
+    ResponseEntity<?> update(Long id, T entity);
     ResponseEntity<?> delete(Long id);
 }

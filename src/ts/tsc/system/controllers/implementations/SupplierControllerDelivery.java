@@ -40,6 +40,7 @@ public class SupplierControllerDelivery
     EntityManager entityManager;
 
     private final SupplierRepository supplierRepository;
+    private final BaseService<SupplierStorage, Long> supplierStorageBaseService;
     private final NamedService<Supplier, Long> supplierService;
     private final BaseService<Delivery, Long> deliveryService;
     private final ShopStorageRepository shopStorageRepository;
@@ -54,6 +55,7 @@ public class SupplierControllerDelivery
 
     @Autowired
     public SupplierControllerDelivery(SupplierRepository supplierRepository,
+                                      @Qualifier(value = "baseService") BaseService<SupplierStorage, Long> supplierStorageBaseService,
                                       @Qualifier(value = "baseService") BaseService<Delivery, Long> deliveryService,
                                       ShopStorageRepository shopStorageRepository,
                                       StorageService<Supplier, SupplierStorage, Long> storageService,
@@ -61,10 +63,11 @@ public class SupplierControllerDelivery
                                       NamedService<Supplier, Long> supplierService,
                                       SupplierStorageProductRepository supplierStorageProductRepository,
                                       @Qualifier(value = "baseService") BaseService<SupplierStorageProduct,
-                                      SupplierStorageProductPrimaryKey> productService,
+                                              SupplierStorageProductPrimaryKey> productService,
                                       DeliveryRepository deliveryRepository,
                                       DeliveryProductRepository deliveryProductRepository, ProductRepository productRepository, ShopStorageProductRepository shopStorageProductRepository) {
         this.supplierRepository = supplierRepository;
+        this.supplierStorageBaseService = supplierStorageBaseService;
         this.deliveryService = deliveryService;
         this.shopStorageRepository = shopStorageRepository;
         this.storageService = storageService;
@@ -80,19 +83,19 @@ public class SupplierControllerDelivery
 
     @Override
     @GetMapping(value = "/list")
-    public ResponseEntity<List<Supplier>> findAll() {
+    public ResponseEntity<?> findAll() {
         return supplierService.findAll(supplierRepository);
     }
 
     @Override
     @GetMapping(value = "/name/{name}")
-    public ResponseEntity<List<Supplier>> findByName(@PathVariable String name) {
+    public ResponseEntity<?> findByName(@PathVariable String name) {
         return supplierService.findByName(name, supplierRepository);
     }
 
     @Override
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Supplier> findById(@PathVariable Long id) {
+    public ResponseEntity<?> findById(@PathVariable Long id) {
         return supplierService.findById(id, supplierRepository);
     }
 
@@ -128,7 +131,7 @@ public class SupplierControllerDelivery
 
     @Override
     @GetMapping(value = "/storage/list")
-    public ResponseEntity<List<SupplierStorage>> findAllStorages() {
+    public ResponseEntity<?> findAllStorages() {
         return storageService.findAll(supplierStorageRepository);
     }
 
@@ -139,8 +142,14 @@ public class SupplierControllerDelivery
     }
 
     @Override
+    @DeleteMapping(value = "/storage/{id}")
+    public ResponseEntity<?> deleteStorage(@PathVariable Long id) {
+        return storageService.deleteStorage(id, supplierStorageRepository, supplierStorageBaseService);
+    }
+
+    @Override
     @GetMapping(value = "/storage/product/list")
-    public ResponseEntity<List<SupplierStorageProduct>> getProducts() {
+    public ResponseEntity<?> getProducts() {
         return productService.findAll(supplierStorageProductRepository);
     }
 
@@ -301,7 +310,7 @@ public class SupplierControllerDelivery
     }
 
     @GetMapping(value = "/delivery/list")
-    public ResponseEntity<List<Delivery>> getDeliveries() {
+    public ResponseEntity<?> getDeliveries() {
         return deliveryService.findAll(deliveryRepository);
     }
 

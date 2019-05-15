@@ -7,5 +7,5 @@ import ts.tsc.system.repositories.NamedRepository;
 import java.util.List;
 
 public interface NamedService<T extends NamedEntity, I> extends BaseService <T,I>{
-    ResponseEntity<List<T>> findByName(String name, NamedRepository<T, I> repository);
+    ResponseEntity<?> findByName(String name, NamedRepository<T, I> repository);
 }

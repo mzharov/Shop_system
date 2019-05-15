@@ -11,4 +11,7 @@ public interface StorageService<B, T, ID> extends BaseService<T, ID>{
                                  T storage,
                                  JpaRepository<B, ID> repositoryBase,
                                  JpaRepository<T, ID> repositoryStorage);
+    ResponseEntity<?> deleteStorage(ID id,
+                                 JpaRepository<T, ID> repositoryBase,
+                                 BaseService<T, ID> storageService);
 }

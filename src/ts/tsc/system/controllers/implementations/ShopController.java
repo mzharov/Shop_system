@@ -40,6 +40,7 @@ public class ShopController implements
 
     private final ShopRepository shopRepository;
     private final NamedService<Shop, Long> shopService;
+    private final BaseService<ShopStorage, Long> shopStorageBaseService;
     private final StorageService<Shop, ShopStorage, Long> storageService;
     private final ShopStorageRepository shopStorageRepository;
     private final ShopStorageProductRepository shopStorageProductRepository;
@@ -51,7 +52,7 @@ public class ShopController implements
     @Autowired
     public ShopController(ShopRepository shopRepository,
                           NamedService<Shop, Long> shopService,
-                          StorageService<Shop, ShopStorage, Long> storageService,
+                          @Qualifier(value = "baseService") BaseService<ShopStorage, Long> shopStorageBaseService, StorageService<Shop, ShopStorage, Long> storageService,
                           ShopStorageRepository shopStorageRepository,
                           ShopStorageProductRepository shopStorageProductRepository,
                           @Qualifier(value = "baseService") BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService,
@@ -60,6 +61,7 @@ public class ShopController implements
                           @Qualifier(value = "baseService") BaseService<Purchase, Long> purchaseService) {
         this.shopRepository = shopRepository;
         this.shopService = shopService;
+        this.shopStorageBaseService = shopStorageBaseService;
         this.storageService = storageService;
         this.shopStorageRepository = shopStorageRepository;
         this.shopStorageProductRepository = shopStorageProductRepository;
@@ -70,17 +72,17 @@ public class ShopController implements
     }
 
     @GetMapping(value = "/list")
-    public ResponseEntity<List<Shop>> findAll() {
+    public ResponseEntity<?> findAll() {
         return shopService.findAll(shopRepository);
     }
 
     @GetMapping(value = "/name/{name}")
-    public ResponseEntity<List<Shop>> findByName(@PathVariable String name) {
+    public ResponseEntity<?>  findByName(@PathVariable String name) {
         return shopService.findByName(name, shopRepository);
     }
 
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Shop> findById(@PathVariable Long id) {
+    public ResponseEntity<?>  findById(@PathVariable Long id) {
         return shopService.findById(id, shopRepository);
     }
 
@@ -114,7 +116,7 @@ public class ShopController implements
 
 
     @GetMapping(value = "/storage/list")
-    public ResponseEntity<List<ShopStorage>> findAllStorages() {
+    public ResponseEntity<?>  findAllStorages() {
         return storageService.findAll(shopStorageRepository);
     }
 
@@ -123,8 +125,14 @@ public class ShopController implements
         return storageService.addStorage(id, storage, shopRepository, shopStorageRepository);
     }
 
+    @Override
+    @DeleteMapping(value = "/storage/{id}")
+    public ResponseEntity<?> deleteStorage(@PathVariable Long id) {
+        return storageService.deleteStorage(id, shopStorageRepository, shopStorageBaseService);
+    }
+
     @GetMapping(value = "/storage/product/list")
-    public ResponseEntity<List<ShopStorageProduct>> getProducts() {
+    public ResponseEntity<?> getProducts() {
         return productService.findAll(shopStorageProductRepository);
     }
 

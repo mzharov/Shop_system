@@ -6,8 +6,8 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 
 public interface BaseService <T, ID> {
-    ResponseEntity<List<T>> findAll(JpaRepository<T, ID> repository);
-    ResponseEntity<T> findById(ID id, JpaRepository<T, ID> repository);
+    ResponseEntity<?> findAll(JpaRepository<T, ID> repository);
+    ResponseEntity<?> findById(ID id, JpaRepository<T, ID> repository);
     ResponseEntity<?> save(T entity, JpaRepository<T, ID> repository);
     ResponseEntity<?> delete(ID id, JpaRepository<T, ID> repository);
 }

@@ -6,5 +6,5 @@ import ts.tsc.system.entities.Product;
 import java.util.List;
 
 public interface ProductControllerInterface extends BaseControllerInterface<Product> {
-    ResponseEntity<List<Product>> findByCategory(String category);
+    ResponseEntity<?> findByCategory(String category);
 }
