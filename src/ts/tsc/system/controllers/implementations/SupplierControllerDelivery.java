@@ -175,11 +175,8 @@ public class SupplierControllerDelivery
         SupplierStorage supplierStorage = supplierStorageOptional.get();
         ShopStorage shopStorage = shopStorageOptional.get();
 
-        int productsSumCount =0;
-        for(int count : countList) {
-            productsSumCount+=count;
-        }
-
+        int productsSumCount = countList.stream().reduce(0, Integer::sum);
+        
         if(shopStorage.getFreeSpace() < productsSumCount) {
             return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorage",
                     HttpStatus.BAD_REQUEST);
@@ -397,8 +394,63 @@ public class SupplierControllerDelivery
 
     @Override
     public ResponseEntity<?> cancelDelivery(Long id) {
+        Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
+        if(!deliveryOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
 
-        return null; //todo
+        Delivery delivery = deliveryOptional.get();
+
+        if(!(delivery.getStatus().equals(Status.RECEIVED)
+                || delivery.getStatus().equals(Status.DELIVERING))) {
+            return new ResponseEntity<>(ErrorStatus.CAN_NOT_BE_CANCELED,
+                    HttpStatus.BAD_REQUEST);
+        }
+        delivery.setStatus(Status.CANCELED);
+
+
+        Optional<SupplierStorage> supplierStorageOptional
+                = supplierStorageRepository.findById(delivery.getSupplierStorage().getId());
+        if(!supplierStorageOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " supplierStorage",
+                    HttpStatus.NOT_FOUND);
+        }
+
+        List<Long> productIdList = new LinkedList<>();
+        List<Integer> countList = new LinkedList<>();
+
+        try {
+            TypedQuery<DeliveryProduct> sumCountTypedQuery = entityManager.createQuery(
+                    "select p from DeliveryProduct p " +
+                            "where p.primaryKey.delivery.id = ?1",
+                    DeliveryProduct.class)
+                    .setParameter(1, delivery.getId());
+
+            DeliveryProduct deliveryProduct= sumCountTypedQuery.getSingleResult();
+            productIdList.add(deliveryProduct.getPrimaryKey().getProduct().getId());
+            countList.add(deliveryProduct.getCount());
+        } catch (Exception e) {
+            logger.error("Error: ", e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
+                    HttpStatus.NOT_FOUND);
+        }
+
+        int productsSumCount = countList.stream().reduce(0, Integer::sum);
+
+        SupplierStorage supplierStorage = supplierStorageOptional.get();
+        if(supplierStorage.getFreeSpace() < productsSumCount) {
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in supplierStorageProduct",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            deliveryRepository.save(delivery);
+        } catch (Exception e) {
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " delivery",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return transfer(productIdList, countList, supplierStorage, delivery);
     }
 
 

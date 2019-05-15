@@ -9,4 +9,5 @@ public enum ErrorStatus {
     WRONG_NUMBER_OF_PARAMETERS,
     NOT_ENOUGH_SPACE,
     NOT_ENOUGH_PRODUCTS,
+    CAN_NOT_BE_CANCELED
 }
