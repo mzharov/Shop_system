@@ -204,6 +204,13 @@ public class ShopController implements
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+        return transfer(productIdList, countList, shopStorage, purchase);
+    }
+
+    private ResponseEntity<?> transfer(List<Long> productIdList,
+                                       List<Integer> countList,
+                                       ShopStorage shopStorage,
+                                       Purchase purchase) {
         for(int orderIterator = 0; orderIterator < productIdList.size(); orderIterator++) {
             Long productID = productIdList.get(orderIterator);
             Integer count = countList.get(orderIterator);
@@ -217,20 +224,35 @@ public class ShopController implements
                             .setParameter(1, shopStorage.getId()).setParameter(2, productID);
             ShopStorageProduct shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
 
-            Product product = shopStorageProduct.getPrimaryKey().getProduct();
-            PurchaseProduct purchaseProduct = new PurchaseProduct();
-            purchaseProduct.setPrimaryKey(new PurchaseProductPrimaryKey(purchase, product));
-            purchaseProduct.setCount(count);
-            BigDecimal price = shopStorageProduct.getPrice();
-            purchaseProduct.setPrice(price);
-            BigDecimal sumPrice = price.multiply(new BigDecimal(count));
-            purchaseProduct.setSumPrice(sumPrice);
+            if(purchase.getStatus().equals(Status.RECEIVED)) {
+                Product product = shopStorageProduct.getPrimaryKey().getProduct();
+                PurchaseProduct purchaseProduct = new PurchaseProduct();
+                purchaseProduct.setPrimaryKey(new PurchaseProductPrimaryKey(purchase, product));
+                purchaseProduct.setCount(count);
+                BigDecimal price = shopStorageProduct.getPrice();
+                purchaseProduct.setPrice(price);
+                BigDecimal sumPrice = price.multiply(new BigDecimal(count));
+                purchaseProduct.setSumPrice(sumPrice);
 
-            shopStorageProduct.setCount(shopStorageProduct.getCount()-count);
-            shopStorage.setFreeSpace(shopStorage.getFreeSpace()-count);
+                try {
+                    purchaseProductRepository.save(purchaseProduct);
+                    shopStorageProductRepository.save(shopStorageProduct);
+                } catch (Exception e) {
+                    logger.error("Error: ", e);
+                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                            HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+
+            int coefficient = -1;
+            if(purchase.getStatus().equals(Status.RECEIVED)) {
+                coefficient = 1;
+            }
+
+            shopStorageProduct.setCount(shopStorageProduct.getCount()-coefficient*count);
+            shopStorage.setFreeSpace(shopStorage.getFreeSpace()+coefficient*count);
 
             try {
-                purchaseProductRepository.save(purchaseProduct);
                 shopStorageProductRepository.save(shopStorageProduct);
             } catch (Exception e) {
                 logger.error("Error: ", e);
@@ -321,6 +343,7 @@ public class ShopController implements
         }
 
         purchase.setStatus(Status.CANCELED);
+
         ShopStorage shopStorage;
         try {
             TypedQuery<ShopStorage> shopStorageTypedQuery =
@@ -333,53 +356,47 @@ public class ShopController implements
                             .setParameter(2, 1);
             shopStorage = shopStorageTypedQuery.getSingleResult();
         } catch (Exception e) {
-            logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + " shopStorage", e);
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
-        List<PurchaseProduct> purchaseProductList = new LinkedList<>(purchase
-                .getPurchaseProducts());
-        List<ShopStorageProduct> shopStorageProductList = new LinkedList<>();
 
-        for(PurchaseProduct purchaseProduct : purchaseProductList) {
-            try {
-                TypedQuery<ShopStorageProduct> shopStorageTypedQuery =
-                        entityManager.createQuery(
-                                "select p from ShopStorageProduct p " +
-                                        "where p.primaryKey.storage.id = ?1 " +
-                                        "and p.primaryKey.product.id =?2",
-                                ShopStorageProduct.class)
-                                .setParameter(1, shopStorage.getId())
-                                .setParameter(2, purchaseProduct.getPrimaryKey().getProduct().getId());
+        List<Long> productIdList = new LinkedList<>();
+        List<Integer> countList = new LinkedList<>();
 
-                ShopStorageProduct shopStorageProduct = shopStorageTypedQuery.getSingleResult();
-                int storageCount = shopStorageProduct.getCount();
-                int orderCount = purchaseProduct.getCount();
+        try {
+            TypedQuery<PurchaseProduct> sumCountTypedQuery = entityManager.createQuery(
+                    "select p from PurchaseProduct p " +
+                            "where p.primaryKey.purchase.id = ?1",
+                    PurchaseProduct.class)
+                    .setParameter(1, purchase.getId());
 
-                shopStorageProduct.setCount(storageCount+orderCount);
-                shopStorageProductList.add(shopStorageProduct);
-                shopStorage.setFreeSpace(shopStorage.getFreeSpace()-orderCount);
-
-                if(shopStorage.getFreeSpace() > shopStorage.getTotalSpace()) {
-                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE, HttpStatus.BAD_REQUEST);
-                }
-
-            } catch (Exception e) {
-                logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            List<PurchaseProduct> purchaseProductList = sumCountTypedQuery.getResultList();
+            for(PurchaseProduct purchaseProduct : purchaseProductList) {
+                productIdList.add(purchaseProduct.getPrimaryKey().getProduct().getId());
+                countList.add(purchaseProduct.getCount());
             }
+        } catch (Exception e) {
+            logger.error("Error: ", e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
+                    HttpStatus.NOT_FOUND);
         }
+
+        int productsSumCount = countList.stream().reduce(0, Integer::sum);
+
+        if(shopStorage.getFreeSpace() < productsSumCount) {
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorageProduct",
+                    HttpStatus.BAD_REQUEST);
+        }
+
         try {
             purchaseRepository.save(purchase);
-            shopStorageRepository.save(shopStorage);
-            for(ShopStorageProduct shopStorageProduct : shopStorageProductList) {
-                shopStorageProductRepository.save(shopStorageProduct);
-            }
-            return new ResponseEntity<>(purchase, HttpStatus.OK);
         } catch (Exception e) {
-            logger.error(ErrorStatus.ERROR_WHILE_SAVING.toString(), e);
-            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " purchase",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        return transfer(productIdList, countList, shopStorage, purchase);
     }
 }
 
