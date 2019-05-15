@@ -68,8 +68,8 @@ public class DBInitializer {
 
         addProductToSupplierStorage(1, new BigDecimal("34"),supplierStorage3, product3);
 
-        ShopStorage shopStorage1 = addStorageToShop(100, 0, shop1);
-        ShopStorage shopStorage2 = addStorageToShop(1000, 1, shop1);
+        ShopStorage shopStorage1 = addStorageToShop(100, 1, shop1);
+        ShopStorage shopStorage2 = addStorageToShop(1000, 0, shop1);
         ShopStorage shopStorage3 = addStorageToShop(90, 1, shop2);
 
         addProductToShopStorage(33, new BigDecimal("68.34"),
