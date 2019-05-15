@@ -40,7 +40,6 @@ public class ShopController implements
 
     private final ShopRepository shopRepository;
     private final NamedService<Shop, Long> shopService;
-    private final BaseService<ShopStorage, Long> shopStorageBaseService;
     private final StorageService<Shop, ShopStorage, Long> storageService;
     private final ShopStorageRepository shopStorageRepository;
     private final ShopStorageProductRepository shopStorageProductRepository;
@@ -52,7 +51,7 @@ public class ShopController implements
     @Autowired
     public ShopController(ShopRepository shopRepository,
                           NamedService<Shop, Long> shopService,
-                          @Qualifier(value = "baseService") BaseService<ShopStorage, Long> shopStorageBaseService, StorageService<Shop, ShopStorage, Long> storageService,
+                          StorageService<Shop, ShopStorage, Long> storageService,
                           ShopStorageRepository shopStorageRepository,
                           ShopStorageProductRepository shopStorageProductRepository,
                           @Qualifier(value = "baseService") BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService,
@@ -61,7 +60,6 @@ public class ShopController implements
                           @Qualifier(value = "baseService") BaseService<Purchase, Long> purchaseService) {
         this.shopRepository = shopRepository;
         this.shopService = shopService;
-        this.shopStorageBaseService = shopStorageBaseService;
         this.storageService = storageService;
         this.shopStorageRepository = shopStorageRepository;
         this.shopStorageProductRepository = shopStorageProductRepository;
