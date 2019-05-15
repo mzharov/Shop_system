@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import ts.tsc.system.entities.Product;
-import ts.tsc.system.entities.ShopStorage;
 
 import java.io.IOException;
 

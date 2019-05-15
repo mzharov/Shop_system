@@ -1,7 +1,6 @@
 package ts.tsc.system.entities;
 
 import ts.tsc.system.entities.keys.DeliveryProductPrimaryKey;
-import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
 
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;

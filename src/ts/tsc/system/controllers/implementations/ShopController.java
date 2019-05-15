@@ -23,11 +23,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/shop")
@@ -35,7 +33,7 @@ public class ShopController implements
         ShopControllerDeliveryInterface,
         ExtendedControllerInterface<Shop, ShopStorage, ShopStorageProduct> {
 
-    final Logger logger = LoggerFactory.getLogger(ShopController.class);
+    private final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
     @PersistenceContext
     EntityManager entityManager;

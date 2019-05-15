@@ -23,7 +23,6 @@ import ts.tsc.system.services.interfaces.StorageService;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
@@ -312,8 +311,8 @@ public class SupplierControllerDelivery
         if(!deliveryOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
-
         Delivery delivery = deliveryOptional.get();
+
         if(!delivery.getStatus().equals(Status.RECEIVED)) {
             return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
         }

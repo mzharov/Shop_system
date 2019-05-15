@@ -6,12 +6,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controllers.interfaces.ProductControllerInterface;
 import ts.tsc.system.entities.Product;
-import ts.tsc.system.entities.Shop;
 import ts.tsc.system.repositories.ProductRepository;
-import ts.tsc.system.services.interfaces.BaseService;
 import ts.tsc.system.services.interfaces.NamedService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
