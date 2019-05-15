@@ -176,7 +176,7 @@ public class SupplierControllerDelivery
         ShopStorage shopStorage = shopStorageOptional.get();
 
         int productsSumCount = countList.stream().reduce(0, Integer::sum);
-        
+
         if(shopStorage.getFreeSpace() < productsSumCount) {
             return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorage",
                     HttpStatus.BAD_REQUEST);
@@ -346,8 +346,24 @@ public class SupplierControllerDelivery
 
         delivery.setStatus(Status.COMPLETED);
         ShopStorage shopStorage = delivery.getShopStorage();
+        int sumProductCount = 0;
 
-        List<DeliveryProduct> deliveryProductList;
+        try {
+            TypedQuery<Integer> sumProductTypedQuery = entityManager.createQuery(
+                    "select  sum(p.count) from DeliveryProduct " +
+                            "where p.primaryKey.delivery.id = ?1",
+                    Integer.class).setParameter(1, delivery.getId());
+            sumProductCount = sumProductTypedQuery.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Error", e);
+            new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        if(shopStorage.getFreeSpace() < sumProductCount) {
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorage",
+                    HttpStatus.BAD_REQUEST);
+        }
+
         try {
             TypedQuery<DeliveryProduct> deliveryProductQuery =
                     entityManager.createQuery(
@@ -356,38 +372,42 @@ public class SupplierControllerDelivery
                             DeliveryProduct.class)
                             .setParameter(1, delivery.getId());
 
-            deliveryProductList = deliveryProductQuery.getResultList();
-        } catch (Exception e) {
-            logger.error("Ошибка в ходе запроса списка продуктов", e);
-            return new ResponseEntity<>("Ошибка в ходе запроса списка продуктов",
-                    HttpStatus.BAD_REQUEST);
-        }
+            List<DeliveryProduct> deliveryProductList = deliveryProductQuery.getResultList();
 
-        for(DeliveryProduct deliveryProduct : deliveryProductList) {
+            for(DeliveryProduct deliveryProduct : deliveryProductList) {
+                ShopStorageProductPrimaryKey primaryKey = new ShopStorageProductPrimaryKey(shopStorage,
+                        deliveryProduct.getPrimaryKey().getProduct());
 
-            ShopStorageProductPrimaryKey primaryKey =
-                    new ShopStorageProductPrimaryKey(shopStorage,
-                            deliveryProduct.getPrimaryKey().getProduct());
-            Optional<ShopStorageProduct> shopStorageProductOptional
-                    = shopStorageProductRepository.findById(primaryKey);
+                Optional<ShopStorageProduct> shopStorageProductOptional
+                        = shopStorageProductRepository
+                        .findById(primaryKey);
+                ShopStorageProduct shopStorageProduct;
+                if(shopStorageProductOptional.isPresent()) {
+                    shopStorageProduct = shopStorageProductOptional.get();
+                    shopStorageProduct
+                            .setCount(shopStorageProduct.getCount()+deliveryProduct.getCount());
 
-            ShopStorageProduct shopStorageProduct;
-            if(shopStorageProductOptional.isPresent()) {
-                shopStorageProduct = shopStorageProductOptional.get();
-                shopStorageProduct
-                        .setCount(shopStorageProduct.getCount()+deliveryProduct.getCount());
-            } else  {
-                shopStorageProduct  = new ShopStorageProduct();
-                shopStorageProduct.setPrimaryKey(primaryKey);
-                shopStorageProduct.setCount(deliveryProduct.getCount());
-                shopStorageProduct.setPrice(deliveryProduct.getPrice());
+                } else {
+                    shopStorageProduct  = new ShopStorageProduct();
+                    shopStorageProduct.setPrimaryKey(primaryKey);
+                    shopStorageProduct.setCount(deliveryProduct.getCount());
+                    shopStorageProduct.setPrice(deliveryProduct.getPrice());
+                }
+                shopStorage.setFreeSpace(shopStorage.getFreeSpace()-deliveryProduct.getCount());
+                try {
+                    shopStorageProductRepository.save(shopStorageProduct);
+                    shopStorageRepository.save(shopStorage);
+                } catch (Exception e) {
+                    logger.error("Error", e);
+                    new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                            HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
-            shopStorage.setFreeSpace(shopStorage.getFreeSpace()-deliveryProduct.getCount());
-            shopStorageProductRepository.save(shopStorageProduct);
+        } catch (Exception e) {
+            logger.error("Error", e);
+            new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
-        shopStorageRepository.save(shopStorage);
-        deliveryRepository.save(delivery);
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
 
@@ -426,9 +446,11 @@ public class SupplierControllerDelivery
                     DeliveryProduct.class)
                     .setParameter(1, delivery.getId());
 
-            DeliveryProduct deliveryProduct= sumCountTypedQuery.getSingleResult();
-            productIdList.add(deliveryProduct.getPrimaryKey().getProduct().getId());
-            countList.add(deliveryProduct.getCount());
+            List<DeliveryProduct> deliveryProductList = sumCountTypedQuery.getResultList();
+            for(DeliveryProduct deliveryProduct : deliveryProductList) {
+                productIdList.add(deliveryProduct.getPrimaryKey().getProduct().getId());
+                countList.add(deliveryProduct.getCount());
+            }
         } catch (Exception e) {
             logger.error("Error: ", e);
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
