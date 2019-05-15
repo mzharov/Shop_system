@@ -289,7 +289,6 @@ public class ShopController implements
                 int storageCount = shopStorageProduct.getCount();
                 int orderCount = purchaseProduct.getCount();
                 if(orderCount > storageCount) {
-                    logger.error(ErrorStatus.NOT_ENOUGH_PRODUCTS.toString());
                     return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS, HttpStatus.NOT_FOUND);
                 }
 
@@ -333,7 +332,80 @@ public class ShopController implements
 
     @Override
     public ResponseEntity<?> cancelOrder(Long id) {
-        return null;
+        Optional<Purchase> purchaseOptional = purchaseRepository.findById(id);
+
+        if(!purchaseOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        Purchase purchase = purchaseOptional.get();
+
+        if(purchase.getStatus().equals(Status.RECEIVED)) {
+            purchase.setStatus(Status.CANCELED);
+            purchaseRepository.save(purchase);
+            return new ResponseEntity<>(purchase, HttpStatus.OK);
+        }
+
+        purchase.setStatus(Status.CANCELED);
+        ShopStorage shopStorage;
+        try {
+            TypedQuery<ShopStorage> shopStorageTypedQuery =
+                    entityManager.createQuery(
+                            "select p from ShopStorage p " +
+                                    "where p.shop.id = ?1 " +
+                                    "and p.type = ?2",
+                            ShopStorage.class)
+                            .setParameter(1, purchase.getShop().getId())
+                            .setParameter(2, 1);
+            shopStorage = shopStorageTypedQuery.getSingleResult();
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        List<PurchaseProduct> purchaseProductList = new LinkedList<>(purchase
+                .getPurchaseProducts());
+        List<ShopStorageProduct> shopStorageProductList = new LinkedList<>();
+
+        for(PurchaseProduct purchaseProduct : purchaseProductList) {
+            try {
+                TypedQuery<ShopStorageProduct> shopStorageTypedQuery =
+                        entityManager.createQuery(
+                                "select p from ShopStorageProduct p " +
+                                        "where p.primaryKey.storage.id = ?1 " +
+                                        "and p.primaryKey.product.id =?2",
+                                ShopStorageProduct.class)
+                                .setParameter(1, shopStorage.getId())
+                                .setParameter(2, purchaseProduct.getPrimaryKey().getProduct().getId());
+
+                ShopStorageProduct shopStorageProduct = shopStorageTypedQuery.getSingleResult();
+                int storageCount = shopStorageProduct.getCount();
+                int orderCount = purchaseProduct.getCount();
+
+                shopStorageProduct.setCount(storageCount+orderCount);
+                shopStorageProductList.add(shopStorageProduct);
+                shopStorage.setFreeSpace(shopStorage.getFreeSpace()-orderCount);
+
+                if(shopStorage.getFreeSpace() > shopStorage.getTotalSpace()) {
+                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE, HttpStatus.BAD_REQUEST);
+                }
+
+            } catch (Exception e) {
+                logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            }
+        }
+        try {
+            purchaseRepository.save(purchase);
+            shopStorageRepository.save(shopStorage);
+            for(ShopStorageProduct shopStorageProduct : shopStorageProductList) {
+                shopStorageProductRepository.save(shopStorageProduct);
+            }
+            return new ResponseEntity<>(purchase, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error(ErrorStatus.ERROR_WHILE_SAVING.toString(), e);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING, HttpStatus.NOT_FOUND);
+        }
     }
 }
 
