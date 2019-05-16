@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import ts.tsc.system.controllers.status.enums.ErrorStatus;
 import ts.tsc.system.controllers.status.enums.Status;
+import ts.tsc.system.entity.parent.OrderEntity;
 
 public abstract class OrderController {
     protected abstract ResponseEntity<?> deliverOrder(Long id);
@@ -21,5 +22,9 @@ public abstract class OrderController {
             return cancelOrder(id);
         }
         return new ResponseEntity<>(ErrorStatus.UNKNOWN_DELIVER_STATUS, HttpStatus.BAD_REQUEST);
+    }
+    protected boolean isNotCancelable(OrderEntity orderEntity) {
+        return !(orderEntity.getStatus().equals(Status.RECEIVED)
+                || orderEntity.getStatus().equals(Status.DELIVERING));
     }
 }

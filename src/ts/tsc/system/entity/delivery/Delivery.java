@@ -2,6 +2,7 @@ package ts.tsc.system.entity.delivery;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ts.tsc.system.controllers.status.enums.Status;
+import ts.tsc.system.entity.parent.OrderEntity;
 import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.entity.supplier.SupplierStorage;
 
@@ -12,7 +13,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "delivery")
-public class Delivery implements Serializable {
+public class Delivery implements Serializable, OrderEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -44,6 +45,7 @@ public class Delivery implements Serializable {
         this.id = id;
     }
 
+    @Override
     public Status getStatus() {
         return status;
     }

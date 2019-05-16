@@ -299,12 +299,12 @@ public class ShopController extends OrderController
 
     @Override
     public ResponseEntity<?> deliverOrder(Long id) {
-        Optional<Purchase> deliveryOptional = purchaseRepository.findById(id);
-        if(!deliveryOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase", HttpStatus.NOT_FOUND);
+        Purchase purchase = isPurchaseExist(id);
+        if(purchase == null) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase",
+                    HttpStatus.NOT_FOUND);
         }
 
-        Purchase purchase = deliveryOptional.get();
         if(!purchase.getStatus().equals(Status.RECEIVED)) {
             return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
         }
@@ -323,11 +323,11 @@ public class ShopController extends OrderController
 
     @Override
     public ResponseEntity<?> completeOrder(Long id) {
-        Optional<Purchase> purchaseOptional = purchaseRepository.findById(id);
-        if(!purchaseOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase", HttpStatus.NOT_FOUND);
+        Purchase purchase = isPurchaseExist(id);
+        if(purchase == null) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase",
+                    HttpStatus.NOT_FOUND);
         }
-        Purchase purchase = purchaseOptional.get();
 
         if(!purchase.getStatus().equals(Status.DELIVERING)) {
             return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.NOT_FOUND);
@@ -339,16 +339,13 @@ public class ShopController extends OrderController
 
     @Override
     public ResponseEntity<?> cancelOrder(Long id) {
-        Optional<Purchase> purchaseOptional = purchaseRepository.findById(id);
-
-        if(!purchaseOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        Purchase purchase = isPurchaseExist(id);
+        if(purchase == null) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase",
+                    HttpStatus.NOT_FOUND);
         }
 
-        Purchase purchase = purchaseOptional.get();
-
-        if(!(purchase.getStatus().equals(Status.RECEIVED)
-                || purchase.getStatus().equals(Status.DELIVERING))) {
+        if(isNotCancelable(purchase)) {
             return new ResponseEntity<>(ErrorStatus.CAN_NOT_BE_CANCELED,
                     HttpStatus.BAD_REQUEST);
         }
@@ -516,6 +513,10 @@ public class ShopController extends OrderController
             }
         }
         return new ResponseEntity<>(targetShopStorage, HttpStatus.OK);
+    }
+    private Purchase isPurchaseExist(Long id) {
+        Optional<Purchase> deliveryOptional = purchaseRepository.findById(id);
+        return deliveryOptional.orElse(null);
     }
 }
 

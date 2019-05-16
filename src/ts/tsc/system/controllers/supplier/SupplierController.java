@@ -354,11 +354,11 @@ public class SupplierController
 
     @Override
     protected ResponseEntity<?> deliverOrder(Long id) {
-        Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
-        if(!deliveryOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        Delivery delivery = isExist(id);
+        if(delivery == null) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
+                    HttpStatus.NOT_FOUND);
         }
-        Delivery delivery = deliveryOptional.get();
 
         if(!delivery.getStatus().equals(Status.RECEIVED)) {
             return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
@@ -466,15 +466,12 @@ public class SupplierController
 
     @Override
     protected ResponseEntity<?> cancelOrder(Long id) {
-        Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
-        if(!deliveryOptional.isPresent()) {
+        Delivery delivery = isExist(id);
+        if(delivery == null) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
-        Delivery delivery = deliveryOptional.get();
-
-        if(!(delivery.getStatus().equals(Status.RECEIVED)
-                || delivery.getStatus().equals(Status.DELIVERING))) {
+        if(isNotCancelable(delivery)) {
             return new ResponseEntity<>(ErrorStatus.CAN_NOT_BE_CANCELED,
                     HttpStatus.BAD_REQUEST);
         }
@@ -550,5 +547,10 @@ public class SupplierController
             result.append(s).append(" ");
         }
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    private Delivery isExist(Long id) {
+        Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
+        return deliveryOptional.orElse(null);
     }
 }

@@ -2,6 +2,7 @@ package ts.tsc.system.entity.purchase;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ts.tsc.system.controllers.status.enums.Status;
+import ts.tsc.system.entity.parent.OrderEntity;
 import ts.tsc.system.entity.shop.Shop;
 
 import javax.persistence.*;
@@ -11,7 +12,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "purchase")
-public class Purchase implements Serializable {
+public class Purchase implements Serializable, OrderEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -45,6 +46,7 @@ public class Purchase implements Serializable {
         this.shop = shop;
     }
 
+    @Override
     public Status getStatus() {
         return status;
     }
