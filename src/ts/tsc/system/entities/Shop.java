@@ -13,15 +13,11 @@ import java.util.Set;
 public class Shop extends NamedEntity<Long> implements Serializable {
 
     @OneToMany(mappedBy = "shop",
-            fetch = FetchType.EAGER,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            fetch = FetchType.EAGER)
     private Set<ShopStorage> storages = new HashSet<>();
 
     @OneToMany(mappedBy = "shop",
-            fetch = FetchType.EAGER,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            fetch = FetchType.EAGER)
     @JsonIgnore
     private Set<Purchase> purchases = new HashSet<>();
 

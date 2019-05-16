@@ -30,16 +30,17 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/supplier")
-public class SupplierControllerDelivery
+public class SupplierController
         implements SupplierControllerDeliveryInterface,
         ExtendedControllerInterface<Supplier, SupplierStorage, SupplierStorageProduct> {
 
-    private final Logger logger = LoggerFactory.getLogger(SupplierControllerDelivery.class);
+    private final Logger logger = LoggerFactory.getLogger(SupplierController.class);
 
     @PersistenceContext
     EntityManager entityManager;
 
     private final SupplierRepository supplierRepository;
+    private final ShopRepository shopRepository;
     private final BaseService<SupplierStorage, Long> supplierStorageBaseService;
     private final NamedService<Supplier, Long> supplierService;
     private final BaseService<Delivery, Long> deliveryService;
@@ -54,7 +55,8 @@ public class SupplierControllerDelivery
     private final ShopStorageProductRepository shopStorageProductRepository;
 
     @Autowired
-    public SupplierControllerDelivery(SupplierRepository supplierRepository,
+    public SupplierController(SupplierRepository supplierRepository,
+                                      ShopRepository shopRepository,
                                       @Qualifier(value = "baseService") BaseService<SupplierStorage, Long> supplierStorageBaseService,
                                       @Qualifier(value = "baseService") BaseService<Delivery, Long> deliveryService,
                                       ShopStorageRepository shopStorageRepository,
@@ -67,6 +69,7 @@ public class SupplierControllerDelivery
                                       DeliveryRepository deliveryRepository,
                                       DeliveryProductRepository deliveryProductRepository, ProductRepository productRepository, ShopStorageProductRepository shopStorageProductRepository) {
         this.supplierRepository = supplierRepository;
+        this.shopRepository = shopRepository;
         this.supplierStorageBaseService = supplierStorageBaseService;
         this.deliveryService = deliveryService;
         this.shopStorageRepository = shopStorageRepository;
@@ -143,9 +146,9 @@ public class SupplierControllerDelivery
     }
 
     @Override
-    @PostMapping(value = "/delivery/{supplierID}/{shopID}/{productIdList}/{countList}")
+    @PostMapping(value = "/delivery/{supplierID}/{shopStorageID}/{productIdList}/{countList}")
     public ResponseEntity<?> receiveDelivery(@PathVariable Long supplierID,
-                             @PathVariable Long shopID,
+                             @PathVariable Long shopStorageID,
                              @PathVariable List<Long> productIdList,
                              @PathVariable List<Integer> countList) {
 
@@ -163,7 +166,7 @@ public class SupplierControllerDelivery
         }
 
         Optional<ShopStorage> shopStorageOptional
-                = shopStorageRepository.findById(shopID);
+                = shopStorageRepository.findById(shopStorageID);
         if(!shopStorageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " shopStorage",
                     HttpStatus.NOT_FOUND);
@@ -202,6 +205,40 @@ public class SupplierControllerDelivery
             }
         }
 
+        BigDecimal sumPrice = new BigDecimal(0);
+
+        for(int deliveryIterator = 0; deliveryIterator < productIdList.size(); deliveryIterator++) {
+            Long productID = productIdList.get(deliveryIterator);
+            Integer count = countList.get(deliveryIterator);
+            try {
+                TypedQuery<BigDecimal> sumCountTypedQuery = entityManager.createQuery(
+                        "select sum(p.price) from SupplierStorageProduct p " +
+                                "where p.primaryKey.storage.id = ?1 " +
+                                "and p.primaryKey.product.id = ?2",
+                        BigDecimal.class)
+                        .setParameter(1, supplierStorage.getId())
+                        .setParameter(2, productID);
+                sumPrice = sumCountTypedQuery.getSingleResult();
+            } catch (Exception e) {
+                logger.error("Error: ", e);
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
+                        HttpStatus.NOT_FOUND);
+            }
+        }
+
+        Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
+        if(!shopOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " shop",
+                    HttpStatus.NOT_FOUND);
+        }
+
+        Shop shop = shopOptional.get();
+
+        if(sumPrice.compareTo(shop.getBudget()) > 0) {
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shop",
+                    HttpStatus.BAD_REQUEST);
+        }
+
         Delivery delivery = new Delivery();
         delivery.setStatus(Status.RECEIVED);
         delivery.setShopStorage(shopStorage);
@@ -214,13 +251,13 @@ public class SupplierControllerDelivery
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " delivery",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return transfer(productIdList, countList, supplierStorage, delivery);
+        return transfer(productIdList, countList, supplierStorage, delivery, shop);
     }
 
     private ResponseEntity<?> transfer(List<Long> productIdList,
                           List<Integer> countList,
                           SupplierStorage supplierStorage,
-                          Delivery delivery) {
+                          Delivery delivery, Shop shop) {
         for(int deliveryIterator = 0; deliveryIterator < productIdList.size(); deliveryIterator++) {
             Long productID = productIdList.get(deliveryIterator);
             Integer count = countList.get(deliveryIterator);
@@ -260,6 +297,9 @@ public class SupplierControllerDelivery
 
                 supplierStorage.setFreeSpace(supplierStorage.getFreeSpace() + coefficient * count);
                 supplierStorageProduct.setCount(supplierStorageProduct.getCount() - coefficient* count);
+                shop.setBudget(shop.getBudget().subtract((supplierStorageProduct.getPrice()
+                        .multiply(new BigDecimal(count)))
+                        .multiply(new BigDecimal(coefficient))));
                 try {
                     supplierStorageProductRepository.save(supplierStorageProduct);
                 } catch (Exception e) {
@@ -276,6 +316,7 @@ public class SupplierControllerDelivery
         }
         try {
             supplierStorageRepository.save(supplierStorage);
+            shopRepository.save(shop);
         } catch (Exception e) {
             logger.error("Error: ", e);
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
@@ -475,7 +516,15 @@ public class SupplierControllerDelivery
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return transfer(productIdList, countList, supplierStorage, delivery);
+        Optional<Shop> shopOptional
+                = shopRepository.findById(delivery.getShopStorage().getShop().getId());
+        if(!shopOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " shop",
+                    HttpStatus.NOT_FOUND);
+        }
+        Shop shop = shopOptional.get();
+
+        return transfer(productIdList, countList, supplierStorage, delivery, shop);
     }
 
 

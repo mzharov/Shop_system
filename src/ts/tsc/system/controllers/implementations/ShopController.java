@@ -199,13 +199,13 @@ public class ShopController implements
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return transfer(productIdList, countList, shopStorage, purchase);
+        return transfer(productIdList, countList, shopStorage, purchase, shop);
     }
 
     private ResponseEntity<?> transfer(List<Long> productIdList,
                                        List<Integer> countList,
                                        ShopStorage shopStorage,
-                                       Purchase purchase) {
+                                       Purchase purchase, Shop shop) {
         for(int orderIterator = 0; orderIterator < productIdList.size(); orderIterator++) {
             Long productID = productIdList.get(orderIterator);
             Integer count = countList.get(orderIterator);
@@ -231,7 +231,6 @@ public class ShopController implements
 
                 try {
                     purchaseProductRepository.save(purchaseProduct);
-                    shopStorageProductRepository.save(shopStorageProduct);
                 } catch (Exception e) {
                     logger.error("Error: ", e);
                     return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
@@ -246,6 +245,9 @@ public class ShopController implements
 
             shopStorageProduct.setCount(shopStorageProduct.getCount()-coefficient*count);
             shopStorage.setFreeSpace(shopStorage.getFreeSpace()+coefficient*count);
+            shop.setBudget(shop.getBudget().add((shopStorageProduct.getPrice()
+                    .multiply(new BigDecimal(count)))
+                    .multiply(new BigDecimal(coefficient))));
 
             try {
                 shopStorageProductRepository.save(shopStorageProduct);
@@ -257,6 +259,7 @@ public class ShopController implements
         }
 
         try {
+            shopRepository.save(shop);
             shopStorageRepository.save(shopStorage);
         } catch (Exception e) {
             logger.error("Error: ", e);
@@ -264,6 +267,7 @@ public class ShopController implements
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+        logger.info("------>" + purchase.getStatus().toString());
         return new ResponseEntity<>(purchase, HttpStatus.OK);
     }
 
@@ -331,10 +335,10 @@ public class ShopController implements
 
         Purchase purchase = purchaseOptional.get();
 
-        if(purchase.getStatus().equals(Status.RECEIVED)) {
-            purchase.setStatus(Status.CANCELED);
-            purchaseRepository.save(purchase);
-            return new ResponseEntity<>(purchase, HttpStatus.OK);
+        if(!(purchase.getStatus().equals(Status.RECEIVED)
+                || purchase.getStatus().equals(Status.DELIVERING))) {
+            return new ResponseEntity<>(ErrorStatus.CAN_NOT_BE_CANCELED,
+                    HttpStatus.BAD_REQUEST);
         }
 
         purchase.setStatus(Status.CANCELED);
@@ -378,7 +382,6 @@ public class ShopController implements
         }
 
         int productsSumCount = countList.stream().reduce(0, Integer::sum);
-
         if(shopStorage.getFreeSpace() < productsSumCount) {
             return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorageProduct",
                     HttpStatus.BAD_REQUEST);
@@ -386,12 +389,18 @@ public class ShopController implements
 
         try {
             purchaseRepository.save(purchase);
+            logger.info(purchase.getStatus().toString());
         } catch (Exception e) {
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " purchase",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return transfer(productIdList, countList, shopStorage, purchase);
+        Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
+        if(!shopOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        Shop shop = shopOptional.get();
+        return transfer(productIdList, countList, shopStorage, purchase, shop);
     }
 }
 
