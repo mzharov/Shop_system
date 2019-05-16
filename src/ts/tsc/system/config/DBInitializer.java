@@ -44,7 +44,7 @@ public class DBInitializer {
 
     @PostConstruct
     public void initDB() {
-        logger.info("--> Инициализация БД начата");
+        logger.info("Инициализация БД начата");
         Shop shop1 = addShop("Johan's", new BigDecimal("1000000.2356"));
         Shop shop2 = addShop("Moran&Johns", new BigDecimal("100000"));
 
@@ -82,7 +82,7 @@ public class DBInitializer {
                 shopStorage3, product1);
 
 
-        logger.info("--> Инициализация БД завершена");
+        logger.info("Инициализация БД завершена");
     }
 
 

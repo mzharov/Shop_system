@@ -22,7 +22,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
-        MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter = new MappingJackson2HttpMessageConverter();
+        MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter
+                = new MappingJackson2HttpMessageConverter();
         mappingJackson2HttpMessageConverter.setObjectMapper(objectMapper());
         return mappingJackson2HttpMessageConverter;
     }

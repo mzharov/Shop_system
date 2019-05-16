@@ -103,7 +103,7 @@ public class ShopController implements
 
 
     @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<List<ShopStorage>> findStorageById(@PathVariable Long id) {
+    public ResponseEntity<ShopStorage> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
         return storageService.findById(id, stringQuery, shopStorageRepository);
     }

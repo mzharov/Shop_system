@@ -3,6 +3,7 @@ package ts.tsc.system.controllers.status.enums;
 public enum ErrorStatus {
     SUCCEED,
     ELEMENT_NOT_FOUND,
+    ELEMENTS_NOT_FOUND_FOR_ENTITY,
     ERROR_WHILE_SAVING,
     WRONG_DELIVERY_STATUS,
     UNKNOWN_DELIVER_STATUS,

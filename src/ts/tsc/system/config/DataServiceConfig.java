@@ -37,16 +37,8 @@ public class DataServiceConfig {
 
     @Bean
     public DataSource dataSource() {
-        /*
         try {
-            EmbeddedDatabaseBuilder dbBuilder = new EmbeddedDatabaseBuilder();
-            return dbBuilder.setType(EmbeddedDatabaseType.H2).build();
-        } catch (Exception e) {
-            logger.error("Embedded DataSource bean cannot be created!", e);
-            return null;
-        }*/
-        try {
-            logger.info("--> Инициализация БД");
+            logger.info("Инициализация БД");
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
             dataSource
                     .setDriverClassName(Objects.requireNonNull(environment
@@ -56,7 +48,7 @@ public class DataServiceConfig {
             dataSource.setPassword(environment.getProperty("spring.datasource.password"));
             return dataSource;
         } catch (Exception e) {
-            logger.error("DataSource bean cannot be created!", e);
+            logger.error("Не удалось подключиться к БД!", e);
             return null;
         }
     }

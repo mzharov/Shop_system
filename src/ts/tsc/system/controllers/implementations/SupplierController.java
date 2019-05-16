@@ -121,7 +121,7 @@ public class SupplierController
 
     @Override
     @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<List<SupplierStorage>> findStorageById(@PathVariable Long id) {
+    public ResponseEntity<SupplierStorage> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
         return storageService.findById(id, stringQuery, supplierStorageRepository);
     }
