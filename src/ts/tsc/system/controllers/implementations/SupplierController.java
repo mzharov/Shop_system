@@ -235,7 +235,7 @@ public class SupplierController
         Shop shop = shopOptional.get();
 
         if(sumPrice.compareTo(shop.getBudget()) > 0) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shop",
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_MONEY + " in shop",
                     HttpStatus.BAD_REQUEST);
         }
 

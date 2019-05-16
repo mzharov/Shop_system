@@ -34,15 +34,12 @@ public class PurchaseProductPrimaryKey implements Serializable {
     public Purchase getPurchase() {
         return purchase;
     }
-
     public void setPurchase(Purchase purchase) {
         this.purchase = purchase;
     }
-
     public Product getProduct() {
         return product;
     }
-
     public void setProduct(Product product) {
         this.product = product;
     }
