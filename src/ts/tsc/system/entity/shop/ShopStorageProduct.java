@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "ShopStoragesProduct")
+@Table(name = "shop_storage_product")
 public class ShopStorageProduct implements Serializable {
 
     @EmbeddedId

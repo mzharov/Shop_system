@@ -14,12 +14,12 @@ import java.io.Serializable;
 @JsonSerialize(using = DeliveryProductPrimaryKeySerializer.class)
 public class DeliveryProductPrimaryKey implements Serializable {
     @ManyToOne
-    @JoinColumn(name = "deliveryID")
+    @JoinColumn(name = "delivery_ID")
     @JsonIgnore
     private Delivery delivery;
 
     @ManyToOne
-    @JoinColumn(name = "productID")
+    @JoinColumn(name = "product_ID")
     @JsonIgnore
     private Product product;
 

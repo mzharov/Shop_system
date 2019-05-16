@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controllers.interfaces.ExtendedControllerInterface;
+import ts.tsc.system.controllers.parent.ExtendedControllerInterface;
+import ts.tsc.system.controllers.parent.OrderController;
+import ts.tsc.system.controllers.parent.ShopOrderInterface;
 import ts.tsc.system.controllers.status.enums.ErrorStatus;
 import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entity.product.Product;
@@ -33,9 +35,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/shop")
-public class ShopController implements
-        ShopControllerDeliveryInterface,
-        ExtendedControllerInterface<Shop, ShopStorage, ShopStorageProduct> {
+public class ShopController extends OrderController
+        implements
+        ShopOrderInterface,
+        ExtendedControllerInterface<Shop, ShopStorage> {
 
     private final Logger logger = LoggerFactory.getLogger(ShopController.class);
 
@@ -58,10 +61,12 @@ public class ShopController implements
                           StorageService<Shop, ShopStorage, Long> storageService,
                           ShopStorageRepository shopStorageRepository,
                           ShopStorageProductRepository shopStorageProductRepository,
-                          @Qualifier(value = "baseService") BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService,
+                          @Qualifier(value = "baseService")
+                                      BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService,
                           PurchaseRepository purchaseRepository,
                           PurchaseProductRepository purchaseProductRepository,
-                          @Qualifier(value = "baseService") BaseService<Purchase, Long> purchaseService) {
+                          @Qualifier(value = "baseService")
+                                      BaseService<Purchase, Long> purchaseService) {
         this.shopRepository = shopRepository;
         this.shopService = shopService;
         this.storageService = storageService;
@@ -107,15 +112,28 @@ public class ShopController implements
 
 
     @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<ShopStorage> findStorageById(@PathVariable Long id) {
+    public ResponseEntity<List<ShopStorage>> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
         return storageService.findById(id, stringQuery, shopStorageRepository);
     }
 
 
     @GetMapping(value = "/storage/list")
-    public ResponseEntity<?>  findAllStorages() {
+    public ResponseEntity<?>  findAllStorage() {
         return storageService.findAll(shopStorageRepository);
+    }
+
+    @Override
+    @GetMapping(value = "/storage/list/{id}")
+    public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
+        String stringQuery = "select entity from ShopStorage entity where entity.shop.id = ?1";
+        return storageService.findById(id, stringQuery, shopStorageRepository);
+    }
+
+    @Override
+    @GetMapping(value = "/order/{id}")
+    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
+        return purchaseService.findById(id, purchaseRepository);
     }
 
     @PostMapping(value = "/storage/{id}")
@@ -130,7 +148,7 @@ public class ShopController implements
     }
 
     @GetMapping(value = "/order/list")
-    public ResponseEntity<?> getPurchases() {
+    public ResponseEntity<?> getAllOrders() {
         return purchaseService.findAll(purchaseRepository);
     }
 
@@ -276,16 +294,7 @@ public class ShopController implements
 
     @PutMapping(value = "/order/status/{id}/{status}")
     public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
-        if(status.equals(Status.DELIVERING)) {
-            return deliverOrder(id);
-        }
-        if(status.equals(Status.COMPLETED)) {
-            return completeOrder(id);
-        }
-        if(status.equals(Status.CANCELED)) {
-            return cancelOrder(id);
-        }
-        return new ResponseEntity<>(ErrorStatus.UNKNOWN_DELIVER_STATUS, HttpStatus.BAD_REQUEST);
+        return super.changeStatus(id, status);
     }
 
     @Override
@@ -407,7 +416,7 @@ public class ShopController implements
     }
 
     @PutMapping(value = "/storage/{shopStorageID}/{targetShopStorageID}/{productIDList}/{countList}")
-    public ResponseEntity<?> addProductsToMainStorage(@PathVariable Long shopStorageID,
+    public ResponseEntity<?> addProductsToStorage(@PathVariable Long shopStorageID,
                                                       @PathVariable Long targetShopStorageID,
                                                       @PathVariable List<Long> productIDList,
                                                       @PathVariable List<Integer> countList) {

@@ -1,4 +1,4 @@
-package ts.tsc.system.controllers.interfaces;
+package ts.tsc.system.controllers.parent;
 
 import org.springframework.http.ResponseEntity;
 

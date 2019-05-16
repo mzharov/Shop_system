@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "deliveryProduct")
+@Table(name = "delivery_product")
 public class DeliveryProduct implements Serializable {
     @EmbeddedId
     private DeliveryProductPrimaryKey primaryKey;
@@ -19,7 +19,7 @@ public class DeliveryProduct implements Serializable {
     @Column(name="price")
     private BigDecimal price;
 
-    @Column(name = "sumPrice")
+    @Column(name = "sum_price")
     private BigDecimal sumPrice;
 
     public DeliveryProductPrimaryKey getPrimaryKey() {

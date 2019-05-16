@@ -22,12 +22,12 @@ public class Delivery implements Serializable {
     private Status status;
 
     @ManyToOne
-    @JoinColumn(name = "shopStorageID")
+    @JoinColumn(name = "shop_storage_ID")
     @JsonIgnore
     private ShopStorage shopStorage;
 
     @ManyToOne
-    @JoinColumn(name = "supplierStorageID")
+    @JoinColumn(name = "supplier_storage_ID")
     @JsonIgnore
     private SupplierStorage supplierStorage;
 

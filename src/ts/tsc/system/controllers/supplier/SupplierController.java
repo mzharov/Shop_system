@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controllers.interfaces.ExtendedControllerInterface;
+import ts.tsc.system.controllers.parent.ExtendedControllerInterface;
+import ts.tsc.system.controllers.parent.OrderController;
+import ts.tsc.system.controllers.parent.SupplierOrderInterface;
 import ts.tsc.system.controllers.status.enums.ErrorStatus;
 import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entity.delivery.Delivery;
@@ -34,8 +36,9 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/supplier")
 public class SupplierController
-        implements SupplierControllerDeliveryInterface,
-        ExtendedControllerInterface<Supplier, SupplierStorage, SupplierStorageProduct> {
+        extends OrderController
+        implements SupplierOrderInterface,
+        ExtendedControllerInterface<Supplier, SupplierStorage> {
 
     private final Logger logger = LoggerFactory.getLogger(SupplierController.class);
 
@@ -44,7 +47,6 @@ public class SupplierController
 
     private final SupplierRepository supplierRepository;
     private final ShopRepository shopRepository;
-    private final BaseService<SupplierStorage, Long> supplierStorageBaseService;
     private final NamedService<Supplier, Long> supplierService;
     private final BaseService<Delivery, Long> deliveryService;
     private final ShopStorageRepository shopStorageRepository;
@@ -54,26 +56,25 @@ public class SupplierController
     private final BaseService<SupplierStorageProduct, SupplierStorageProductPrimaryKey> productService;
     private final DeliveryRepository deliveryRepository;
     private final DeliveryProductRepository deliveryProductRepository;
-    private final ProductRepository productRepository;
     private final ShopStorageProductRepository shopStorageProductRepository;
 
     @Autowired
     public SupplierController(SupplierRepository supplierRepository,
-                                      ShopRepository shopRepository,
-                                      @Qualifier(value = "baseService") BaseService<SupplierStorage, Long> supplierStorageBaseService,
-                                      @Qualifier(value = "baseService") BaseService<Delivery, Long> deliveryService,
-                                      ShopStorageRepository shopStorageRepository,
-                                      StorageService<Supplier, SupplierStorage, Long> storageService,
-                                      SupplierStorageRepository supplierStorageRepository,
-                                      NamedService<Supplier, Long> supplierService,
-                                      SupplierStorageProductRepository supplierStorageProductRepository,
-                                      @Qualifier(value = "baseService") BaseService<SupplierStorageProduct,
-                                              SupplierStorageProductPrimaryKey> productService,
-                                      DeliveryRepository deliveryRepository,
-                                      DeliveryProductRepository deliveryProductRepository, ProductRepository productRepository, ShopStorageProductRepository shopStorageProductRepository) {
+                              ShopRepository shopRepository,
+                              @Qualifier(value = "baseService")
+                                          BaseService<Delivery, Long> deliveryService,
+                              ShopStorageRepository shopStorageRepository,
+                              StorageService<Supplier, SupplierStorage, Long> storageService,
+                              SupplierStorageRepository supplierStorageRepository,
+                              NamedService<Supplier, Long> supplierService,
+                              SupplierStorageProductRepository supplierStorageProductRepository,
+                              @Qualifier(value = "baseService")
+                                          BaseService<SupplierStorageProduct, SupplierStorageProductPrimaryKey> productService,
+                              DeliveryRepository deliveryRepository,
+                              DeliveryProductRepository deliveryProductRepository,
+                              ShopStorageProductRepository shopStorageProductRepository) {
         this.supplierRepository = supplierRepository;
         this.shopRepository = shopRepository;
-        this.supplierStorageBaseService = supplierStorageBaseService;
         this.deliveryService = deliveryService;
         this.shopStorageRepository = shopStorageRepository;
         this.storageService = storageService;
@@ -83,7 +84,6 @@ public class SupplierController
         this.productService = productService;
         this.deliveryRepository = deliveryRepository;
         this.deliveryProductRepository = deliveryProductRepository;
-        this.productRepository = productRepository;
         this.shopStorageProductRepository = shopStorageProductRepository;
     }
 
@@ -124,15 +124,28 @@ public class SupplierController
 
     @Override
     @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<SupplierStorage> findStorageById(@PathVariable Long id) {
+    public ResponseEntity<List<SupplierStorage>> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
         return storageService.findById(id, stringQuery, supplierStorageRepository);
     }
 
     @Override
     @GetMapping(value = "/storage/list")
-    public ResponseEntity<?> findAllStorages() {
+    public ResponseEntity<?> findAllStorage() {
         return storageService.findAll(supplierStorageRepository);
+    }
+
+    @Override
+    @GetMapping(value = "/storage/list/{id}")
+    public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
+        String stringQuery = "select entity from SupplierStorage entity where entity.supplier.id = ?1";
+        return storageService.findById(id, stringQuery, supplierStorageRepository);
+    }
+
+    @Override
+    @GetMapping(value = "/order/{id}")
+    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
+        return deliveryService.findById(id, deliveryRepository);
     }
 
     @Override
@@ -149,8 +162,8 @@ public class SupplierController
     }
 
     @Override
-    @PostMapping(value = "/delivery/{supplierID}/{shopStorageID}/{productIdList}/{countList}")
-    public ResponseEntity<?> receiveDelivery(@PathVariable Long supplierID,
+    @PostMapping(value = "/order/{supplierID}/{shopStorageID}/{productIdList}/{countList}")
+    public ResponseEntity<?> receiveOrder(@PathVariable Long supplierID,
                              @PathVariable Long shopStorageID,
                              @PathVariable List<Long> productIdList,
                              @PathVariable List<Integer> countList) {
@@ -329,27 +342,18 @@ public class SupplierController
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
     
-    @PutMapping(value = "/delivery/status/{id}/{status}")
+    @PutMapping(value = "/order/status/{id}/{status}")
     public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
-        if(status.equals(Status.DELIVERING)) {
-            return transferDelivery(id);
-        }
-        if(status.equals(Status.COMPLETED)) {
-            return completeDelivery(id);
-        }
-        if(status.equals(Status.CANCELED)) {
-            return cancelDelivery(id);
-        }
-        return new ResponseEntity<>("Unknown status", HttpStatus.NOT_FOUND);
+        return super.changeStatus(id, status);
     }
 
-    @GetMapping(value = "/delivery/list")
-    public ResponseEntity<?> getDeliveries() {
+    @GetMapping(value = "/order/list")
+    public ResponseEntity<?> getAllOrders() {
         return deliveryService.findAll(deliveryRepository);
     }
 
     @Override
-    public ResponseEntity<?> transferDelivery(Long id) {
+    protected ResponseEntity<?> deliverOrder(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
         if(!deliveryOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
@@ -373,7 +377,7 @@ public class SupplierController
     }
 
     @Override
-    public ResponseEntity<?> completeDelivery(Long id) {
+    protected ResponseEntity<?> completeOrder(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
 
         if(!deliveryOptional.isPresent()) {
@@ -461,7 +465,7 @@ public class SupplierController
 
 
     @Override
-    public ResponseEntity<?> cancelDelivery(Long id) {
+    protected ResponseEntity<?> cancelOrder(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
         if(!deliveryOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);

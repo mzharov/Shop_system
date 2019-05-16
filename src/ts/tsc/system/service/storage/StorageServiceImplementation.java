@@ -11,6 +11,7 @@ import ts.tsc.system.service.base.BaseServiceImplementation;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,21 +28,21 @@ public class StorageServiceImplementation<B, T extends BaseStorage<B>, ID>
     EntityManager entityManager;
 
     /**
-     * Поиск склада по заданному идентификатору
-     * @param id идентификатор
+     * Поиск складов по заданному запросу
+     * @param id входной параметр
      * @param stringQuery строковый запрос HQL
      * @param repository репозиторий таблицы
      * @return объект, с указанным идентификатором и кодом 200, если найден; иначе код 404
      */
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
-    public ResponseEntity<T> findById(Long id,
+    public ResponseEntity<List<T>> findById(Long id,
                                          String stringQuery,
                                          JpaRepository<T, ID> repository) {
         try {
             Query query = entityManager.createQuery(stringQuery)
                     .setParameter(1, id);
-            T storage = (T) query.getSingleResult();
+            List<T> storage = query.getResultList();
             return ResponseEntity.ok().body(storage);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
