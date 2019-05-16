@@ -7,7 +7,8 @@ import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
 
 import java.io.IOException;
 
-public class ShopStorageProductPrimaryKeySerializer extends JsonSerializer<ShopStorageProductPrimaryKey> {
+public class ShopStorageProductPrimaryKeySerializer
+        extends JsonSerializer<ShopStorageProductPrimaryKey> {
     @Override
     public void serialize(ShopStorageProductPrimaryKey productPrimaryKey, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();

@@ -1,8 +1,6 @@
 package ts.tsc.system.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import ts.tsc.system.json.serializer.ProductSerializer;
 
 import javax.persistence.*;
 import java.io.Serializable;

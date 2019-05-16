@@ -3,7 +3,6 @@ package ts.tsc.system.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ts.tsc.system.entities.interfaces.BaseStorage;
-import ts.tsc.system.json.serializer.ProductSerializer;
 import ts.tsc.system.json.serializer.SupplierStorageSerializer;
 
 import javax.persistence.*;
@@ -32,7 +31,6 @@ public class SupplierStorage implements Serializable, BaseStorage<Supplier> {
     private Supplier supplier;
 
     @OneToMany(mappedBy = "primaryKey.storage", fetch = FetchType.EAGER)
-    @JsonSerialize(using = ProductSerializer.class)
     private Set<SupplierStorageProduct> products = new HashSet<>();
 
     @OneToMany(mappedBy = "supplierStorage", fetch = FetchType.EAGER)
