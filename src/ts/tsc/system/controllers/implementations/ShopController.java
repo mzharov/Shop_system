@@ -267,7 +267,6 @@ public class ShopController implements
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        logger.info("------>" + purchase.getStatus().toString());
         return new ResponseEntity<>(purchase, HttpStatus.OK);
     }
 
@@ -403,9 +402,9 @@ public class ShopController implements
         return transfer(productIdList, countList, shopStorage, purchase, shop);
     }
 
-    @PutMapping(value = "/storage/{mainStorageID}/{shopStorageID}/{productIDList}/{countList}")
-    public ResponseEntity<?> addProductsToMainStorage(@PathVariable Long mainStorageID,
-                                                      @PathVariable Long shopStorageID,
+    @PutMapping(value = "/storage/{shopStorageID}/{targetShopStorageID}/{productIDList}/{countList}")
+    public ResponseEntity<?> addProductsToMainStorage(@PathVariable Long shopStorageID,
+                                                      @PathVariable Long targetShopStorageID,
                                                       @PathVariable List<Long> productIDList,
                                                       @PathVariable List<Integer> countList) {
 
@@ -414,8 +413,8 @@ public class ShopController implements
                     HttpStatus.NOT_FOUND);
         }
 
-        Optional<ShopStorage> mainShopStorageOptional
-                = shopStorageRepository.findById(mainStorageID);
+        Optional<ShopStorage> targetShopStorageOptional
+                = shopStorageRepository.findById(targetShopStorageID);
         Optional<ShopStorage> shopStorageOptional
                 = shopStorageRepository.findById(shopStorageID);
 
@@ -423,18 +422,18 @@ public class ShopController implements
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " storage",
                     HttpStatus.NOT_FOUND);
         }
-        if(!mainShopStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " main storage",
+        if(!targetShopStorageOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " target storage",
                     HttpStatus.NOT_FOUND);
         }
 
-        ShopStorage mainShopStorage = mainShopStorageOptional.get();
+        ShopStorage targetShopStorage = targetShopStorageOptional.get();
         ShopStorage shopStorage = shopStorageOptional.get();
 
         int sumCount = countList.stream().reduce(0, Integer::sum);
 
-        if(mainShopStorage.getFreeSpace() < sumCount) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " main storage",
+        if(targetShopStorage.getFreeSpace() < sumCount) {
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " target storage",
                     HttpStatus.BAD_REQUEST);
         }
 
@@ -474,7 +473,7 @@ public class ShopController implements
                                 "where  p.primaryKey.storage.id = ?1 " +
                                 "and p.primaryKey.product.id = ?2",
                         ShopStorageProduct.class)
-                        .setParameter(1, mainStorageID)
+                        .setParameter(1, targetShopStorageID)
                         .setParameter(2, productID);
                 shopStorageProductMain = shopStorageProductTypedQuery.getSingleResult();
                 shopStorageProductMain.setCount(shopStorageProductMain.getCount() + count);
@@ -482,7 +481,7 @@ public class ShopController implements
             } catch (Exception e) {
                 shopStorageProductMain = new ShopStorageProduct();
                 shopStorageProductMain
-                        .setPrimaryKey(new ShopStorageProductPrimaryKey(mainShopStorage,
+                        .setPrimaryKey(new ShopStorageProductPrimaryKey(targetShopStorage,
                                 shopStorageProduct.getPrimaryKey().getProduct()));
                 shopStorageProductMain.setCount(count);
                 shopStorageProductMain.setPrice(shopStorageProduct.getPrice());
@@ -490,22 +489,20 @@ public class ShopController implements
 
             shopStorageProduct.setCount(shopStorageProduct.getCount()-count);
             shopStorage.setFreeSpace(shopStorage.getFreeSpace()+count);
-            mainShopStorage.setFreeSpace(mainShopStorage.getFreeSpace()-count);
+            targetShopStorage.setFreeSpace(targetShopStorage.getFreeSpace()-count);
 
             try {
                  shopStorageProductRepository.save(shopStorageProductMain);
                  shopStorageProductRepository.save(shopStorageProduct);
                  shopStorageRepository.save(shopStorage);
-                 shopStorageRepository.save(mainShopStorage);
+                 shopStorageRepository.save(targetShopStorage);
             } catch (Exception e) {
                 logger.error("Error", e);
                 new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
-
-        return new ResponseEntity<>(mainShopStorage, HttpStatus.OK);
-
+        return new ResponseEntity<>(targetShopStorage, HttpStatus.OK);
     }
 }
 

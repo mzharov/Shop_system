@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entities.interfaces.BaseStorage;
-import ts.tsc.system.services.interfaces.BaseService;
 import ts.tsc.system.services.interfaces.StorageService;
 
 import javax.persistence.EntityManager;

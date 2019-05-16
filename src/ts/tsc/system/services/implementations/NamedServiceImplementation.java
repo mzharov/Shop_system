@@ -7,8 +7,6 @@ import ts.tsc.system.entities.NamedEntity;
 import ts.tsc.system.repositories.NamedRepository;
 import ts.tsc.system.services.interfaces.NamedService;
 
-import java.util.List;
-
 @Service("namedService")
 @Transactional
 public class NamedServiceImplementation<T extends NamedEntity,I>
