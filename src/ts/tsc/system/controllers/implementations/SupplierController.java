@@ -325,7 +325,8 @@ public class SupplierController
 
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
-    @PostMapping(value = "/delivery/status/{id}/{status}")
+    
+    @PutMapping(value = "/delivery/status/{id}/{status}")
     public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
         if(status.equals(Status.DELIVERING)) {
             return transferDelivery(id);
