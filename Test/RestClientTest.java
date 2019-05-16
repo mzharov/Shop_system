@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
-import ts.tsc.system.entities.Shop;
+import ts.tsc.system.entity.shop.Shop;
 
 import java.util.List;
 

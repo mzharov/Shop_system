@@ -4,10 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ts.tsc.system.entities.*;
-import ts.tsc.system.entities.keys.ShopStorageProductPrimaryKey;
-import ts.tsc.system.entities.keys.SupplierStorageProductPrimaryKey;
-import ts.tsc.system.repositories.*;
+import ts.tsc.system.entity.product.Product;
+import ts.tsc.system.entity.shop.*;
+import ts.tsc.system.entity.supplier.Supplier;
+import ts.tsc.system.entity.supplier.SupplierStorage;
+import ts.tsc.system.entity.supplier.SupplierStorageProduct;
+import ts.tsc.system.entity.supplier.SupplierStorageProductPrimaryKey;
+import ts.tsc.system.repository.*;
 
 
 import javax.annotation.PostConstruct;

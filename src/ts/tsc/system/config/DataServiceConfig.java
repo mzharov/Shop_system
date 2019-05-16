@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 @Configuration
-@EnableJpaRepositories(basePackages = {"ts.tsc.system.repositories"})
+@EnableJpaRepositories(basePackages = {"ts.tsc.system.repository"})
 @ComponentScan(basePackages  = {"ts.tsc.system"} )
 @PropertySource("classpath:application.properties")
 public class DataServiceConfig {
@@ -99,7 +99,7 @@ public class DataServiceConfig {
     @Bean
     public EntityManagerFactory entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
-        factoryBean.setPackagesToScan("ts.tsc.system.entities");
+        factoryBean.setPackagesToScan("ts.tsc.system.entity");
         factoryBean.setDataSource(dataSource());
         factoryBean.setJpaProperties(hibernateProperties());
         factoryBean.setJpaVendorAdapter(jpaVendorAdapter());
