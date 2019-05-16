@@ -17,12 +17,12 @@ public class SupplierStorageSerializer extends JsonSerializer<SupplierStorage> {
                 storage.getId());
         jsonGenerator.writeNumberField("supplierId",
                 storage.getSupplier().getId());
-        jsonGenerator.writeObjectField("products",
-                storage.getProducts());
         jsonGenerator.writeNumberField("totalSpace",
                 storage.getTotalSpace());
         jsonGenerator.writeNumberField("freeSpace",
                 storage.getFreeSpace());
+        jsonGenerator.writeObjectField("products",
+                storage.getProducts());
         jsonGenerator.writeEndObject();
     }
 }

@@ -12,6 +12,10 @@ import java.util.Set;
 @Table(name = "shop")
 public class Shop extends NamedEntity<Long> implements Serializable {
 
+
+    @Column(name = "budget")
+    private BigDecimal budget;
+
     @OneToMany(mappedBy = "shop",
             fetch = FetchType.EAGER)
     private Set<ShopStorage> storages = new HashSet<>();
@@ -21,28 +25,21 @@ public class Shop extends NamedEntity<Long> implements Serializable {
     @JsonIgnore
     private Set<Purchase> purchases = new HashSet<>();
 
-    @Column(name = "budget")
-    private BigDecimal budget;
-
     public BigDecimal getBudget() {
         return budget;
     }
     public void setBudget(BigDecimal budget) {
         this.budget = budget;
     }
-
     public Set<ShopStorage> getStorages() {
         return storages;
     }
-
     public void setStorages(Set<ShopStorage> storages) {
         this.storages = storages;
     }
-
     public Set<Purchase> getPurchases() {
         return purchases;
     }
-
     public void setPurchases(Set<Purchase> purchases) {
         this.purchases = purchases;
     }

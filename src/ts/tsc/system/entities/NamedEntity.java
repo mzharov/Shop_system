@@ -2,9 +2,10 @@ package ts.tsc.system.entities;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
+import java.io.Serializable;
 
 @MappedSuperclass
-public abstract class NamedEntity<ID> extends BaseEntity<ID>{
+public abstract class NamedEntity<ID> extends BaseEntity<ID> implements Serializable {
     @Column(name = "name")
     private String name;
 

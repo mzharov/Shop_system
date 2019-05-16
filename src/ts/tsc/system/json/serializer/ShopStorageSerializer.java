@@ -17,14 +17,14 @@ public class ShopStorageSerializer extends JsonSerializer<ShopStorage> {
                 storage.getId());
         jsonGenerator.writeNumberField("shopId",
                 storage.getShop().getId());
-        jsonGenerator.writeObjectField("products",
-                storage.getProducts());
         jsonGenerator.writeNumberField("type",
                 storage.getType());
         jsonGenerator.writeNumberField("totalSpace",
                 storage.getTotalSpace());
         jsonGenerator.writeNumberField("freeSpace",
                 storage.getFreeSpace());
+        jsonGenerator.writeObjectField("products",
+                storage.getProducts());
         jsonGenerator.writeEndObject();
     }
 }

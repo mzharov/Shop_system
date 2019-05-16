@@ -23,9 +23,14 @@ public class ShopStorage implements Serializable, BaseStorage<Shop> {
     @Column(name = "type")
     private int type;
 
+    @Column(name = "total_space")
+    private int totalSpace;
+
+    @Column(name = "free_space")
+    private int freeSpace;
+
     @ManyToOne
     @JoinColumn(name = "shop_id")
-    @JsonIgnore
     private Shop shop;
 
     @OneToMany(mappedBy = "primaryKey.storage",
@@ -34,71 +39,53 @@ public class ShopStorage implements Serializable, BaseStorage<Shop> {
 
     @OneToMany(mappedBy = "shopStorage",
             fetch = FetchType.EAGER)
+    @JsonIgnore
     private Set<Delivery> deliveries = new HashSet<>();
-
-    @Column(name = "total_space")
-    private int totalSpace;
-
-    @Column(name = "free_space")
-    private int freeSpace;
 
     @Override
     public void setOwner(Shop shop) {
         setShop(shop);
     }
 
-    public Shop getShop() {
-        return shop;
-    }
-
-    public void setShop(Shop shop) {
-        this.shop = shop;
-    }
-
-    public Set<ShopStorageProduct> getProducts() {
-        return products;
-    }
-
-    public void setProducts(Set<ShopStorageProduct> products) {
-        this.products = products;
-    }
-
-    public int getTotalSpace() {
-        return totalSpace;
-    }
-
-    public void setTotalSpace(int totalSpace) {
-        this.totalSpace = totalSpace;
-    }
-
-    public int getFreeSpace() {
-        return freeSpace;
-    }
-
-    public void setFreeSpace(int freeSpace) {
-        this.freeSpace = freeSpace;
-    }
-
     public Long getId() {
         return id;
     }
-
     public void setId(Long id) {
         this.id = id;
     }
-
+    public int getTotalSpace() {
+        return totalSpace;
+    }
+    public void setTotalSpace(int totalSpace) {
+        this.totalSpace = totalSpace;
+    }
+    public int getFreeSpace() {
+        return freeSpace;
+    }
+    public void setFreeSpace(int freeSpace) {
+        this.freeSpace = freeSpace;
+    }
+    public Shop getShop() {
+        return shop;
+    }
+    public void setShop(Shop shop) {
+        this.shop = shop;
+    }
+    public Set<ShopStorageProduct> getProducts() {
+        return products;
+    }
+    public void setProducts(Set<ShopStorageProduct> products) {
+        this.products = products;
+    }
     public int getType() {
         return type;
     }
-
     public void setType(int type) {
         this.type = type;
     }
-
     public Set<Delivery> getDeliveries() {
         return deliveries;
     }
-
     public void setDeliveries(Set<Delivery> deliveries) {
         this.deliveries = deliveries;
     }

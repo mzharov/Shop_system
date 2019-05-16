@@ -1,9 +1,10 @@
 package ts.tsc.system.entities;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 @MappedSuperclass
-public abstract class BaseEntity<ID> {
+public abstract class BaseEntity<ID> implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
