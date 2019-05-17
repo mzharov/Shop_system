@@ -82,4 +82,7 @@ public class SupplierStorage implements Serializable, BaseStorage<Supplier, Supp
     public void setDeliveries(Set<Delivery> deliveries) {
         this.deliveries = deliveries;
     }
+    public void addProducts(SupplierStorageProduct supplierStorageProduct) {
+        products.add(supplierStorageProduct);
+    }
 }

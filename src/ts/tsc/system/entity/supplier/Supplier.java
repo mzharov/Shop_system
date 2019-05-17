@@ -11,9 +11,7 @@ import java.util.Set;
 @Table(name = "suppliers")
 public class Supplier extends NamedEntity<Long> implements Serializable {
     @OneToMany(mappedBy = "supplier",
-            fetch = FetchType.EAGER,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            fetch = FetchType.EAGER)
     private Set<SupplierStorage> storages = new HashSet<>();
 
     public Set<SupplierStorage> getStorages() {

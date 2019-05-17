@@ -17,10 +17,12 @@ import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.delivery.DeliveryProduct;
 import ts.tsc.system.entity.delivery.DeliveryProductPrimaryKey;
 import ts.tsc.system.entity.parent.BaseStorage;
+import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.entity.shop.*;
 import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
 import ts.tsc.system.entity.supplier.SupplierStorageProduct;
+import ts.tsc.system.entity.supplier.SupplierStorageProductPrimaryKey;
 import ts.tsc.system.repository.*;
 import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.named.NamedService;
@@ -30,6 +32,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -676,6 +679,121 @@ public class SupplierController
         return transfer(productIdList, countList, supplierStorage, delivery, shop);
     }
 
+    /**
+     * Добавление товаров на склад
+     * @param id идентификатор склада
+     * @param productIDList список идентификтаоров товаров
+     * @param countList список количества товаров
+     * @return 1) код 400 c сообщением WRONG_NUMBER_OF_PARAMETERS, если количество элементов в списках разное
+     *         2) код 400 с сообщением NUMBER_FORMAT_EXCEPTION, если не удалось преобразовать строкове значение в BigDecimal
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:supplier_storage, если не найден склад
+     *         4) код 400 с сообщением NOT_ENOUGH_SPACE - если не хватает места на складе
+     *         5) код 404 с сообщением ELEMENT_NOT_FOUND:product, если не найден товар
+     *         6) код 500 с сообщением ERROR_WHILE_SAVING:supplier_storage_product, если не удалось сохранить изменения
+     *         7) код 500 с сообщением ERROR_WHILE_SAVING:supplier_storage, если не удалось сохранить изменения
+     *         8) код 200 с объектом, если удалось выполнить запрос
+     */
+    @PutMapping(value = "/storage/{id}/{productIDList}/{countList}/{stringPriceList:.+}")
+    ResponseEntity<?> addProductsToStorage(@PathVariable Long id,
+                                           @PathVariable List<Long> productIDList,
+                                           @PathVariable List<Integer> countList,
+                                           @PathVariable List<String> stringPriceList) {
+
+        if((productIDList.size() != countList.size())
+                || (productIDList.size() != stringPriceList.size())) {
+            return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS,
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        List<BigDecimal> priceList = new LinkedList<>();
+
+        for(String stringPrice : stringPriceList) {
+           try {
+               BigDecimal decimal = new BigDecimal(stringPrice);
+               priceList.add(decimal);
+           } catch (Exception e) {
+               return new ResponseEntity<>(ErrorStatus.NUMBER_FORMAT_EXCEPTION,
+                       HttpStatus.BAD_REQUEST);
+           }
+        }
+
+
+        Optional<SupplierStorage> supplierStorageOptional = supplierStorageRepository.findById(id);
+        if(!supplierStorageOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
+                    HttpStatus.NOT_FOUND);
+        }
+
+        SupplierStorage supplierStorage = supplierStorageOptional.get();
+        int countSum = countList.stream().reduce(0, Integer::sum);
+        if(supplierStorage.getFreeSpace() < countSum) {
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + "", HttpStatus.BAD_REQUEST);
+        }
+
+        for(int iterator = 0; iterator < productIDList.size(); iterator++) {
+            Long productID = productIDList.get(iterator);
+            Integer count = countList.get(iterator);
+            BigDecimal price = priceList.get(iterator);
+
+            Product product;
+
+            try {
+                TypedQuery<Product> productTypedQuery =
+                        entityManager.createQuery(
+                                "select  p from Product p " +
+                                        "where p.id = ?1",
+                                Product.class).setParameter(1, productID);
+                product = productTypedQuery.getSingleResult();
+            } catch (Exception e) {
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product",
+                        HttpStatus.NOT_FOUND);
+            }
+
+            SupplierStorageProduct supplierStorageProduct;
+            try {
+                TypedQuery<SupplierStorageProduct> supplierStorageProductTypedQuery
+                        =  entityManager.createQuery(
+                                "select p from SupplierStorageProduct p " +
+                                        "where p.primaryKey.product.id =?1 " +
+                                        "and p.primaryKey.storage.id = ?2",
+                        SupplierStorageProduct.class)
+                        .setParameter(1, productID)
+                        .setParameter(2, supplierStorage.getId());
+                supplierStorageProduct = supplierStorageProductTypedQuery.getSingleResult();
+                supplierStorageProduct.setPrice(price);
+                supplierStorageProduct.setCount(supplierStorageProduct.getCount()+count);
+
+            } catch (Exception e) {
+                logger.error("Error " + e);
+                supplierStorageProduct = new SupplierStorageProduct();
+                supplierStorageProduct
+                        .setPrimaryKey(new SupplierStorageProductPrimaryKey(supplierStorage, product));
+                supplierStorageProduct.setCount(count);
+                supplierStorageProduct.setPrice(price);
+                supplierStorage.addProducts(supplierStorageProduct);
+            }
+            supplierStorage.setFreeSpace(supplierStorage.getFreeSpace()-count);
+            try {
+                supplierStorageProductRepository.save(supplierStorageProduct);
+            } catch (Exception e) {
+                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        try {
+            supplierStorageRepository.save(supplierStorage);
+        } catch (Exception e) {
+            logger.error("Error ", e);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        supplierStorageOptional = supplierStorageRepository.findById(id);
+        return supplierStorageOptional.<ResponseEntity<?>>map(supplierStorageR ->
+                new ResponseEntity<>(supplierStorageR, HttpStatus.OK)).orElseGet(()
+                -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
+    }
     private Delivery isExist(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
         return deliveryOptional.orElse(null);
