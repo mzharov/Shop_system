@@ -145,7 +145,7 @@ public class ShopController extends OrderController
      */
     @Override
     @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<List<ShopStorage>> findStorageById(@PathVariable Long id) {
+    public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
         return storageService.findById(id, stringQuery, shopStorageRepository);
     }
@@ -226,7 +226,7 @@ public class ShopController extends OrderController
      * @return 1) Если количество элементов списке идентификаторов товаров и их количества разное
      *            возвращается код 400 с сообщением WRONG_NUMBER_OF_PARAMETERS
      *         2) код 404 с сообщением ELEMENT_NOT_FOUND:shop - если не найден магазин с указанным id
-     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:storage - если не найден внутренний склад у магазина
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:internal_storage - если не найден внутренний склад у магазина
      *         4) код 404 с сообщением ELEMENT_NOT_FOUND:product - если не удалось найти какой-то товар на складе
      *         5) код 400 с оообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-либо товара
      *         6) код 500 с сообщением ERROR_WHILE_SAVING - если не удалось сохранить заказ
@@ -262,7 +262,7 @@ public class ShopController extends OrderController
                             .setParameter(2, 1);
             shopStorage = shopStorageTypedQuery.getSingleResult();
         } catch (Exception e) {
-            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + ":storage", e);
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + ":internal_storage", e);
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":storage", HttpStatus.NOT_FOUND);
         }
 
@@ -284,7 +284,7 @@ public class ShopController extends OrderController
                 }
             } catch (Exception e) {
                 logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product",
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
                         HttpStatus.NOT_FOUND);
             }
         }
@@ -396,18 +396,20 @@ public class ShopController extends OrderController
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return new ResponseEntity<>(purchase, HttpStatus.OK);
+        return purchaseRepository.findById(purchase.getId())
+                .<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     /**
      * Изменения состояния заказа
      * @param id идентификтаор заказа
      * @param status состояние
-     * @return {@link OrderController#changeStatus(Long, Status)}
+     * @return {@link OrderController#changeStatus(Long, String)}
      */
     @Override
     @PutMapping(value = "/order/status/{id}/{status}")
-    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
+    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable String status) {
         return super.changeStatus(id, status);
     }
 
@@ -455,7 +457,7 @@ public class ShopController extends OrderController
     public ResponseEntity<?> completeOrder(Long id) {
         Purchase purchase = isPurchaseExist(id);
         if(purchase == null) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":purchase",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":purchase " + id,
                     HttpStatus.NOT_FOUND);
         }
 
@@ -491,7 +493,7 @@ public class ShopController extends OrderController
     public ResponseEntity<?> cancelOrder(Long id) {
         Purchase purchase = isPurchaseExist(id);
         if(purchase == null) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":purchase",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":purchase " + id,
                     HttpStatus.NOT_FOUND);
         }
 
@@ -676,7 +678,10 @@ public class ShopController extends OrderController
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
-        return new ResponseEntity<>(targetShopStorage, HttpStatus.OK);
+
+        return shopStorageRepository.findById(targetShopStorageID)
+                .<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     /**

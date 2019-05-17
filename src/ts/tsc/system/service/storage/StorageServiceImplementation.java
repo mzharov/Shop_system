@@ -37,16 +37,18 @@ public class StorageServiceImplementation<B, P, T extends BaseStorage<B, P>, ID>
      */
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
-    public ResponseEntity<List<T>> findById(Long id,
+    public ResponseEntity<?> findById(Long id,
                                          String stringQuery,
                                          JpaRepository<T, ID> repository) {
         try {
             Query query = entityManager.createQuery(stringQuery)
                     .setParameter(1, id);
             List<T> storage = query.getResultList();
-            return ResponseEntity.ok().body(storage);
+            if(storage.size() > 0) {
+                return ResponseEntity.ok().body(storage);
+            } else throw new Exception();
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
     }
 

@@ -9,8 +9,6 @@ import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.parent.OrderEntity;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Optional;
 
 public abstract class OrderController<B, P, T extends BaseStorage<B, P>> {
@@ -21,24 +19,30 @@ public abstract class OrderController<B, P, T extends BaseStorage<B, P>> {
     /**
      * Изменения статуса заказа
      * @param id идентификатор заказа
-     * @param status новое состояние
+     * @param stringStatus новое состояние
      * @return объект заказа с кодом 200, если успешно,
      *      * код 400 с описанием UNKNOWN_DELIVER_STATUS, если передано неизвестное состояние,
      *      * либо результаты {@link #deliverOrder(Long)},
      *      * {@link #cancelOrder(Long)},
      *      * {@link #completeOrder(Long)}
      */
-    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
+    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable String stringStatus) {
+
+        Status status;
+
+        try {
+             status = Status.valueOf(stringStatus);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(ErrorStatus.UNKNOWN_DELIVER_STATUS, HttpStatus.BAD_REQUEST);
+        }
+
         if(status.equals(Status.DELIVERING)) {
             return deliverOrder(id);
         }
         if(status.equals(Status.COMPLETED)) {
             return completeOrder(id);
         }
-        if(status.equals(Status.CANCELED)) {
-            return cancelOrder(id);
-        }
-        return new ResponseEntity<>(ErrorStatus.UNKNOWN_DELIVER_STATUS, HttpStatus.BAD_REQUEST);
+        return cancelOrder(id);
     }
     protected boolean isNotCancelable(OrderEntity orderEntity) {
         return !(orderEntity.getStatus().equals(Status.RECEIVED)

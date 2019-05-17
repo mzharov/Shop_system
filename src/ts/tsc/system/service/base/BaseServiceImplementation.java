@@ -1,6 +1,7 @@
 package ts.tsc.system.service.base;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,6 +9,7 @@ import ts.tsc.system.controllers.status.enums.ErrorStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Реализация интерфейса основных функций в виде сервиса
@@ -32,7 +34,7 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
         if (list.size() > 0) {
             return ResponseEntity.ok().body(list);
         } else {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
     }
 
@@ -45,9 +47,9 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
     @Override
     @Transactional(readOnly = true)
     public ResponseEntity<?> findById(ID id, JpaRepository<T, ID> repository) {
-        return repository.findById(id)
-                .map(record -> ResponseEntity.ok().body(record))
-                .orElse(ResponseEntity.notFound().build());
+        Optional<T> optionalT = repository.findById(id);
+        return optionalT.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     /**

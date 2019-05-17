@@ -154,7 +154,7 @@ public class SupplierController
      */
     @Override
     @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<List<SupplierStorage>> findStorageById(@PathVariable Long id) {
+    public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
         return storageService.findById(id, stringQuery, supplierStorageRepository);
     }
@@ -440,10 +440,10 @@ public class SupplierController
      * Изменение состояние заказа
      * @param id идентификатор заказа
      * @param status новое состояние
-     * @return {@link OrderController#changeStatus(Long, Status)}
+     * @return {@link OrderController#changeStatus(Long, String)}
      */
     @PutMapping(value = "/order/status/{id}/{status}")
-    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
+    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable String status) {
         return super.changeStatus(id, status);
     }
 
@@ -709,7 +709,7 @@ public class SupplierController
 
         for(String stringPrice : stringPriceList) {
            try {
-               BigDecimal decimal = new BigDecimal(stringPrice);
+               BigDecimal decimal = new BigDecimal(stringPrice).setScale(5, RoundingMode.HALF_UP);
                priceList.add(decimal);
            } catch (Exception e) {
                return new ResponseEntity<>(ErrorStatus.NUMBER_FORMAT_EXCEPTION,
@@ -730,6 +730,7 @@ public class SupplierController
             return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + "", HttpStatus.BAD_REQUEST);
         }
 
+        List<SupplierStorageProduct> supplierStorageProductList = new LinkedList<>();
         for(int iterator = 0; iterator < productIDList.size(); iterator++) {
             Long productID = productIDList.get(iterator);
             Integer count = countList.get(iterator);
@@ -745,7 +746,7 @@ public class SupplierController
                                 Product.class).setParameter(1, productID);
                 product = productTypedQuery.getSingleResult();
             } catch (Exception e) {
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product",
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
                         HttpStatus.NOT_FOUND);
             }
 
@@ -773,6 +774,10 @@ public class SupplierController
                 supplierStorage.addProducts(supplierStorageProduct);
             }
             supplierStorage.setFreeSpace(supplierStorage.getFreeSpace()-count);
+            supplierStorageProductList.add(supplierStorageProduct);
+        }
+
+        for(SupplierStorageProduct supplierStorageProduct : supplierStorageProductList) {
             try {
                 supplierStorageProductRepository.save(supplierStorageProduct);
             } catch (Exception e) {
