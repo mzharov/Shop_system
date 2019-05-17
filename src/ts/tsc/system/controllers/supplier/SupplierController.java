@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import ts.tsc.system.controllers.status.enums.Status;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.delivery.DeliveryProduct;
 import ts.tsc.system.entity.delivery.DeliveryProductPrimaryKey;
+import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.shop.*;
 import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
@@ -53,7 +55,6 @@ public class SupplierController
     private final StorageService<Supplier, SupplierStorage, Long> storageService;
     private final SupplierStorageRepository supplierStorageRepository;
     private final SupplierStorageProductRepository supplierStorageProductRepository;
-    private final BaseService<SupplierStorageProduct, SupplierStorageProductPrimaryKey> productService;
     private final DeliveryRepository deliveryRepository;
     private final DeliveryProductRepository deliveryProductRepository;
     private final ShopStorageProductRepository shopStorageProductRepository;
@@ -68,8 +69,6 @@ public class SupplierController
                               SupplierStorageRepository supplierStorageRepository,
                               NamedService<Supplier, Long> supplierService,
                               SupplierStorageProductRepository supplierStorageProductRepository,
-                              @Qualifier(value = "baseService")
-                                          BaseService<SupplierStorageProduct, SupplierStorageProductPrimaryKey> productService,
                               DeliveryRepository deliveryRepository,
                               DeliveryProductRepository deliveryProductRepository,
                               ShopStorageProductRepository shopStorageProductRepository) {
@@ -81,36 +80,60 @@ public class SupplierController
         this.supplierStorageRepository = supplierStorageRepository;
         this.supplierService = supplierService;
         this.supplierStorageProductRepository = supplierStorageProductRepository;
-        this.productService = productService;
         this.deliveryRepository = deliveryRepository;
         this.deliveryProductRepository = deliveryProductRepository;
         this.shopStorageProductRepository = shopStorageProductRepository;
     }
 
+    /**
+     * Поиск всех магазинов
+     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
+     */
     @Override
     @GetMapping(value = "/list")
     public ResponseEntity<?> findAll() {
         return supplierService.findAll(supplierRepository);
     }
 
+    /**
+     * Поиск по названию магазина
+     * @param name название, по которому будет происходить поиск
+     * @return {@link ts.tsc.system.service.named.NamedServiceImplementation#findByName(String, NamedRepository)}
+     */
     @Override
     @GetMapping(value = "/name/{name}")
     public ResponseEntity<?> findByName(@PathVariable String name) {
         return supplierService.findByName(name, supplierRepository);
     }
 
+    /**
+     * Поиск магазина по идентификатору
+     * @param id идентификатор запрашиваемого объекта
+     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
+     */
     @Override
     @GetMapping(value = "/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
         return supplierService.findById(id, supplierRepository);
     }
 
+    /**
+     * Добавление нового магазина
+     * @param supplier объект типа Supplier
+     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#save(Object, JpaRepository)}
+     */
     @Override
     @PostMapping(value = "/")
     public ResponseEntity<?> create(@RequestBody Supplier supplier) {
         return supplierService.save(supplier, supplierRepository);
     }
 
+    /**
+     * Обновление данных магазина
+     * @param id идентификатор искомого магазина
+     * @param supplier объект
+     * @return объект и код 200, если удалось обновить, иначе код 422
+     */
     @Override
     @PutMapping(value = "/{id}")
     public ResponseEntity<Supplier> update(@PathVariable Long id, @RequestBody Supplier supplier) {
@@ -122,6 +145,11 @@ public class SupplierController
                 }).orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Поиск склада по идентификтаору
+     * @param id идентификтаор склада
+     * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#findById(Object, JpaRepository)}
+     */
     @Override
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<List<SupplierStorage>> findStorageById(@PathVariable Long id) {
@@ -129,12 +157,21 @@ public class SupplierController
         return storageService.findById(id, stringQuery, supplierStorageRepository);
     }
 
+    /**
+     * Поиск всех складов магазинов
+     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
+     */
     @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?> findAllStorage() {
         return storageService.findAll(supplierStorageRepository);
     }
 
+    /**
+     * Поиск складов по идентификтору магазина
+     * @param id идентификтаор магазина
+     * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#findById(Long, String, JpaRepository)}
+     */
     @Override
     @GetMapping(value = "/storage/list/{id}")
     public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
@@ -142,12 +179,23 @@ public class SupplierController
         return storageService.findById(id, stringQuery, supplierStorageRepository);
     }
 
+    /**
+     * Поиск заказа по идентификатору
+     * @param id идентификатор заказа
+     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
+     */
     @Override
     @GetMapping(value = "/order/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable Long id) {
         return deliveryService.findById(id, deliveryRepository);
     }
 
+    /**
+     * Добавление склада магазину
+     * @param id идентификатор магазина
+     * @param storage объект типа Storage, который будет добавлен
+     * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#addStorage(Object, BaseStorage, JpaRepository, JpaRepository)}
+     */
     @Override
     @PostMapping(value = "/storage/{id}")
     public ResponseEntity<?> addStorage(@PathVariable Long id, @RequestBody SupplierStorage storage) {
@@ -155,23 +203,25 @@ public class SupplierController
     }
 
 
+    /**
+     * Получение списка продуктов со склада
+     * @return {@link OrderController#getStorageProducts(Long, JpaRepository)}
+     */
     @Override
+    @SuppressWarnings("unchecked")
     @GetMapping(value = "/storage/product/list/{id}")
     public ResponseEntity<?> getStorageProducts(@PathVariable Long id) {
-        Optional<SupplierStorage> supplierStorageOptional = supplierStorageRepository.findById(id);
-        if(!supplierStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
-                    HttpStatus.NOT_FOUND);
-        }
-        SupplierStorage supplierStorage = supplierStorageOptional.get();
-        if(supplierStorage.getProducts().size() > 0) {
-            return ResponseEntity.ok().body(supplierStorage.getProducts());
-        } else {
-            return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE,
-                    HttpStatus.NOT_FOUND);
-        }
+        return getStorageProducts(id, supplierStorageRepository);
     }
 
+    /**
+     * Обработка поступившего заказа
+     * @param supplierID идентификатор склада поставщика
+     * @param shopStorageID идентификатор склада магазина
+     * @param productIdList список идентификаторов товаров
+     * @param countList список количества товаров
+     * @return
+     */
     @Override
     @PostMapping(value = "/order/{supplierID}/{shopStorageID}/{productIdList}/{countList}")
     public ResponseEntity<?> receiveOrder(@PathVariable Long supplierID,
@@ -281,6 +331,15 @@ public class SupplierController
         return transfer(productIdList, countList, supplierStorage, delivery, shop);
     }
 
+    /**
+     * Оформление заказа RECEIVED или отмена CANCEL
+     * @param productIdList список идентификаторов продуктов
+     * @param countList список количества товаров
+     * @param supplierStorage объект кслада поставщика
+     * @param delivery объект заказа
+     * @param shop объект магазина
+     * @return
+     */
     private ResponseEntity<?> transfer(List<Long> productIdList,
                           List<Integer> countList,
                           SupplierStorage supplierStorage,
@@ -352,17 +411,32 @@ public class SupplierController
 
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
-    
+
+    /**
+     * Изменение состояние заказа
+     * @param id идентификатор заказа
+     * @param status новое состояние
+     * @return {@link OrderController#changeStatus(Long, Status)}
+     */
     @PutMapping(value = "/order/status/{id}/{status}")
     public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
         return super.changeStatus(id, status);
     }
 
+    /**
+     * Поиск всех доставок
+     * @return {@link ts.tsc.system.service.base.BaseService#findAll(JpaRepository)}
+     */
     @GetMapping(value = "/order/list")
     public ResponseEntity<?> getAllOrders() {
         return deliveryService.findAll(deliveryRepository);
     }
 
+    /**
+     * Перевод заказа в состояние DELIVERING
+     * @param id идентификатор заказа
+     * @return
+     */
     @Override
     protected ResponseEntity<?> deliverOrder(Long id) {
         Delivery delivery = isExist(id);
@@ -387,6 +461,11 @@ public class SupplierController
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
 
+    /**
+     * Завершение заказа
+     * @param id идентификатор заказа
+     * @return
+     */
     @Override
     protected ResponseEntity<?> completeOrder(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
@@ -474,7 +553,11 @@ public class SupplierController
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
 
-
+    /**
+     * Отмена заказа
+     * @param id идентификатор заказа
+     * @return
+     */
     @Override
     protected ResponseEntity<?> cancelOrder(Long id) {
         Delivery delivery = isExist(id);
@@ -541,23 +624,6 @@ public class SupplierController
         Shop shop = shopOptional.get();
 
         return transfer(productIdList, countList, supplierStorage, delivery, shop);
-    }
-
-
-    private void setFreeSpace(DeliveryProduct deliveryProduct, SupplierStorage supplierStorage) {
-        int count = deliveryProduct.getCount();
-        int freeSpace = supplierStorage.getFreeSpace();
-        supplierStorage.setFreeSpace(freeSpace-count);
-    }
-
-    @GetMapping(value = "/string/{name}")
-    public ResponseEntity<?> getName(@PathVariable List<String> name) {
-        //todo delete
-        StringBuilder result = new StringBuilder();
-        for(String s : name) {
-            result.append(s).append(" ");
-        }
-        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     private Delivery isExist(Long id) {

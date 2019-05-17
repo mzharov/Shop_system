@@ -14,7 +14,7 @@ import java.util.Set;
 @Entity
 @Table(name = "shop_storage")
 @JsonSerialize(using = ShopStorageSerializer.class)
-public class ShopStorage implements Serializable, BaseStorage<Shop> {
+public class ShopStorage implements Serializable, BaseStorage<Shop, ShopStorageProduct> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

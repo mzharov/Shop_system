@@ -14,7 +14,7 @@ import java.util.Set;
 @Entity
 @Table(name = "supplier_storage")
 @JsonSerialize(using = SupplierStorageSerializer.class)
-public class SupplierStorage implements Serializable, BaseStorage<Supplier> {
+public class SupplierStorage implements Serializable, BaseStorage<Supplier, SupplierStorageProduct> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -68,6 +68,8 @@ public class SupplierStorage implements Serializable, BaseStorage<Supplier> {
     public void setFreeSpace(int freeSpace) {
         this.freeSpace = freeSpace;
     }
+
+    @Override
     public Set<SupplierStorageProduct> getProducts() {
         return products;
     }

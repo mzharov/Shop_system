@@ -23,7 +23,7 @@ import java.util.Optional;
  */
 @Service("storageService")
 @Transactional
-public class StorageServiceImplementation<B, T extends BaseStorage<B>, ID>
+public class StorageServiceImplementation<B, P, T extends BaseStorage<B, P>, ID>
         extends BaseServiceImplementation<T, ID> implements StorageService<B, T, ID>{
     @PersistenceContext
     EntityManager entityManager;

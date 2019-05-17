@@ -53,7 +53,6 @@ public class ShopController extends OrderController
     private final StorageService<Shop, ShopStorage, Long> storageService;
     private final ShopStorageRepository shopStorageRepository;
     private final ShopStorageProductRepository shopStorageProductRepository;
-    private final BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseProductRepository purchaseProductRepository;
     private final BaseService<Purchase, Long> purchaseService;
@@ -64,8 +63,6 @@ public class ShopController extends OrderController
                           StorageService<Shop, ShopStorage, Long> storageService,
                           ShopStorageRepository shopStorageRepository,
                           ShopStorageProductRepository shopStorageProductRepository,
-                          @Qualifier(value = "baseService")
-                                      BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> productService,
                           PurchaseRepository purchaseRepository,
                           PurchaseProductRepository purchaseProductRepository,
                           @Qualifier(value = "baseService")
@@ -75,7 +72,6 @@ public class ShopController extends OrderController
         this.storageService = storageService;
         this.shopStorageRepository = shopStorageRepository;
         this.shopStorageProductRepository = shopStorageProductRepository;
-        this.productService = productService;
         this.purchaseRepository = purchaseRepository;
         this.purchaseProductRepository = purchaseProductRepository;
         this.purchaseService = purchaseService;
@@ -85,6 +81,7 @@ public class ShopController extends OrderController
      * Поиск всех магазинов
      * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
      */
+    @Override
     @GetMapping(value = "/list")
     public ResponseEntity<?> findAll() {
         return shopService.findAll(shopRepository);
@@ -95,6 +92,7 @@ public class ShopController extends OrderController
      * @param name название, по которому будет происходить поиск
      * @return {@link ts.tsc.system.service.named.NamedServiceImplementation#findByName(String, NamedRepository)}
      */
+    @Override
     @GetMapping(value = "/name/{name}")
     public ResponseEntity<?>  findByName(@PathVariable String name) {
         return shopService.findByName(name, shopRepository);
@@ -105,6 +103,7 @@ public class ShopController extends OrderController
      * @param id идентификатор запрашиваемого объекта
      * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
      */
+    @Override
     @GetMapping(value = "/{id}")
     public ResponseEntity<?>  findById(@PathVariable Long id) {
         return shopService.findById(id, shopRepository);
@@ -115,6 +114,7 @@ public class ShopController extends OrderController
      * @param shop объект типа Shop
      * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#save(Object, JpaRepository)}
      */
+    @Override
     @PostMapping(value = "/")
     public ResponseEntity<?> create(@RequestBody Shop shop) {
         return shopService.save(shop, shopRepository);
@@ -126,6 +126,7 @@ public class ShopController extends OrderController
      * @param shop объект
      * @return объект и код 200, если удалось обновить, иначе код 422
      */
+    @Override
     @PutMapping(value = "/{id}")
     public ResponseEntity<Shop> update(@PathVariable Long id, @RequestBody Shop shop) {
         return shopRepository.findById(id)
@@ -142,6 +143,7 @@ public class ShopController extends OrderController
      * @param id идентификтаор склада
      * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#findById(Object, JpaRepository)}
      */
+    @Override
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<List<ShopStorage>> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
@@ -153,6 +155,7 @@ public class ShopController extends OrderController
      * Поиск всех складов магазинов
      * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
      */
+    @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?>  findAllStorage() {
         return storageService.findAll(shopStorageRepository);
@@ -187,6 +190,7 @@ public class ShopController extends OrderController
      * @param storage объект типа Storage, которы йбудет добавлен
      * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#addStorage(Object, BaseStorage, JpaRepository, JpaRepository)}
      */
+    @Override
     @PostMapping(value = "/storage/{id}")
     public ResponseEntity<?> addStorage(@PathVariable Long id, @RequestBody ShopStorage storage) {
         return storageService.addStorage(id, storage, shopRepository, shopStorageRepository);
@@ -195,30 +199,20 @@ public class ShopController extends OrderController
 
     /**
      * Получение списка продуктов со склада
-     * @return если склад с указанным идентификаторо мнайден возвращается список товаров с колом 200,
-     * иначе если товаров на складе нет возвращается код 404 с сообщением NO_PRODUCTS_IN_STORAGE,
-     * или если склад с указанным идентификатором не найден код 404
+     * @return {@link OrderController#getStorageProducts(Long, JpaRepository)}
      */
+    @Override
+    @SuppressWarnings("unchecked")
     @GetMapping(value = "/storage/product/list/{id}")
     public ResponseEntity<?> getStorageProducts(@PathVariable Long id) {
-        Optional<ShopStorage> shopStorageOptional = shopStorageRepository.findById(id);
-        if(!shopStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
-                    HttpStatus.NOT_FOUND);
-        }
-        ShopStorage shopStorage = shopStorageOptional.get();
-        if(shopStorage.getProducts().size() > 0) {
-            return ResponseEntity.ok().body(shopStorage.getProducts());
-        } else {
-            return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE,
-                    HttpStatus.NOT_FOUND);
-        }
+        return getStorageProducts(id, shopStorageRepository);
     }
 
     /**
      * Получение списка заказов
      * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
      */
+    @Override
     @GetMapping(value = "/order/list")
     public ResponseEntity<?> getAllOrders() {
         return purchaseService.findAll(purchaseRepository);
@@ -303,6 +297,15 @@ public class ShopController extends OrderController
         return transfer(productIdList, countList, shopStorage, purchase, shop);
     }
 
+    /**
+     * Оформление заказа RECEIVED или отмена CANCEL
+     * @param productIdList  список идентификтаоров товаров
+     * @param countList список количества товаров
+     * @param shopStorage объект склада магазина
+     * @param purchase объект заказа
+     * @param shop объект магазина
+     * @return
+     */
     private ResponseEntity<?> transfer(List<Long> productIdList,
                                        List<Integer> countList,
                                        ShopStorage shopStorage,
@@ -375,12 +378,9 @@ public class ShopController extends OrderController
      * Изменения состояния заказа
      * @param id идентификтаор заказа
      * @param status состояние
-     * @return объект типа Purchase с кодом 200, если успешно,
-     * код 400 с описанием UNKNOWN_DELIVER_STATUS, если передано неизвестное состояние,
-     * либо результаты {@link ShopController#deliverOrder(Long)},
-     * {@link ShopController#cancelOrder(Long)},
-     * {@link ShopController#completeOrder(Long)}
+     * @return {@link OrderController#changeStatus(Long, Status)}
      */
+    @Override
     @PutMapping(value = "/order/status/{id}/{status}")
     public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable Status status) {
         return super.changeStatus(id, status);
@@ -627,6 +627,15 @@ public class ShopController extends OrderController
         return new ResponseEntity<>(targetShopStorage, HttpStatus.OK);
     }
 
+    /**
+     * Добавление денег в бюджет магазина
+     * @param id идентификатор магазина
+     * @param budgetString строковое значение, содержащее количество денег, которое необходимо добавить
+     * @return в случае успешного завершения возвращается объект типа Shop c кодом 200,
+     * если магазин не найден - код 404,
+     * если не удалось перевести входную строку в BigDecimal - код 400 с сообщением NUMBER_FORMAT_EXCEPTION,
+     * если в ходе сохранения объекта произошла ошибка возвращается код 500 с сообщением ERROR_WHILE_SAVING
+     */
     @PutMapping(value = "/budget/{id}/{budgetString:.+}")
     public ResponseEntity<?> addBudget(@PathVariable Long id, @PathVariable String budgetString) {
         Optional<Shop> shopOptional = shopRepository.findById(id);
@@ -638,7 +647,8 @@ public class ShopController extends OrderController
         try {
             budget = new BigDecimal(budgetString).setScale(5, RoundingMode.HALF_UP);
         } catch (Exception e) {
-            return new ResponseEntity<>(ErrorStatus.NUMBER_FORMAT_EXCEPTION, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ErrorStatus.NUMBER_FORMAT_EXCEPTION,
+                    HttpStatus.BAD_REQUEST);
         }
 
         Shop shop = shopOptional.get();
@@ -646,10 +656,12 @@ public class ShopController extends OrderController
         try {
             shopRepository.save(shop);
         } catch (Exception e) {
-            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(shop, HttpStatus.OK);
     }
+
     private Purchase isPurchaseExist(Long id) {
         Optional<Purchase> deliveryOptional = purchaseRepository.findById(id);
         return deliveryOptional.orElse(null);
