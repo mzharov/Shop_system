@@ -1,6 +1,7 @@
 package ts.tsc.system.controllers.status.enums;
 
 public enum ErrorStatus {
+    BAD_QUERY,
     NUMBER_FORMAT_EXCEPTION,
     NO_PRODUCTS_IN_STORAGE,
     ELEMENT_NOT_FOUND,

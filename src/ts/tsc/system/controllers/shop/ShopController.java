@@ -223,7 +223,14 @@ public class ShopController extends OrderController
      * @param shopID идентификатор магазина, в котором запрошена покупка
      * @param productIdList списко идентификтаоров продуктов
      * @param countList список количества продуктов
-     * @return
+     * @return 1) Если количество элементов списке идентификаторов товаров и их количества разное
+     *            возвращается код 400 с сообщением WRONG_NUMBER_OF_PARAMETERS
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND:shop - если не найден магазин с указанным id
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:storage - если не найден внутренний склад у магазина
+     *         4) код 404 с сообщением ELEMENT_NOT_FOUND:product - если не удалось найти какой-то товар на складе
+     *         5) код 400 с оообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-либо товара
+     *         6) код 500 с сообщением ERROR_WHILE_SAVING - если не удалось сохранить заказ
+     *         7) {@link #transfer(List, List, ShopStorage, Purchase, Shop)}
      */
     @Override
     @PostMapping (value = "/order/{shopID}/{productIdList}/{countList}")
@@ -238,7 +245,7 @@ public class ShopController extends OrderController
 
         Optional<Shop> shopOptional = shopRepository.findById(shopID);
         if(!shopOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop",
                     HttpStatus.NOT_FOUND);
         }
         Shop shop = shopOptional.get();
@@ -255,8 +262,8 @@ public class ShopController extends OrderController
                             .setParameter(2, 1);
             shopStorage = shopStorageTypedQuery.getSingleResult();
         } catch (Exception e) {
-            logger.error(ErrorStatus.ELEMENT_NOT_FOUND.toString(), e);
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + ":storage", e);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":storage", HttpStatus.NOT_FOUND);
         }
 
         for(int orderIterator = 0; orderIterator < productIdList.size(); orderIterator++) {
@@ -272,12 +279,12 @@ public class ShopController extends OrderController
                         .setParameter(2, productID);
                 int productCountInStorage = productCountInStorageQuery.getSingleResult();
                 if(productCountInStorage < count) {
-                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS + " shop storage",
+                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
                             HttpStatus.BAD_REQUEST);
                 }
             } catch (Exception e) {
                 logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product ",
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product",
                         HttpStatus.NOT_FOUND);
             }
         }
@@ -304,7 +311,12 @@ public class ShopController extends OrderController
      * @param shopStorage объект склада магазина
      * @param purchase объект заказа
      * @param shop объект магазина
-     * @return
+     * @return 1) код 404 с сообщением NO_PRODUCTS_IN_STORAGE, если товар не найден на складе
+     *         2) код 500 с сообщением ERROR_WHILE_SAVING:purchase_product, если не удалось сохранить изменения в заказе
+     *         3) код 500 с сообщением ERROR_WHILE_SAVING:shop_storage_product, если не удалось сохранить изменения в записи товара на складе
+     *         4) код 500 с сообщением ERROR_WHILE_SAVING:shop_storage если не удалось сохранить изменения на складе
+     *         5) код 500 с сообщением ERROR_WHILE_SAVING:shop если не удалось сохранить изменения в магазине
+     *         6) код 200 с объектом заказа, если удалось обработать запрос
      */
     private ResponseEntity<?> transfer(List<Long> productIdList,
                                        List<Integer> countList,
@@ -314,14 +326,21 @@ public class ShopController extends OrderController
             Long productID = productIdList.get(orderIterator);
             Integer count = countList.get(orderIterator);
 
-            TypedQuery<ShopStorageProduct> shopStorageProductTypedQuery =
-                    entityManager.createQuery(
-                            "select p from ShopStorageProduct p " +
-                                    "where p.primaryKey.storage.id = ?1 " +
-                                    "and p.primaryKey.product.id = ?2",
-                            ShopStorageProduct.class)
-                            .setParameter(1, shopStorage.getId()).setParameter(2, productID);
-            ShopStorageProduct shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
+            ShopStorageProduct shopStorageProduct;
+
+            try {
+                TypedQuery<ShopStorageProduct> shopStorageProductTypedQuery =
+                        entityManager.createQuery(
+                                "select p from ShopStorageProduct p " +
+                                        "where p.primaryKey.storage.id = ?1 " +
+                                        "and p.primaryKey.product.id = ?2",
+                                ShopStorageProduct.class)
+                                .setParameter(1, shopStorage.getId()).setParameter(2, productID);
+                shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
+            } catch (Exception e) {
+                logger.error("Error", e);
+                return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE, HttpStatus.NOT_FOUND);
+            }
 
             if(purchase.getStatus().equals(Status.RECEIVED)) {
                 Product product = shopStorageProduct.getPrimaryKey().getProduct();
@@ -337,7 +356,7 @@ public class ShopController extends OrderController
                     purchaseProductRepository.save(purchaseProduct);
                 } catch (Exception e) {
                     logger.error("Error: ", e);
-                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase",
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
@@ -357,17 +376,23 @@ public class ShopController extends OrderController
                 shopStorageProductRepository.save(shopStorageProduct);
             } catch (Exception e) {
                 logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
 
         try {
-            shopRepository.save(shop);
             shopStorageRepository.save(shopStorage);
         } catch (Exception e) {
             logger.error("Error: ", e);
-            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        try {
+            shopRepository.save(shop);
+        } catch (Exception e) {
+            logger.error("Error: ", e);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -389,13 +414,16 @@ public class ShopController extends OrderController
     /**
      * Перевод заказа в состояние доставки
      * @param id идентификатор заказа
-     * @return
+     * @return 1) код 404 с сообщением ELEMENT_NOT_FOUND:purchase, если заказ не найден
+     *         2) код 400 с сообщением WRONG_DELIVERY_STATUS, если нельзя перевести заказ в состояние DELIVERING
+     *         3) код 500 с сообщением ERROR_WHILE_SAVING:purchase, если не удалось сохранить изменения
+     *         4) код 200 с объектом заказа, если удалось изменить состояние
      */
     @Override
     public ResponseEntity<?> deliverOrder(Long id) {
         Purchase purchase = isPurchaseExist(id);
         if(purchase == null) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND +":purchase",
                     HttpStatus.NOT_FOUND);
         }
 
@@ -408,7 +436,7 @@ public class ShopController extends OrderController
         try {
             purchaseRepository.save(purchase);
         } catch (Exception e) {
-            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " purchase",
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase ",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -418,44 +446,61 @@ public class ShopController extends OrderController
     /**
      * Перевод заказа в завершенное состояние
      * @param id идентификтаор заказа
-     * @return
+     * @return 1) код 404 с сообщением ELEMENT_NOT_FOUND:purchase, если заказ не найден
+     *         2) код 400 с сообщением WRONG_DELIVERY_STATUS, если нельзя перевести заказ в состояние COMPLETED
+     *         3) код 500 с сообщением ERROR_WHILE_SAVING:purchase, если не удалось сохранить изменения
+     *         4) код 200 с объектом заказа, если удалось изменить состояние
      */
     @Override
     public ResponseEntity<?> completeOrder(Long id) {
         Purchase purchase = isPurchaseExist(id);
         if(purchase == null) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":purchase",
                     HttpStatus.NOT_FOUND);
         }
 
         if(!purchase.getStatus().equals(Status.DELIVERING)) {
-            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS,
+                    HttpStatus.BAD_REQUEST);
         }
         purchase.setStatus(Status.COMPLETED);
-        purchaseRepository.save(purchase);
+
+        try {
+            purchaseRepository.save(purchase);
+        } catch (Exception e) {
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
         return new ResponseEntity<>(purchase, HttpStatus.OK);
     }
 
     /**
      * Отмена заказа
      * @param id идентификтаор заказа
-     * @return
+     * @return 1) код 404 с сообщением ELEMENT_NOT_FOUND:purchase, если заказ не найден
+     *         2) код 400 с сообщением WRONG_DELIVERY_STATUS, если нельзя перевести заказ в состояние CANCELED
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:shop_storage, если склад не найден
+     *         4) код 400 с сообщением BAD_REQUEST, если не удалось выполнить запрос
+     *         5) код 400 с сообщением NOT_ENOUGH_SPACE:shop_storage, если на складе магазина не хватает места
+     *         6) код 500 с сообщением ERROR_WHILE_SAVING:purchase, если не удалось сохранить изменения
+     *         7) {@link #transfer(List, List, ShopStorage, Purchase, Shop)}
+     *
      */
     @Override
     public ResponseEntity<?> cancelOrder(Long id) {
         Purchase purchase = isPurchaseExist(id);
         if(purchase == null) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " purchase",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":purchase",
                     HttpStatus.NOT_FOUND);
         }
 
         if(isNotCancelable(purchase)) {
-            return new ResponseEntity<>(ErrorStatus.CAN_NOT_BE_CANCELED,
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS,
                     HttpStatus.BAD_REQUEST);
         }
 
         purchase.setStatus(Status.CANCELED);
-
         ShopStorage shopStorage;
         try {
             TypedQuery<ShopStorage> shopStorageTypedQuery =
@@ -468,10 +513,9 @@ public class ShopController extends OrderController
                             .setParameter(2, 1);
             shopStorage = shopStorageTypedQuery.getSingleResult();
         } catch (Exception e) {
-            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + " shopStorage", e);
+            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + ":shop_storage", e);
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
-
 
         List<Long> productIdList = new LinkedList<>();
         List<Integer> countList = new LinkedList<>();
@@ -490,13 +534,13 @@ public class ShopController extends OrderController
             }
         } catch (Exception e) {
             logger.error("Error: ", e);
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
-                    HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.BAD_QUERY,
+                    HttpStatus.BAD_REQUEST);
         }
 
         int productsSumCount = countList.stream().reduce(0, Integer::sum);
         if(shopStorage.getFreeSpace() < productsSumCount) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorageProduct",
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + ":shop_storage",
                     HttpStatus.BAD_REQUEST);
         }
 
@@ -504,15 +548,16 @@ public class ShopController extends OrderController
             purchaseRepository.save(purchase);
             logger.info(purchase.getStatus().toString());
         } catch (Exception e) {
-            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " purchase",
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
         if(!shopOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop ", HttpStatus.NOT_FOUND);
         }
         Shop shop = shopOptional.get();
+
         return transfer(productIdList, countList, shopStorage, purchase, shop);
     }
 
@@ -522,7 +567,13 @@ public class ShopController extends OrderController
      * @param targetShopStorageID идентификтаор целевого склада
      * @param productIDList список идентификтаоров товаров
      * @param countList список количества товаров
-     * @return
+     * @return 1) код 400 c сообщением WRONG_NUMBER_OF_PARAMETERS, если количество элементов в списках разное
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND:source_storage, если не найден исходный склад
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:target_storage, если не найден целевой склад
+     *         4) код 400 с сообщением NOT_ENOUGH_SPACE:target_storage - если не хватает места на складе магазина
+     *         5) код 500 с сообщением BAD_QUERY, если не удалось выполнить запрос
+     *         6) код 400 с сообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-нибудь товара
+     *         7) код 200 с объектом, если удалось выполнить запрос
      */
     @PutMapping(value = "/storage/{shopStorageID}/{targetShopStorageID}/{productIDList}/{countList}")
     public ResponseEntity<?> transferProducts(@PathVariable Long shopStorageID,
@@ -532,7 +583,7 @@ public class ShopController extends OrderController
 
         if(productIDList.size() != countList.size()) {
             return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS,
-                    HttpStatus.NOT_FOUND);
+                    HttpStatus.BAD_REQUEST);
         }
 
         Optional<ShopStorage> targetShopStorageOptional
@@ -541,11 +592,11 @@ public class ShopController extends OrderController
                 = shopStorageRepository.findById(shopStorageID);
 
         if(!shopStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " storage",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":source_storage",
                     HttpStatus.NOT_FOUND);
         }
         if(!targetShopStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " target storage",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":target_storage",
                     HttpStatus.NOT_FOUND);
         }
 
@@ -555,7 +606,7 @@ public class ShopController extends OrderController
         int sumCount = countList.stream().reduce(0, Integer::sum);
 
         if(targetShopStorage.getFreeSpace() < sumCount) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " target storage",
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + ":target_storage",
                     HttpStatus.BAD_REQUEST);
         }
 
@@ -577,13 +628,14 @@ public class ShopController extends OrderController
                 shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
 
                 if(count > shopStorageProduct.getCount()) {
-                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
+                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS + ":source_storage",
                             HttpStatus.BAD_REQUEST);
                 }
 
             } catch (Exception e) {
                 logger.error("Error", e);
-                new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+                new ResponseEntity<>(ErrorStatus.BAD_QUERY,
+                        HttpStatus.BAD_REQUEST);
             }
 
             ShopStorageProduct shopStorageProductMain;

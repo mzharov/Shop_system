@@ -21,7 +21,6 @@ import ts.tsc.system.entity.shop.*;
 import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
 import ts.tsc.system.entity.supplier.SupplierStorageProduct;
-import ts.tsc.system.entity.supplier.SupplierStorageProductPrimaryKey;
 import ts.tsc.system.repository.*;
 import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.named.NamedService;
@@ -220,7 +219,19 @@ public class SupplierController
      * @param shopStorageID идентификатор склада магазина
      * @param productIdList список идентификаторов товаров
      * @param countList список количества товаров
-     * @return
+     * @return 1) Если количество элементов списке идентификаторов товаров и их количества разное
+     *            возвращается код 400 с сообщением WRONG_NUMBER_OF_PARAMETERS
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND:supplier_storage - если не найден склад поставщика с указанным id
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:shop_storage - если не найден склад магазина с указанным id
+     *         4) код 400 с сообщением NOT_ENOUGH_SPACE - если не хватает места на складе магазина для товаров
+     *         5) код 400 с сообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-нибудь товара
+     *         6) код 404 с сообщением ELEMENT_NOT_FOUND:product - если не удалось найти какой-то товар на складе
+     *         7) код 500 с сообщением BAD_QUERY, если не удалось выполнить запрос
+     *         8) код 404 с сообщением ELEMENT_NOT_FOUND:shop, если не удалось найти магазин
+     *         9) код 400 с сообщением NOT_ENOUGH_MONEY, если у магазина не хватает бюджета
+     *         10) код 500 с сообщением ERROR_WHILE_SAVING, если не удалось сохранить заказ
+     *         11) {@link #transfer(List, List, SupplierStorage, Delivery, Shop)}
+     *
      */
     @Override
     @PostMapping(value = "/order/{supplierID}/{shopStorageID}/{productIdList}/{countList}")
@@ -230,22 +241,21 @@ public class SupplierController
                              @PathVariable List<Integer> countList) {
 
         if(productIdList.size() != countList.size()) {
-            return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS
-                    +  " of products and counts",
+            return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS,
                     HttpStatus.BAD_REQUEST);
         }
 
         Optional<SupplierStorage> supplierStorageOptional
                 = supplierStorageRepository.findById(supplierID);
         if(!supplierStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " supplierStorage",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
                     HttpStatus.NOT_FOUND);
         }
 
         Optional<ShopStorage> shopStorageOptional
                 = shopStorageRepository.findById(shopStorageID);
         if(!shopStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " shopStorage",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop_storage",
                     HttpStatus.NOT_FOUND);
         }
 
@@ -255,7 +265,7 @@ public class SupplierController
         int productsSumCount = countList.stream().reduce(0, Integer::sum);
 
         if(shopStorage.getFreeSpace() < productsSumCount) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorage",
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE,
                     HttpStatus.BAD_REQUEST);
         }
 
@@ -272,12 +282,12 @@ public class SupplierController
                         .setParameter(2, productID);
                 Integer sumCount = sumCountTypedQuery.getSingleResult();
                 if(sumCount < count) {
-                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS + " supplier storage",
+                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
                             HttpStatus.BAD_REQUEST);
                 }
             } catch (Exception e) {
                 logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product",
                         HttpStatus.NOT_FOUND);
             }
         }
@@ -298,21 +308,21 @@ public class SupplierController
                 sumPrice = sumCountTypedQuery.getSingleResult();
             } catch (Exception e) {
                 logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
-                        HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(ErrorStatus.BAD_QUERY,
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
 
         Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
         if(!shopOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " shop",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop",
                     HttpStatus.NOT_FOUND);
         }
 
         Shop shop = shopOptional.get();
 
         if(sumPrice.compareTo(shop.getBudget()) > 0) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_MONEY + " in shop",
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_MONEY,
                     HttpStatus.BAD_REQUEST);
         }
 
@@ -325,7 +335,7 @@ public class SupplierController
             deliveryRepository.save(delivery);
         } catch (Exception e) {
             logger.error("Error: ", e);
-            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " delivery",
+            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return transfer(productIdList, countList, supplierStorage, delivery, shop);
@@ -338,7 +348,12 @@ public class SupplierController
      * @param supplierStorage объект кслада поставщика
      * @param delivery объект заказа
      * @param shop объект магазина
-     * @return
+     * @return 1) код 404 с сообщением NO_PRODUCTS_IN_STORAGE, если товар не найден на складе
+     *         2) код 500 с сообщением ERROR_WHILE_SAVING:delivery_product, если не удалось сохранить изменения в заказе
+     *         3) код 500 с сообщением ERROR_WHILE_SAVING:supplier_storage_product если не удалось сохранить изменения в записи товара на складе
+     *         4) код 500 с сообщением ERROR_WHILE_SAVING:supplier_storage если не удалось сохранить изменения на складе
+     *         5) код 500 с сообщением ERROR_WHILE_SAVING:shop если не удалось сохранить изменения в магазине
+     *         6) код 200 с объектом заказа, если удалось обработать запрос
      */
     private ResponseEntity<?> transfer(List<Long> productIdList,
                           List<Integer> countList,
@@ -347,6 +362,8 @@ public class SupplierController
         for(int deliveryIterator = 0; deliveryIterator < productIdList.size(); deliveryIterator++) {
             Long productID = productIdList.get(deliveryIterator);
             Integer count = countList.get(deliveryIterator);
+            SupplierStorageProduct supplierStorageProduct;
+
             try {
                 TypedQuery<SupplierStorageProduct> sumCountTypedQuery = entityManager.createQuery(
                         "select p from SupplierStorageProduct p " +
@@ -355,57 +372,61 @@ public class SupplierController
                         SupplierStorageProduct.class)
                         .setParameter(1, supplierStorage.getId())
                         .setParameter(2, productID);
-                SupplierStorageProduct supplierStorageProduct = sumCountTypedQuery.getSingleResult();
+                supplierStorageProduct = sumCountTypedQuery.getSingleResult();
+            } catch (Exception e) {
+                logger.error("Error", e);
+                return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE, HttpStatus.NOT_FOUND);
+            }
 
-                if(delivery.getStatus().equals(Status.RECEIVED)) {
-                    DeliveryProduct deliveryProduct = new DeliveryProduct();
-                    deliveryProduct
-                            .setPrimaryKey(new DeliveryProductPrimaryKey
-                                    (delivery, supplierStorageProduct.getPrimaryKey().getProduct()));
-                    deliveryProduct.setPrice(supplierStorageProduct.getPrice());
-                    deliveryProduct.setCount(count);
-                    deliveryProduct
-                            .setSumPrice(supplierStorageProduct.getPrice()
-                                    .multiply(new BigDecimal(count)));
-                    try {
-                        deliveryProductRepository.save(deliveryProduct);
-                    } catch (Exception e) {
-                        logger.error("Error: ", e);
-                        return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
-                                HttpStatus.INTERNAL_SERVER_ERROR);
-                    }
-                }
-
-                int coefficient = -1;
-                if(delivery.getStatus().equals(Status.RECEIVED)) {
-                    coefficient = 1;
-                }
-
-                supplierStorage.setFreeSpace(supplierStorage.getFreeSpace() + coefficient * count);
-                supplierStorageProduct.setCount(supplierStorageProduct.getCount() - coefficient* count);
-                shop.setBudget(shop.getBudget().subtract((supplierStorageProduct.getPrice()
-                        .multiply(new BigDecimal(count)))
-                        .multiply(new BigDecimal(coefficient))));
+            if(delivery.getStatus().equals(Status.RECEIVED)) {
+                DeliveryProduct deliveryProduct = new DeliveryProduct();
+                deliveryProduct
+                        .setPrimaryKey(new DeliveryProductPrimaryKey
+                                (delivery, supplierStorageProduct.getPrimaryKey().getProduct()));
+                deliveryProduct.setPrice(supplierStorageProduct.getPrice());
+                deliveryProduct.setCount(count);
+                deliveryProduct
+                        .setSumPrice(supplierStorageProduct.getPrice()
+                                .multiply(new BigDecimal(count)));
                 try {
-                    supplierStorageProductRepository.save(supplierStorageProduct);
+                    deliveryProductRepository.save(deliveryProduct);
                 } catch (Exception e) {
                     logger.error("Error: ", e);
-                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery_product",
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
+            }
 
+            int coefficient = -1;
+            if(delivery.getStatus().equals(Status.RECEIVED)) {
+                coefficient = 1;
+            }
+
+            supplierStorage.setFreeSpace(supplierStorage.getFreeSpace() + coefficient * count);
+            supplierStorageProduct.setCount(supplierStorageProduct.getCount() - coefficient* count);
+            shop.setBudget(shop.getBudget().subtract((supplierStorageProduct.getPrice()
+                    .multiply(new BigDecimal(count)))
+                    .multiply(new BigDecimal(coefficient))));
+            try {
+                supplierStorageProductRepository.save(supplierStorageProduct);
             } catch (Exception e) {
                 logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
-                        HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
         try {
             supplierStorageRepository.save(supplierStorage);
+        } catch (Exception e) {
+            logger.error("Error: ", e);
+            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        try {
             shopRepository.save(shop);
         } catch (Exception e) {
             logger.error("Error: ", e);
-            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -434,14 +455,17 @@ public class SupplierController
 
     /**
      * Перевод заказа в состояние DELIVERING
-     * @param id идентификатор заказа
-     * @return
+     * @param id идентификтаор заказа
+     * @return 1) код 404 с сообщением ELEMENT_NOT_FOUND:deliver, если заказ не найден
+     *         2) код 400 с сообщением WRONG_DELIVERY_STATUS, если нельзя перевести заказ в состояние COMPLETED
+     *         3) код 500 с сообщением ERROR_WHILE_SAVING:deliver, если не удалось сохранить изменения
+     *         4) код 200 с объектом заказа, если удалось изменить состояние
      */
     @Override
     protected ResponseEntity<?> deliverOrder(Long id) {
         Delivery delivery = isExist(id);
         if(delivery == null) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":deliver",
                     HttpStatus.NOT_FOUND);
         }
 
@@ -454,7 +478,7 @@ public class SupplierController
         try {
             deliveryRepository.save(delivery);
         } catch (Exception e) {
-            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " delivery",
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -462,22 +486,32 @@ public class SupplierController
     }
 
     /**
-     * Завершение заказа
-     * @param id идентификатор заказа
-     * @return
+     * Перевод заказа в завершенное состояние
+     * @param id идентификтаор заказа
+     * @return 1) код 404 с сообщением ELEMENT_NOT_FOUND:delivery, если заказ не найден
+     *         2) код 400 с сообщением BAD_REQUEST, если не удалось выполнить запрос
+     *         3) код 400 с сообщением WRONG_DELIVERY_STATUS, если нельзя перевести заказ в состояние COMPLETED
+     *         4) код 500 с сообщением ERROR_WHILE_SAVING:delivery, если не удалось сохранить изменения
+     *         5) код 400 с сообщением NOT_ENOUGH_SPACE:shop_storage, если на складе магазина не хватает места
+     *         6) код 500 с сообщением ERROR_WHILE_SAVING:shop_storage_product, если не удалось сохранить изменения в записи товара со склада
+     *         7) код 500 с сообщением ERROR_WHILE_SAVING:shop_storage, если не удалось сохранить изменения в записи склада
+     *         8) код 500 с сообщением ERROR_WHILE_SAVING:delivery, если не удалось сохранить изменения в заказе
+     *         9) код 200 с объектом заказа, если удалось завершить запрос
      */
     @Override
     protected ResponseEntity<?> completeOrder(Long id) {
         Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
 
         if(!deliveryOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":delivery",
+                    HttpStatus.NOT_FOUND);
         }
 
         Delivery delivery = deliveryOptional.get();
 
         if(!delivery.getStatus().equals(Status.DELIVERING)) {
-            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS,
+                    HttpStatus.BAD_REQUEST);
         }
 
         delivery.setStatus(Status.COMPLETED);
@@ -492,14 +526,15 @@ public class SupplierController
             sumProductCount = sumProductTypedQuery.getSingleResult();
         } catch (Exception e) {
             logger.error("Error", e);
-            new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":delivery", HttpStatus.NOT_FOUND);
         }
 
         if(shopStorage.getFreeSpace() < sumProductCount) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in shopStorage",
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + ":shop_storage",
                     HttpStatus.BAD_REQUEST);
         }
 
+        List<DeliveryProduct> deliveryProductList = new LinkedList<>();
         try {
             TypedQuery<DeliveryProduct> deliveryProductQuery =
                     entityManager.createQuery(
@@ -507,48 +542,55 @@ public class SupplierController
                                     "where p.primaryKey.delivery.id = ?1",
                             DeliveryProduct.class)
                             .setParameter(1, delivery.getId());
-
-            List<DeliveryProduct> deliveryProductList = deliveryProductQuery.getResultList();
-
-            for(DeliveryProduct deliveryProduct : deliveryProductList) {
-                ShopStorageProductPrimaryKey primaryKey = new ShopStorageProductPrimaryKey(shopStorage,
-                        deliveryProduct.getPrimaryKey().getProduct());
-
-                Optional<ShopStorageProduct> shopStorageProductOptional
-                        = shopStorageProductRepository
-                        .findById(primaryKey);
-                ShopStorageProduct shopStorageProduct;
-                if(shopStorageProductOptional.isPresent()) {
-                    shopStorageProduct = shopStorageProductOptional.get();
-                    shopStorageProduct
-                            .setCount(shopStorageProduct.getCount()+deliveryProduct.getCount());
-
-                } else {
-                    shopStorageProduct  = new ShopStorageProduct();
-                    shopStorageProduct.setPrimaryKey(primaryKey);
-                    shopStorageProduct.setCount(deliveryProduct.getCount());
-                    shopStorageProduct.setPrice(deliveryProduct.getPrice());
-                }
-                shopStorage.setFreeSpace(shopStorage.getFreeSpace()-deliveryProduct.getCount());
-                try {
-                    shopStorageProductRepository.save(shopStorageProduct);
-                    shopStorageRepository.save(shopStorage);
-                } catch (Exception e) {
-                    logger.error("Error", e);
-                    new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
-                            HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-            }
+            deliveryProductList = deliveryProductQuery.getResultList();
         } catch (Exception e) {
             logger.error("Error", e);
-            new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            new ResponseEntity<>(ErrorStatus.BAD_QUERY,
+                    HttpStatus.NOT_FOUND);
+        }
+
+        for(DeliveryProduct deliveryProduct : deliveryProductList) {
+            ShopStorageProductPrimaryKey primaryKey = new ShopStorageProductPrimaryKey(shopStorage,
+                    deliveryProduct.getPrimaryKey().getProduct());
+
+            Optional<ShopStorageProduct> shopStorageProductOptional
+                    = shopStorageProductRepository
+                    .findById(primaryKey);
+            ShopStorageProduct shopStorageProduct;
+            if(shopStorageProductOptional.isPresent()) {
+                shopStorageProduct = shopStorageProductOptional.get();
+                shopStorageProduct
+                        .setCount(shopStorageProduct.getCount()+deliveryProduct.getCount());
+
+            } else {
+                shopStorageProduct  = new ShopStorageProduct();
+                shopStorageProduct.setPrimaryKey(primaryKey);
+                shopStorageProduct.setCount(deliveryProduct.getCount());
+                shopStorageProduct.setPrice(deliveryProduct.getPrice());
+            }
+            shopStorage.setFreeSpace(shopStorage.getFreeSpace()-deliveryProduct.getCount());
+            try {
+                shopStorageProductRepository.save(shopStorageProduct);
+            } catch (Exception e) {
+                logger.error("Error", e);
+                new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage_product",
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            try {
+                shopStorageRepository.save(shopStorage);
+            } catch (Exception e) {
+                logger.error("Error", e);
+                new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage",
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
 
         try {
             deliveryRepository.save(delivery);
         } catch (Exception e) {
             logger.error("Error", e);
-            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING, HttpStatus.INTERNAL_SERVER_ERROR);
+            new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(delivery, HttpStatus.OK);
     }
@@ -556,17 +598,25 @@ public class SupplierController
     /**
      * Отмена заказа
      * @param id идентификатор заказа
-     * @return
+     * @return 1) код 404 с сообщением ELEMENT_NOT_FOUND:delivery, если заказ не найден
+     *         2) код 400 с сообщением WRONG_DELIVERY_STATUS, если нельзя перевести заказ в состояние CANCELED
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:supplier_storage, если склад не найден
+     *         4) код 400 с сообщением BAD_REQUEST, если не удалось выполнить запрос
+     *         5) код 400 с сообщением NOT_ENOUGH_SPACE:shop_storage, если на складе магазина не хватает места
+     *         6) код 500 с сообщением ERROR_WHILE_SAVING:purchase, если не удалось сохранить изменения
+     *         7) код 404 с сообщением ELEMENT_NOT_FOUND:shop, если магазин не найден
+     *         8) {@link #transfer(List, List, SupplierStorage, Delivery, Shop)}
      */
     @Override
     protected ResponseEntity<?> cancelOrder(Long id) {
         Delivery delivery = isExist(id);
         if(delivery == null) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":delivery",
+                    HttpStatus.NOT_FOUND);
         }
 
         if(isNotCancelable(delivery)) {
-            return new ResponseEntity<>(ErrorStatus.CAN_NOT_BE_CANCELED,
+            return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS,
                     HttpStatus.BAD_REQUEST);
         }
         delivery.setStatus(Status.CANCELED);
@@ -575,7 +625,7 @@ public class SupplierController
         Optional<SupplierStorage> supplierStorageOptional
                 = supplierStorageRepository.findById(delivery.getSupplierStorage().getId());
         if(!supplierStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " supplierStorage",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
                     HttpStatus.NOT_FOUND);
         }
 
@@ -596,29 +646,29 @@ public class SupplierController
             }
         } catch (Exception e) {
             logger.error("Error: ", e);
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " sum of product",
-                    HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.BAD_QUERY,
+                    HttpStatus.BAD_REQUEST);
         }
 
         int productsSumCount = countList.stream().reduce(0, Integer::sum);
 
         SupplierStorage supplierStorage = supplierStorageOptional.get();
         if(supplierStorage.getFreeSpace() < productsSumCount) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + " in supplierStorageProduct",
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + ":supplier_storage",
                     HttpStatus.BAD_REQUEST);
         }
 
         try {
             deliveryRepository.save(delivery);
         } catch (Exception e) {
-            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + " delivery",
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         Optional<Shop> shopOptional
                 = shopRepository.findById(delivery.getShopStorage().getShop().getId());
         if(!shopOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + " shop",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop",
                     HttpStatus.NOT_FOUND);
         }
         Shop shop = shopOptional.get();
