@@ -156,9 +156,20 @@ public class SupplierController
 
 
     @Override
-    @GetMapping(value = "/storage/product/list")
-    public ResponseEntity<?> getProducts() {
-        return productService.findAll(supplierStorageProductRepository);
+    @GetMapping(value = "/storage/product/list/{id}")
+    public ResponseEntity<?> getStorageProducts(@PathVariable Long id) {
+        Optional<SupplierStorage> supplierStorageOptional = supplierStorageRepository.findById(id);
+        if(!supplierStorageOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
+                    HttpStatus.NOT_FOUND);
+        }
+        SupplierStorage supplierStorage = supplierStorageOptional.get();
+        if(supplierStorage.getProducts().size() > 0) {
+            return ResponseEntity.ok().body(supplierStorage.getProducts());
+        } else {
+            return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE,
+                    HttpStatus.NOT_FOUND);
+        }
     }
 
     @Override

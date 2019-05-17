@@ -11,8 +11,6 @@ import ts.tsc.system.repository.NamedRepository;
 import ts.tsc.system.repository.ProductRepository;
 import ts.tsc.system.service.base.BaseServiceImplementation;
 import ts.tsc.system.service.product.ProductService;
-import ts.tsc.system.service.named.NamedServiceImplementation;
-import ts.tsc.system.service.product.ProductServiceImplementation;
 
 import java.util.List;
 
@@ -42,7 +40,7 @@ public class ProductController implements ProductControllerInterface {
     /**
      * Поиск товара по названию
      * @param name название товара
-     * @return {@link NamedServiceImplementation#findByName(String, NamedRepository)}
+     * @return {@link ts.tsc.system.service.named.NamedServiceImplementation#findByName(String, NamedRepository)}
      */
     @Override
     @GetMapping(value = "/name/{name}")
@@ -53,7 +51,7 @@ public class ProductController implements ProductControllerInterface {
     /**
      * Поиск товара по идентификатору
      * @param id идентификатор
-     * @return {@link BaseServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
      */
     @Override
     @GetMapping(value = "/{id}")
@@ -64,7 +62,7 @@ public class ProductController implements ProductControllerInterface {
     /**
      * Добавление нового товара
      * @param entity объект, представляющий товар
-     * @return {@link BaseServiceImplementation#save(Object, JpaRepository)}
+     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#save(Object, JpaRepository)}
      */
     @Override
     @PostMapping(value = "/")
@@ -93,7 +91,7 @@ public class ProductController implements ProductControllerInterface {
     /**
      * Поиск по типу товара
      * @param category категория
-     * @return {@link ProductServiceImplementation#findByCategory(String, ProductRepository)}
+     * @return {@link ts.tsc.system.service.product.ProductServiceImplementation#findByCategory(String, ProductRepository)}
      */
     @Override
     @GetMapping(value = "/category/{category}")

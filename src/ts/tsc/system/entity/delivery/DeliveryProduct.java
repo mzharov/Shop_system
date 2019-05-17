@@ -6,6 +6,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "delivery_product")
@@ -16,10 +17,10 @@ public class DeliveryProduct implements Serializable {
     @Column(name = "count")
     private int count;
 
-    @Column(name="price")
+    @Column(name="price", precision = 20, scale = 5)
     private BigDecimal price;
 
-    @Column(name = "sum_price")
+    @Column(name = "sum_price", precision =20, scale = 5)
     private BigDecimal sumPrice;
 
     public DeliveryProductPrimaryKey getPrimaryKey() {
@@ -43,7 +44,8 @@ public class DeliveryProduct implements Serializable {
     }
 
     public void setPrice(BigDecimal price) {
-        this.price = price;
+        this.price = new BigDecimal(0).setScale(5, RoundingMode.HALF_UP);
+        this.price = this.price.add(price.setScale(5, RoundingMode.HALF_UP));
     }
 
     public BigDecimal getSumPrice() {
@@ -51,6 +53,7 @@ public class DeliveryProduct implements Serializable {
     }
 
     public void setSumPrice(BigDecimal sumPrice) {
-        this.sumPrice = sumPrice;
+        this.sumPrice = new BigDecimal(0).setScale(5, RoundingMode.HALF_UP);
+        this.sumPrice = this.sumPrice.add(sumPrice.setScale(5, RoundingMode.HALF_UP));
     }
 }

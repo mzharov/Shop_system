@@ -3,6 +3,7 @@ package ts.tsc.system.entity.supplier;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "SupplierStorageProduct")
@@ -11,7 +12,7 @@ public class SupplierStorageProduct implements Serializable {
     @EmbeddedId
     private SupplierStorageProductPrimaryKey primaryKey;
 
-    @Column(name = "price")
+    @Column(name = "price", precision = 20, scale = 5)
     private BigDecimal price;
 
     @Column(name = "count")
@@ -30,7 +31,8 @@ public class SupplierStorageProduct implements Serializable {
     }
 
     public void setPrice(BigDecimal price) {
-        this.price = price;
+        this.price = new BigDecimal(0).setScale(5, RoundingMode.HALF_UP);
+        this.price = this.price.add(price.setScale(5, RoundingMode.HALF_UP));
     }
 
     public int getCount() {

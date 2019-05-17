@@ -6,6 +6,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "shop_storage_product")
@@ -17,7 +18,7 @@ public class ShopStorageProduct implements Serializable {
     @Column(name = "count")
     private int count;
 
-    @Column(name="price")
+    @Column(name="price", precision = 20, scale = 5)
     private BigDecimal price;
 
     public ShopStorageProductPrimaryKey getPrimaryKey() {
@@ -41,6 +42,7 @@ public class ShopStorageProduct implements Serializable {
     }
 
     public void setPrice(BigDecimal price) {
-        this.price = price;
+        this.price = new BigDecimal(0).setScale(5, RoundingMode.HALF_UP);
+        this.price = this.price.add(price.setScale(5, RoundingMode.HALF_UP));
     }
 }

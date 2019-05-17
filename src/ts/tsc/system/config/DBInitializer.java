@@ -48,7 +48,7 @@ public class DBInitializer {
     @PostConstruct
     public void initDB() {
         logger.info("Инициализация БД начата");
-        Shop shop1 = addShop("Johan's", new BigDecimal("1000000.2356"));
+        Shop shop1 = addShop("Johan's", new BigDecimal("1000000.243"));
         Shop shop2 = addShop("Moran&Johns", new BigDecimal("100000"));
 
         Supplier supplier = addSupplier("Avalon");

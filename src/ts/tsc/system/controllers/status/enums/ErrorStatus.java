@@ -1,7 +1,8 @@
 package ts.tsc.system.controllers.status.enums;
 
 public enum ErrorStatus {
-    SUCCEED,
+    NUMBER_FORMAT_EXCEPTION,
+    NO_PRODUCTS_IN_STORAGE,
     ELEMENT_NOT_FOUND,
     ELEMENTS_NOT_FOUND_FOR_ENTITY,
     ERROR_WHILE_SAVING,

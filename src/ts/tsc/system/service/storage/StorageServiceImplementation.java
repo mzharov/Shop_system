@@ -1,6 +1,7 @@
 package ts.tsc.system.service.storage;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,7 +72,7 @@ public class StorageServiceImplementation<B, T extends BaseStorage<B>, ID>
                 repositoryStorage.save(storage);
                 return ResponseEntity.ok().body(storage);
             } else {
-                return ResponseEntity.notFound().build();
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
             return ResponseEntity.unprocessableEntity().body(ErrorStatus.ERROR_WHILE_SAVING);

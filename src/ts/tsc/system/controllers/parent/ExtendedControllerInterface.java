@@ -9,5 +9,5 @@ public interface ExtendedControllerInterface<T, S> extends BaseControllerInterfa
     ResponseEntity<?> getAllOrders();
     ResponseEntity<?> getOrderById(Long id);
     ResponseEntity<?> addStorage(Long id, S storage);
-    ResponseEntity<?> getProducts();
+    ResponseEntity<?> getStorageProducts(Long id);
 }
