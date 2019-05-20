@@ -1,7 +1,7 @@
 package ts.tsc.system.entity.delivery;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ts.tsc.system.controllers.status.enums.Status;
+import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.parent.OrderEntity;
 import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.entity.supplier.SupplierStorage;
@@ -19,8 +19,8 @@ public class Delivery implements Serializable, OrderEntity {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "status")
-    private Status status;
+    @Column(name = "orderStatus")
+    private OrderStatus orderStatus;
 
     @ManyToOne
     @JoinColumn(name = "shop_storage_ID")
@@ -46,12 +46,12 @@ public class Delivery implements Serializable, OrderEntity {
     }
 
     @Override
-    public Status getStatus() {
-        return status;
+    public OrderStatus getOrderStatus() {
+        return orderStatus;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
+    public void setOrderStatus(OrderStatus orderStatus) {
+        this.orderStatus = orderStatus;
     }
 
     public ShopStorage getShopStorage() {

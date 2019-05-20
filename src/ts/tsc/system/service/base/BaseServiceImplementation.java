@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ts.tsc.system.controllers.status.enums.ErrorStatus;
+import ts.tsc.system.controller.status.ErrorStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.Optional;
 /**
  * Реализация интерфейса основных функций в виде сервиса
  * @param <T> Тип сущности
- * @param <ID> Тип идентификтаора сущности
+ * @param <ID> Тип идентификатора сущности
  */
 @Service("baseService")
 @Transactional

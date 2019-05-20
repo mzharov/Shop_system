@@ -3,7 +3,7 @@ package ts.tsc.system.entity.delivery;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ts.tsc.system.entity.product.Product;
-import ts.tsc.system.json.serializer.delivery.DeliveryProductPrimaryKeySerializer;
+import ts.tsc.system.serializer.delivery.DeliveryProductPrimaryKeySerializer;
 
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;

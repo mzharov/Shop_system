@@ -1,7 +1,7 @@
 package ts.tsc.system.entity.parent;
 
-import ts.tsc.system.controllers.status.enums.Status;
+import ts.tsc.system.controller.status.OrderStatus;
 
 public interface OrderEntity {
-    Status getStatus();
+    OrderStatus getOrderStatus();
 }

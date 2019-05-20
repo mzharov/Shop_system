@@ -1,7 +1,7 @@
 package ts.tsc.system.entity.purchase;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ts.tsc.system.controllers.status.enums.Status;
+import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.parent.OrderEntity;
 import ts.tsc.system.entity.shop.Shop;
 
@@ -27,8 +27,8 @@ public class Purchase implements Serializable, OrderEntity {
             fetch = FetchType.EAGER)
     private Set<PurchaseProduct> purchaseProducts = new HashSet<>();
 
-    @Column(name = "status")
-    private Status status;
+    @Column(name = "orderStatus")
+    private OrderStatus orderStatus;
 
     public Long getId() {
         return id;
@@ -47,12 +47,12 @@ public class Purchase implements Serializable, OrderEntity {
     }
 
     @Override
-    public Status getStatus() {
-        return status;
+    public OrderStatus getOrderStatus() {
+        return orderStatus;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
+    public void setOrderStatus(OrderStatus orderStatus) {
+        this.orderStatus = orderStatus;
     }
 
     public Set<PurchaseProduct> getPurchaseProducts() {

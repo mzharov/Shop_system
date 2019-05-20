@@ -10,7 +10,13 @@ import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
 import ts.tsc.system.entity.supplier.SupplierStorageProduct;
 import ts.tsc.system.entity.supplier.SupplierStorageProductPrimaryKey;
-import ts.tsc.system.repository.*;
+import ts.tsc.system.repository.product.ProductRepository;
+import ts.tsc.system.repository.shop.ShopRepository;
+import ts.tsc.system.repository.shop.ShopStorageProductRepository;
+import ts.tsc.system.repository.shop.ShopStorageRepository;
+import ts.tsc.system.repository.supplier.SupplierRepository;
+import ts.tsc.system.repository.supplier.SupplierStorageProductRepository;
+import ts.tsc.system.repository.supplier.SupplierStorageRepository;
 
 
 import javax.annotation.PostConstruct;
@@ -49,7 +55,7 @@ public class DBInitializer {
     public void initDB() {
         logger.info("Инициализация БД начата");
         Shop shop1 = addShop("Johan's", new BigDecimal("1000000.243"));
-        Shop shop2 = addShop("Moran&Johns", new BigDecimal("100000"));
+        Shop shop2 = addShop("Moran&Johns", new BigDecimal("50000"));
 
         Supplier supplier = addSupplier("Avalon");
         Supplier supplier1 = addSupplier("MXK");
@@ -131,7 +137,7 @@ public class DBInitializer {
 
     private Supplier addSupplier(String name) {
         Supplier supplier = new Supplier();
-        supplier.setName("Avalon");
+        supplier.setName(name);
         supplierRepository.save(supplier);
         return supplier;
     }

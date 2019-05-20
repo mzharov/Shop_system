@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ts.tsc.system.controllers.status.enums.ErrorStatus;
+import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.service.base.BaseServiceImplementation;
 
@@ -58,9 +58,9 @@ public class StorageServiceImplementation<B, P, T extends BaseStorage<B, P>, ID>
      * @param storage объект склада
      * @param repositoryBase репозиторий таблицы целевых объектов
      * @param repositoryStorage репозиторий таблицы складов
-     * @return объект и код 200, если удалось добавить;
-     * 404 - если не йдалось найти целевой объект;
-     * 422 с описанием - если в ходе добавления произошла ошибка
+     * @return 1) код 200 и объект, если удалось добавить;
+     *         2) код 404 - если не йдалось найти целевой объект;
+     *         3) код 422 с описанием - если в ходе добавления произошла ошибка
      */
     @Override
     public ResponseEntity<?> addStorage(ID id, T storage,

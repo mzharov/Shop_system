@@ -1,0 +1,9 @@
+package ts.tsc.system.repository.purchase;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ts.tsc.system.entity.purchase.Purchase;
+
+@Repository
+public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
+}

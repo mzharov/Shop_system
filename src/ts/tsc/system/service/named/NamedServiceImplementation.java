@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entity.parent.NamedEntity;
-import ts.tsc.system.repository.NamedRepository;
+import ts.tsc.system.repository.named.NamedRepository;
 import ts.tsc.system.service.base.BaseServiceImplementation;
 
 /**

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.parent.BaseStorage;
-import ts.tsc.system.json.serializer.supplier.SupplierStorageSerializer;
+import ts.tsc.system.serializer.supplier.SupplierStorageSerializer;
 
 import javax.persistence.*;
 import java.io.Serializable;

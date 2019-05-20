@@ -3,7 +3,7 @@ package ts.tsc.system.service.product;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ts.tsc.system.entity.product.Product;
-import ts.tsc.system.repository.ProductRepository;
+import ts.tsc.system.repository.product.ProductRepository;
 import ts.tsc.system.service.named.NamedServiceImplementation;
 
 import java.util.List;
