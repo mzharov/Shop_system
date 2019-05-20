@@ -105,7 +105,6 @@ public class ProductController implements ProductControllerInterface {
      */
     @Override
     @GetMapping(value = "/category/{category}")
-    @Transactional(readOnly = true)
     public ResponseEntity<List<Product>> findByCategory(@PathVariable String category) {
         return productService.findByCategory(category, productRepository);
     }
