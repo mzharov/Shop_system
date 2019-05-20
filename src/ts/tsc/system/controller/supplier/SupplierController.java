@@ -75,7 +75,7 @@ public class SupplierController
                               ShopStorageRepository shopStorageRepository,
                               StorageService<Supplier, SupplierStorage, Long> storageService,
                               SupplierStorageRepository supplierStorageRepository,
-                              NamedService<Supplier, Long> supplierService,
+                              @Qualifier(value = "namedService") NamedService<Supplier, Long> supplierService,
                               SupplierStorageProductRepository supplierStorageProductRepository,
                               DeliveryRepository deliveryRepository,
                               DeliveryProductRepository deliveryProductRepository,

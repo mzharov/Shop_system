@@ -62,7 +62,7 @@ public class ShopController extends OrderController
 
     @Autowired
     public ShopController(ShopRepository shopRepository,
-                          NamedService<Shop, Long> shopService,
+                          @Qualifier(value = "namedService") NamedService<Shop, Long> shopService,
                           StorageService<Shop, ShopStorage, Long> storageService,
                           ShopStorageRepository shopStorageRepository,
                           ShopStorageProductRepository shopStorageProductRepository,
