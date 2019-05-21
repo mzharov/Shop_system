@@ -21,13 +21,14 @@ public abstract class OrderController<B extends BaseEntity, P, T extends BaseSto
      * @param stringStatus новое состояние
      * @return 1) объект заказа с кодом 200, если успешно,
      *         2) код 400 с описанием UNKNOWN_DELIVER_STATUS, если передано неизвестное состояние,
-     *         3) Остальные возможные значения:
+     *         3) Возможные значения, возвращаемые из методов:
      *                      3.1) {@link ts.tsc.system.service.shop.ShopService#deliverOrder(Long)}
      *                      3.2) {@link ts.tsc.system.service.supplier.SupplierService#deliverOrder(Long)}
      *                      3.3) {@link ts.tsc.system.service.shop.ShopService#completeOrder(Long)} (Long)}
      *                      3.4) {@link ts.tsc.system.service.supplier.SupplierService#completeOrder(Long)}
      *                      3.5) {@link ts.tsc.system.service.shop.ShopService#cancelOrder(Long)} (Long)}
      *                      3.6) {@link ts.tsc.system.service.supplier.SupplierService#cancelOrder(Long)}
+     *        4) код 400 с сообщением WRONG_DELIVERY_STATUS
      */
     public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable String stringStatus) {
 
