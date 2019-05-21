@@ -32,16 +32,15 @@ public class RestClientTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testFindAll() {
-        logger.info("--> Testing retrieve all shops");
-        List<Shop> shops =
-                restTemplate.getForObject(URL_GET_ALL_SHOPS, List.class);
+        logger.info("Начало теста");
+        List<Shop> shops = restTemplate.getForObject(URL_GET_ALL_SHOPS, List.class);
         assert shops != null;
         assertEquals(1, shops.size());
-        listSingers(shops);
+        listShops(shops);
     }
 
 
-    private void listSingers(List<Shop> singers) {
-        singers.forEach(s -> logger.info(s.getId() + " " + s.getName() + " " + s.getBudget()));
+    private void listShops(List<Shop> shops) {
+        shops.forEach(s -> logger.info(s.getId() + " " + s.getName() + " " + s.getBudget()));
     }
 }
