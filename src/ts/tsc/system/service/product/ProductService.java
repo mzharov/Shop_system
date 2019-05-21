@@ -8,6 +8,5 @@ import ts.tsc.system.service.named.NamedService;
 import java.util.List;
 
 public interface ProductService extends NamedService<Product, Long> {
-    ResponseEntity<List<Product>> findByCategory(String category,
-                                                 ProductRepository productRepository);
+    ResponseEntity<List<Product>> findByCategory(String category);
 }

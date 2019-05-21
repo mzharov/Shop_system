@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.parent.BaseStorage;
+import ts.tsc.system.entity.parent.NamedEntity;
 import ts.tsc.system.service.base.BaseServiceImplementation;
+import ts.tsc.system.service.named.NamedService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -23,7 +25,7 @@ import java.util.Optional;
  */
 @Service("storageService")
 @Transactional
-public class StorageServiceImplementation<B, P, T extends BaseStorage<B, P>, ID>
+public class StorageServiceImplementation<B extends NamedEntity<ID>, P, T extends BaseStorage<B, P>, ID>
         extends BaseServiceImplementation<T, ID> implements StorageService<B, T, ID>{
     @PersistenceContext
     EntityManager entityManager;
@@ -32,14 +34,11 @@ public class StorageServiceImplementation<B, P, T extends BaseStorage<B, P>, ID>
      * Поиск складов по заданному запросу
      * @param id входной параметр
      * @param stringQuery строковый запрос HQL
-     * @param repository репозиторий таблицы
      * @return объект, с указанным идентификатором и кодом 200, если найден; иначе код 404
      */
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
-    public ResponseEntity<?> findById(Long id,
-                                         String stringQuery,
-                                         JpaRepository<T, ID> repository) {
+    public ResponseEntity<?> findById(Long id, String stringQuery) {
         try {
             Query query = entityManager.createQuery(stringQuery)
                     .setParameter(1, id);
@@ -56,22 +55,19 @@ public class StorageServiceImplementation<B, P, T extends BaseStorage<B, P>, ID>
      * Добавление склада объекту
      * @param id идентификатор целевого объекта
      * @param storage объект склада
-     * @param repositoryBase репозиторий таблицы целевых объектов
-     * @param repositoryStorage репозиторий таблицы складов
+     * @param namedService репозиторий таблицы целевых объектов
      * @return 1) код 200 и объект, если удалось добавить;
      *         2) код 404 - если не йдалось найти целевой объект;
      *         3) код 422 с описанием - если в ходе добавления произошла ошибка
      */
     @Override
-    public ResponseEntity<?> addStorage(ID id, T storage,
-                                        JpaRepository<B, ID> repositoryBase,
-                                        JpaRepository<T, ID> repositoryStorage) {
+    public ResponseEntity<?> addStorage(ID id, T storage, NamedService<B, ID> namedService) {
         try {
-            Optional<B> optionalSupplier = repositoryBase.findById(id);
+            Optional<B> optionalSupplier = namedService.findById(id);
             if(optionalSupplier.isPresent()) {
                 B base = optionalSupplier.get();
                 storage.setOwner(base);
-                repositoryStorage.save(storage);
+                getRepository().save(storage);
                 return ResponseEntity.ok().body(storage);
             } else {
                 return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);

@@ -38,6 +38,16 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<T> findAll() {
+        Iterable<T> iterable = getRepository().findAll();
+        List<T> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        return list;
+    }
+
+
     /**
      * Поиск по идентификатору
      * @param id идентификтатор объекта
@@ -51,8 +61,13 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
         return optionalT.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<T> findById(ID id) {
+        return getRepository().findById(id);
+    }
 
-    /**
+    /*
      * Сохранение объекта в таблице
      * @param entity объект
      * @param repository репозиторий таблицы
@@ -66,5 +81,25 @@ public class BaseServiceImplementation <T, ID> implements BaseService<T, ID> {
         } catch (Exception e) {
             return ResponseEntity.unprocessableEntity().body(ErrorStatus.ERROR_WHILE_SAVING);
         }
+    }
+
+    @Override
+    public T save(T entity) {
+        try {
+            getRepository().save(entity);
+            return entity;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public T update(ID id, T entity) {
+        return null;
+    }
+
+    @Override
+    public JpaRepository<T, ID> getRepository() {
+        return null;
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controller.parent.ExtendedControllerInterface;
 import ts.tsc.system.controller.parent.OrderController;
 import ts.tsc.system.controller.parent.SupplierOrderInterface;
+import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.delivery.Delivery;
@@ -67,6 +68,8 @@ public class SupplierController
     private final DeliveryProductRepository deliveryProductRepository;
     private final ShopStorageProductRepository shopStorageProductRepository;
 
+    private final BaseResponseBuilder<Supplier> supplierBaseResponseBuilder;
+
     @Autowired
     public SupplierController(SupplierRepository supplierRepository,
                               ShopRepository shopRepository,
@@ -75,11 +78,11 @@ public class SupplierController
                               ShopStorageRepository shopStorageRepository,
                               StorageService<Supplier, SupplierStorage, Long> storageService,
                               SupplierStorageRepository supplierStorageRepository,
-                              @Qualifier(value = "namedService") NamedService<Supplier, Long> supplierService,
+                              @Qualifier(value = "supplierService") NamedService<Supplier, Long> supplierService,
                               SupplierStorageProductRepository supplierStorageProductRepository,
                               DeliveryRepository deliveryRepository,
                               DeliveryProductRepository deliveryProductRepository,
-                              ShopStorageProductRepository shopStorageProductRepository) {
+                              ShopStorageProductRepository shopStorageProductRepository, BaseResponseBuilder<Supplier> supplierBaseResponseBuilder) {
         this.supplierRepository = supplierRepository;
         this.shopRepository = shopRepository;
         this.deliveryService = deliveryService;
@@ -91,6 +94,7 @@ public class SupplierController
         this.deliveryRepository = deliveryRepository;
         this.deliveryProductRepository = deliveryProductRepository;
         this.shopStorageProductRepository = shopStorageProductRepository;
+        this.supplierBaseResponseBuilder = supplierBaseResponseBuilder;
     }
 
     /**
@@ -100,7 +104,7 @@ public class SupplierController
     @Override
     @GetMapping(value = "/list")
     public ResponseEntity<?> findAll() {
-        return supplierService.findAll(supplierRepository);
+        return supplierBaseResponseBuilder.getAll(supplierService.findAll());
     }
 
     /**
@@ -111,7 +115,7 @@ public class SupplierController
     @Override
     @GetMapping(value = "/name/{name}")
     public ResponseEntity<?> findByName(@PathVariable String name) {
-        return supplierService.findByName(name, supplierRepository);
+        return supplierService.findByName(name);
     }
 
     /**
@@ -122,7 +126,9 @@ public class SupplierController
     @Override
     @GetMapping(value = "/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
-        return supplierService.findById(id, supplierRepository);
+        Optional<Supplier> supplierOptional = supplierService.findById(id);
+        return supplierOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -137,7 +143,7 @@ public class SupplierController
         if(supplier.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return supplierService.save(supplier, supplierRepository);
+        return supplierBaseResponseBuilder.save(supplierService.save(supplier));
     }
 
     /**
@@ -171,7 +177,7 @@ public class SupplierController
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
-        return storageService.findById(id, stringQuery, supplierStorageRepository);
+        return storageService.findById(id, stringQuery);
     }
 
     /**
@@ -193,7 +199,7 @@ public class SupplierController
     @GetMapping(value = "/storage/list/{id}")
     public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.supplier.id = ?1";
-        return storageService.findById(id, stringQuery, supplierStorageRepository);
+        return storageService.findById(id, stringQuery);
     }
 
     /**
@@ -220,7 +226,7 @@ public class SupplierController
         if(storage.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return storageService.addStorage(id, storage, supplierRepository, supplierStorageRepository);
+        return storageService.addStorage(id, storage, supplierService);
     }
 
 

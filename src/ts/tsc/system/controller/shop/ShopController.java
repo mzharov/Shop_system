@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.parent.ExtendedControllerInterface;
 import ts.tsc.system.controller.parent.OrderController;
 import ts.tsc.system.controller.parent.ShopOrderInterface;
@@ -51,7 +52,7 @@ public class ShopController extends OrderController
     @PersistenceContext
     EntityManager entityManager;
 
-    private final ShopRepository shopRepository;
+    //private final ShopRepository shopRepository;
     private final NamedService<Shop, Long> shopService;
     private final StorageService<Shop, ShopStorage, Long> storageService;
     private final ShopStorageRepository shopStorageRepository;
@@ -60,17 +61,18 @@ public class ShopController extends OrderController
     private final PurchaseProductRepository purchaseProductRepository;
     private final BaseService<Purchase, Long> purchaseService;
 
+    private final BaseResponseBuilder<Shop> shopBaseResponseBuilder;
+    private final BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder;
+
     @Autowired
-    public ShopController(ShopRepository shopRepository,
-                          @Qualifier(value = "namedService") NamedService<Shop, Long> shopService,
-                          StorageService<Shop, ShopStorage, Long> storageService,
+    public ShopController(@Qualifier(value = "shopService") NamedService<Shop, Long> shopService,
+                          @Qualifier(value = "shopStorageService") StorageService<Shop, ShopStorage, Long> storageService,
                           ShopStorageRepository shopStorageRepository,
                           ShopStorageProductRepository shopStorageProductRepository,
                           PurchaseRepository purchaseRepository,
                           PurchaseProductRepository purchaseProductRepository,
                           @Qualifier(value = "baseService")
-                                      BaseService<Purchase, Long> purchaseService) {
-        this.shopRepository = shopRepository;
+                                      BaseService<Purchase, Long> purchaseService, BaseResponseBuilder<Shop> shopBaseResponseBuilder, BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder) {
         this.shopService = shopService;
         this.storageService = storageService;
         this.shopStorageRepository = shopStorageRepository;
@@ -78,6 +80,8 @@ public class ShopController extends OrderController
         this.purchaseRepository = purchaseRepository;
         this.purchaseProductRepository = purchaseProductRepository;
         this.purchaseService = purchaseService;
+        this.shopBaseResponseBuilder = shopBaseResponseBuilder;
+        this.shopStorageBaseResponseBuilder = shopStorageBaseResponseBuilder;
     }
 
     /**
@@ -87,7 +91,7 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/list")
     public ResponseEntity<?> findAll() {
-        return shopService.findAll(shopRepository);
+        return shopBaseResponseBuilder.getAll(shopService.findAll());
     }
 
     /**
@@ -98,7 +102,7 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/name/{name}")
     public ResponseEntity<?>  findByName(@PathVariable String name) {
-        return shopService.findByName(name, shopRepository);
+        return shopService.findByName(name);
     }
 
     /**
@@ -109,7 +113,9 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/{id}")
     public ResponseEntity<?>  findById(@PathVariable Long id) {
-        return shopService.findById(id, shopRepository);
+        Optional<Shop> shopOptional = shopService.findById(id);
+        return shopOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -124,7 +130,7 @@ public class ShopController extends OrderController
         if(shop.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return shopService.save(shop, shopRepository);
+        return shopBaseResponseBuilder.save(shopService.save(shop));
     }
 
     /**
@@ -141,13 +147,12 @@ public class ShopController extends OrderController
         if(shop.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return shopRepository.findById(id)
-                .map(record -> {
-                    record.setName(shop.getName());
-                    record.setBudget(shop.getBudget());
-                    Shop updated = shopRepository.save(record);
-                    return ResponseEntity.ok().body(updated);
-                }).orElse(ResponseEntity.notFound().build());
+        Optional<Shop> baseShopOptional = shopService.findById(id);
+        if(baseShopOptional.isPresent()) {
+            return shopBaseResponseBuilder.save(shopService.update(id, shop));
+        } else {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -159,7 +164,7 @@ public class ShopController extends OrderController
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
-        return storageService.findById(id, stringQuery, shopStorageRepository);
+        return storageService.findById(id, stringQuery);
     }
 
 
@@ -170,7 +175,7 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?>  findAllStorage() {
-        return storageService.findAll(shopStorageRepository);
+        return shopStorageBaseResponseBuilder.getAll(storageService.findAll());
     }
 
     /**
@@ -182,7 +187,7 @@ public class ShopController extends OrderController
     @GetMapping(value = "/storage/list/{id}")
     public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.shop.id = ?1";
-        return storageService.findById(id, stringQuery, shopStorageRepository);
+        return storageService.findById(id, stringQuery);
     }
 
     /**
@@ -201,7 +206,7 @@ public class ShopController extends OrderController
      * @param id идентификатор магазина
      * @param storage объект типа Storage, которы йбудет добавлен
      * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *          2) {@link ts.tsc.system.service.storage.StorageServiceImplementation#addStorage(Object, BaseStorage, JpaRepository, JpaRepository)}
+     *          2) {@link ts.tsc.system.service.storage.StorageServiceImplementation#addStorage(Object, BaseStorage, JpaRepository)}
      */
     @Override
     @PostMapping(value = "/storage/{id}")
@@ -209,7 +214,7 @@ public class ShopController extends OrderController
         if(storage.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return storageService.addStorage(id, storage, shopRepository, shopStorageRepository);
+        return storageService.addStorage(id, storage, shopService);
     }
 
 
@@ -259,7 +264,7 @@ public class ShopController extends OrderController
                     HttpStatus.BAD_REQUEST);
         }
 
-        Optional<Shop> shopOptional = shopRepository.findById(shopID);
+        Optional<Shop> shopOptional = shopService.findById(shopID);
         if(!shopOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop",
                     HttpStatus.NOT_FOUND);
@@ -405,7 +410,7 @@ public class ShopController extends OrderController
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
         try {
-            shopRepository.save(shop);
+            shopService.save(shop);
         } catch (Exception e) {
             logger.error("Error: ", e);
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop",
@@ -570,7 +575,7 @@ public class ShopController extends OrderController
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
+        Optional<Shop> shopOptional = shopService.findById(shopStorage.getShop().getId());
         if(!shopOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop ", HttpStatus.NOT_FOUND);
         }
@@ -711,7 +716,7 @@ public class ShopController extends OrderController
      */
     @PutMapping(value = "/budget/{id}/{budgetString:.+}")
     public ResponseEntity<?> addBudget(@PathVariable Long id, @PathVariable String budgetString) {
-        Optional<Shop> shopOptional = shopRepository.findById(id);
+        Optional<Shop> shopOptional = shopService.findById(id);
         if(!shopOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
                     HttpStatus.NOT_FOUND);
@@ -727,7 +732,7 @@ public class ShopController extends OrderController
         Shop shop = shopOptional.get();
         shop.setBudget(shop.getBudget().add(budget));
         try {
-            shopRepository.save(shop);
+            shopService.save(shop);
         } catch (Exception e) {
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
                     HttpStatus.INTERNAL_SERVER_ERROR);

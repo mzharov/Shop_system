@@ -101,11 +101,12 @@ public class ProductController implements ProductControllerInterface {
     /**
      * Поиск по типу товара
      * @param category категория
-     * @return {@link ts.tsc.system.service.product.ProductServiceImplementation#findByCategory(String, ProductRepository)}
+     * @return {@link ts.tsc.system.service.product.ProductServiceImplementation#findByCategory(String)}
      */
     @Override
     @GetMapping(value = "/category/{category}")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Product>> findByCategory(@PathVariable String category) {
-        return productService.findByCategory(category, productRepository);
+        return productService.findByCategory(category);
     }
 }
