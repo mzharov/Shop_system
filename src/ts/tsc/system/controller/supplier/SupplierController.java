@@ -24,16 +24,13 @@ import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
 import ts.tsc.system.entity.supplier.SupplierStorageProduct;
 import ts.tsc.system.entity.supplier.SupplierStorageProductPrimaryKey;
-import ts.tsc.system.repository.delivery.DeliveryProductRepository;
-import ts.tsc.system.repository.delivery.DeliveryRepository;
 import ts.tsc.system.repository.named.NamedRepository;
 import ts.tsc.system.repository.shop.ShopRepository;
 import ts.tsc.system.repository.shop.ShopStorageProductRepository;
-import ts.tsc.system.repository.shop.ShopStorageRepository;
-import ts.tsc.system.repository.supplier.*;
 import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.named.NamedService;
-import ts.tsc.system.service.storage.StorageService;
+import ts.tsc.system.service.storage.manager.StorageServiceInterface;
+import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -56,49 +53,50 @@ public class SupplierController
     @PersistenceContext
     EntityManager entityManager;
 
-    private final SupplierRepository supplierRepository;
     private final ShopRepository shopRepository;
     private final NamedService<Supplier, Long> supplierService;
     private final BaseService<Delivery, Long> deliveryService;
-    private final ShopStorageRepository shopStorageRepository;
-    private final StorageService<Supplier, SupplierStorage, Long> storageService;
-    private final SupplierStorageRepository supplierStorageRepository;
-    private final SupplierStorageProductRepository supplierStorageProductRepository;
-    private final DeliveryRepository deliveryRepository;
-    private final DeliveryProductRepository deliveryProductRepository;
-    private final ShopStorageProductRepository shopStorageProductRepository;
+    private final BaseService<ShopStorage, Long> shopStorageService;
+    private final BaseService<SupplierStorage, Long> supplierStorageService;
+    private final StorageServiceInterface<Supplier, SupplierStorage, Long> storageServiceInterface;
+    private final BaseService<SupplierStorageProduct, SupplierStorageProductPrimaryKey> supplierStorageProductService;
+    private final BaseService<DeliveryProduct, DeliveryProductPrimaryKey> deliveryProductService;
+    private final BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> shopStorageProductService;
 
     private final BaseResponseBuilder<Supplier> supplierBaseResponseBuilder;
+    private final BaseResponseBuilder<Delivery> deliveryBaseResponseBuilder;
+    private final BaseResponseBuilder<SupplierStorage> supplierStorageBaseResponseBuilder;
 
     @Autowired
-    public SupplierController(SupplierRepository supplierRepository,
-                              ShopRepository shopRepository,
-                              @Qualifier(value = "baseService")
-                                          BaseService<Delivery, Long> deliveryService,
-                              ShopStorageRepository shopStorageRepository,
-                              StorageService<Supplier, SupplierStorage, Long> storageService,
-                              SupplierStorageRepository supplierStorageRepository,
+    public SupplierController(ShopRepository shopRepository,
+                              @Qualifier(value = "deliveryService") BaseService<Delivery, Long> deliveryService,
+                              BaseService<ShopStorage, Long> shopStorageService,
+                              @Qualifier(value = "supplierStorageService")
+                                      StorageServiceInterface<Supplier, SupplierStorage, Long> storageServiceInterface,
                               @Qualifier(value = "supplierService") NamedService<Supplier, Long> supplierService,
-                              SupplierStorageProductRepository supplierStorageProductRepository,
-                              DeliveryRepository deliveryRepository,
-                              DeliveryProductRepository deliveryProductRepository,
-                              ShopStorageProductRepository shopStorageProductRepository, BaseResponseBuilder<Supplier> supplierBaseResponseBuilder) {
-        this.supplierRepository = supplierRepository;
+                              BaseService<SupplierStorage, Long> supplierStorageService,
+                              BaseService<SupplierStorageProduct, SupplierStorageProductPrimaryKey> supplierStorageProductService,
+                              BaseService<DeliveryProduct, DeliveryProductPrimaryKey> deliveryProductService,
+                              BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> shopStorageProductService, ShopStorageProductRepository shopStorageProductRepository,
+                              BaseResponseBuilder<Supplier> supplierBaseResponseBuilder,
+                              BaseResponseBuilder<Delivery> deliveryBaseResponseBuilder,
+                              BaseResponseBuilder<SupplierStorage> supplierStorageBaseResponseBuilder) {
         this.shopRepository = shopRepository;
         this.deliveryService = deliveryService;
-        this.shopStorageRepository = shopStorageRepository;
-        this.storageService = storageService;
-        this.supplierStorageRepository = supplierStorageRepository;
+        this.shopStorageService = shopStorageService;
+        this.storageServiceInterface = storageServiceInterface;
         this.supplierService = supplierService;
-        this.supplierStorageProductRepository = supplierStorageProductRepository;
-        this.deliveryRepository = deliveryRepository;
-        this.deliveryProductRepository = deliveryProductRepository;
-        this.shopStorageProductRepository = shopStorageProductRepository;
+        this.supplierStorageService = supplierStorageService;
+        this.supplierStorageProductService = supplierStorageProductService;
+        this.deliveryProductService = deliveryProductService;
+        this.shopStorageProductService = shopStorageProductService;
         this.supplierBaseResponseBuilder = supplierBaseResponseBuilder;
+        this.deliveryBaseResponseBuilder = deliveryBaseResponseBuilder;
+        this.supplierStorageBaseResponseBuilder = supplierStorageBaseResponseBuilder;
     }
 
     /**
-     * Поиск всех магазинов
+     * Поиск всех поставщиков
      * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
      */
     @Override
@@ -115,7 +113,7 @@ public class SupplierController
     @Override
     @GetMapping(value = "/name/{name}")
     public ResponseEntity<?> findByName(@PathVariable String name) {
-        return supplierService.findByName(name);
+        return supplierStorageBaseResponseBuilder.getAll(supplierService.findByName(name));
     }
 
     /**
@@ -160,24 +158,24 @@ public class SupplierController
         if(supplier.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return supplierRepository.findById(id)
-                .map(record -> {
-                    record.setName(supplier.getName());
-                    Supplier updated = supplierRepository.save(record);
-                    return ResponseEntity.ok().body(updated);
-                }).orElse(ResponseEntity.notFound().build());
+        Optional<Supplier> supplierOptional = supplierService.findById(id);
+        if(supplierOptional.isPresent()) {
+            return supplierBaseResponseBuilder.save(supplierService.update(id, supplier));
+        } else {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier", HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
      * Поиск склада по идентификтаору
      * @param id идентификтаор склада
-     * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Object, JpaRepository)}
      */
     @Override
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
-        return storageService.findById(id, stringQuery);
+        return storageServiceInterface.findById(id, stringQuery);
     }
 
     /**
@@ -187,19 +185,19 @@ public class SupplierController
     @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?> findAllStorage() {
-        return storageService.findAll(supplierStorageRepository);
+        return supplierStorageBaseResponseBuilder.getAll(storageServiceInterface.findAll());
     }
 
     /**
      * Поиск складов по идентификтору магазина
      * @param id идентификтаор магазина
-     * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#findById(Long, String, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Long, String, JpaRepository)}
      */
     @Override
     @GetMapping(value = "/storage/list/{id}")
     public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.supplier.id = ?1";
-        return storageService.findById(id, stringQuery);
+        return storageServiceInterface.findById(id, stringQuery);
     }
 
     /**
@@ -210,7 +208,9 @@ public class SupplierController
     @Override
     @GetMapping(value = "/order/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable Long id) {
-        return deliveryService.findById(id, deliveryRepository);
+        Optional<Delivery> deliveryOptional = deliveryService.findById(id);
+        return deliveryOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -218,7 +218,7 @@ public class SupplierController
      * @param id идентификатор магазина
      * @param storage объект типа Storage, который будет добавлен
      * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *          2) {@link ts.tsc.system.service.storage.StorageServiceImplementation#addStorage(Object, BaseStorage, JpaRepository, JpaRepository)}
+     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, JpaRepository, JpaRepository)}
      */
     @Override
     @PostMapping(value = "/storage/{id}")
@@ -226,7 +226,7 @@ public class SupplierController
         if(storage.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return storageService.addStorage(id, storage, supplierService);
+        return storageServiceInterface.addStorage(id, storage, supplierService);
     }
 
 
@@ -238,7 +238,7 @@ public class SupplierController
     @SuppressWarnings("unchecked")
     @GetMapping(value = "/storage/product/list/{id}")
     public ResponseEntity<?> getStorageProducts(@PathVariable Long id) {
-        return getStorageProducts(id, supplierStorageRepository);
+        return getStorageProducts(id, supplierStorageService);
     }
 
     /**
@@ -274,14 +274,14 @@ public class SupplierController
         }
 
         Optional<SupplierStorage> supplierStorageOptional
-                = supplierStorageRepository.findById(supplierID);
+                = supplierStorageService.findById(supplierID);
         if(!supplierStorageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
                     HttpStatus.NOT_FOUND);
         }
 
         Optional<ShopStorage> shopStorageOptional
-                = shopStorageRepository.findById(shopStorageID);
+                = shopStorageService.findById(shopStorageID);
         if(!shopStorageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop_storage",
                     HttpStatus.NOT_FOUND);
@@ -358,7 +358,7 @@ public class SupplierController
         delivery.setSupplierStorage(supplierStorage);
 
         try {
-            deliveryRepository.save(delivery);
+            deliveryService.save(delivery);
         } catch (Exception e) {
             logger.error("Error: ", e);
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
@@ -415,7 +415,7 @@ public class SupplierController
                         .setSumPrice(supplierStorageProduct.getPrice()
                                 .multiply(new BigDecimal(count)));
                 try {
-                    deliveryProductRepository.save(deliveryProduct);
+                    deliveryProductService.save(deliveryProduct);
                 } catch (Exception e) {
                     logger.error("Error: ", e);
                     return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery_product",
@@ -434,7 +434,7 @@ public class SupplierController
                     .multiply(new BigDecimal(count)))
                     .multiply(new BigDecimal(coefficient))));
             try {
-                supplierStorageProductRepository.save(supplierStorageProduct);
+                supplierStorageProductService.save(supplierStorageProduct);
             } catch (Exception e) {
                 logger.error("Error: ", e);
                 return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
@@ -442,7 +442,7 @@ public class SupplierController
             }
         }
         try {
-            supplierStorageRepository.save(supplierStorage);
+            supplierStorageService.save(supplierStorage);
         } catch (Exception e) {
             logger.error("Error: ", e);
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage",
@@ -456,7 +456,7 @@ public class SupplierController
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return deliveryRepository.findById(delivery.getId())
+        return deliveryService.findById(delivery.getId())
                 .<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
@@ -478,7 +478,7 @@ public class SupplierController
      */
     @GetMapping(value = "/order/list")
     public ResponseEntity<?> getAllOrders() {
-        return deliveryService.findAll(deliveryRepository);
+        return deliveryBaseResponseBuilder.getAll(deliveryService.findAll());
     }
 
     /**
@@ -504,7 +504,7 @@ public class SupplierController
         delivery.setOrderStatus(OrderStatus.DELIVERING);
 
         try {
-            deliveryRepository.save(delivery);
+            deliveryService.save(delivery);
         } catch (Exception e) {
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -528,7 +528,7 @@ public class SupplierController
      */
     @Override
     protected ResponseEntity<?> completeOrder(Long id) {
-        Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
+        Optional<Delivery> deliveryOptional = deliveryService.findById(id);
 
         if(!deliveryOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":delivery",
@@ -582,7 +582,7 @@ public class SupplierController
                     deliveryProduct.getPrimaryKey().getProduct());
 
             Optional<ShopStorageProduct> shopStorageProductOptional
-                    = shopStorageProductRepository
+                    = shopStorageProductService
                     .findById(primaryKey);
             ShopStorageProduct shopStorageProduct;
             if(shopStorageProductOptional.isPresent()) {
@@ -598,14 +598,14 @@ public class SupplierController
             }
             shopStorage.setFreeSpace(shopStorage.getFreeSpace()-deliveryProduct.getCount());
             try {
-                shopStorageProductRepository.save(shopStorageProduct);
+                shopStorageProductService.save(shopStorageProduct);
             } catch (Exception e) {
                 logger.error("Error", e);
                 new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
             try {
-                shopStorageRepository.save(shopStorage);
+                shopStorageService.save(shopStorage);
             } catch (Exception e) {
                 logger.error("Error", e);
                 new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage",
@@ -614,7 +614,7 @@ public class SupplierController
         }
 
         try {
-            deliveryRepository.save(delivery);
+            deliveryService.save(delivery);
         } catch (Exception e) {
             logger.error("Error", e);
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
@@ -651,7 +651,7 @@ public class SupplierController
 
 
         Optional<SupplierStorage> supplierStorageOptional
-                = supplierStorageRepository.findById(delivery.getSupplierStorage().getId());
+                = supplierStorageService.findById(delivery.getSupplierStorage().getId());
         if(!supplierStorageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
                     HttpStatus.NOT_FOUND);
@@ -687,7 +687,7 @@ public class SupplierController
         }
 
         try {
-            deliveryRepository.save(delivery);
+            deliveryService.save(delivery);
         } catch (Exception e) {
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -743,7 +743,7 @@ public class SupplierController
         }
 
 
-        Optional<SupplierStorage> supplierStorageOptional = supplierStorageRepository.findById(id);
+        Optional<SupplierStorage> supplierStorageOptional = supplierStorageService.findById(id);
         if(!supplierStorageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
                     HttpStatus.NOT_FOUND);
@@ -804,7 +804,7 @@ public class SupplierController
 
         for(SupplierStorageProduct supplierStorageProduct : supplierStorageProductList) {
             try {
-                supplierStorageProductRepository.save(supplierStorageProduct);
+                supplierStorageProductService.save(supplierStorageProduct);
             } catch (Exception e) {
                 return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
@@ -812,20 +812,20 @@ public class SupplierController
         }
 
         try {
-            supplierStorageRepository.save(supplierStorage);
+            supplierStorageService.save(supplierStorage);
         } catch (Exception e) {
             logger.error("Error ", e);
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        supplierStorageOptional = supplierStorageRepository.findById(id);
+        supplierStorageOptional = supplierStorageService.findById(id);
         return supplierStorageOptional.<ResponseEntity<?>>map(supplierStorageR ->
                 new ResponseEntity<>(supplierStorageR, HttpStatus.OK)).orElseGet(()
                 -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
     private Delivery isExist(Long id) {
-        Optional<Delivery> deliveryOptional = deliveryRepository.findById(id);
+        Optional<Delivery> deliveryOptional = deliveryService.findById(id);
         return deliveryOptional.orElse(null);
     }
 }

@@ -1,13 +1,12 @@
 package ts.tsc.system.service.named;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entity.parent.NamedEntity;
 import ts.tsc.system.repository.named.NamedRepository;
 import ts.tsc.system.service.base.BaseServiceImplementation;
+
+import java.util.List;
 
 /**
  * Реализация интрефейса для поиска объектов по имени
@@ -16,7 +15,7 @@ import ts.tsc.system.service.base.BaseServiceImplementation;
  */
 @Service("namedService")
 @Transactional
-public class NamedServiceImplementation<T extends NamedEntity, ID>
+public abstract class NamedServiceImplementation<T extends NamedEntity, ID>
         extends BaseServiceImplementation<T, ID>
         implements NamedService<T, ID> {
 
@@ -28,17 +27,10 @@ public class NamedServiceImplementation<T extends NamedEntity, ID>
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<?> findByName(String name) {
-        return getRepository().findByName(name).map(record -> ResponseEntity.ok().body(record))
-                .orElse(ResponseEntity.notFound().build());
+    public List<T> findByName(String name) {
+        return getRepository().findByName(name);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ResponseEntity<?> findByName(String name, NamedRepository<T, ID> repository) {
-        return repository.findByName(name).map(record -> ResponseEntity.ok().body(record))
-                .orElse(ResponseEntity.notFound().build());
-    }
 
     @Override
     public NamedRepository<T, ID> getRepository() {

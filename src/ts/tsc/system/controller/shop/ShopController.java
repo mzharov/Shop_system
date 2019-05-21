@@ -24,12 +24,11 @@ import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.entity.shop.ShopStorageProduct;
 import ts.tsc.system.entity.shop.ShopStorageProductPrimaryKey;
 import ts.tsc.system.repository.named.NamedRepository;
-import ts.tsc.system.repository.purchase.PurchaseProductRepository;
-import ts.tsc.system.repository.purchase.PurchaseRepository;
-import ts.tsc.system.repository.shop.*;
 import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.named.NamedService;
-import ts.tsc.system.service.storage.StorageService;
+import ts.tsc.system.service.order.ShopInterface;
+import ts.tsc.system.service.storage.manager.StorageServiceInterface;
+import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -52,36 +51,36 @@ public class ShopController extends OrderController
     @PersistenceContext
     EntityManager entityManager;
 
-    //private final ShopRepository shopRepository;
-    private final NamedService<Shop, Long> shopService;
-    private final StorageService<Shop, ShopStorage, Long> storageService;
-    private final ShopStorageRepository shopStorageRepository;
-    private final ShopStorageProductRepository shopStorageProductRepository;
-    private final PurchaseRepository purchaseRepository;
-    private final PurchaseProductRepository purchaseProductRepository;
+    private final ShopInterface shopService;
+    private final StorageServiceInterface<Shop, ShopStorage, Long> storageServiceInterface;
+    private final BaseService<ShopStorage, Long> shopStorageService;
+    private final BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> shopStorageProductService;
     private final BaseService<Purchase, Long> purchaseService;
+    private final BaseService<PurchaseProduct, PurchaseProductPrimaryKey> purchaseProductService;
 
     private final BaseResponseBuilder<Shop> shopBaseResponseBuilder;
     private final BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder;
+    private final BaseResponseBuilder<Purchase> purchaseBaseResponseBuilder;
 
     @Autowired
-    public ShopController(@Qualifier(value = "shopService") NamedService<Shop, Long> shopService,
-                          @Qualifier(value = "shopStorageService") StorageService<Shop, ShopStorage, Long> storageService,
-                          ShopStorageRepository shopStorageRepository,
-                          ShopStorageProductRepository shopStorageProductRepository,
-                          PurchaseRepository purchaseRepository,
-                          PurchaseProductRepository purchaseProductRepository,
-                          @Qualifier(value = "baseService")
-                                      BaseService<Purchase, Long> purchaseService, BaseResponseBuilder<Shop> shopBaseResponseBuilder, BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder) {
+    public ShopController(@Qualifier(value = "shopService") ShopInterface shopService,
+                          @Qualifier(value = "shopStorageService") StorageServiceInterface<Shop, ShopStorage, Long> storageServiceInterface,
+                          BaseService<ShopStorage, Long> shopStorageService,
+                          BaseService<ShopStorageProduct, ShopStorageProductPrimaryKey> shopStorageProductService,
+                          @Qualifier(value = "purchaseService") BaseService<Purchase, Long> purchaseService,
+                          BaseService<PurchaseProduct, PurchaseProductPrimaryKey> purchaseProductService,
+                          BaseResponseBuilder<Shop> shopBaseResponseBuilder,
+                          BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder,
+                          BaseResponseBuilder<Purchase> purchaseBaseResponseBuilder) {
         this.shopService = shopService;
-        this.storageService = storageService;
-        this.shopStorageRepository = shopStorageRepository;
-        this.shopStorageProductRepository = shopStorageProductRepository;
-        this.purchaseRepository = purchaseRepository;
-        this.purchaseProductRepository = purchaseProductRepository;
+        this.storageServiceInterface = storageServiceInterface;
+        this.shopStorageService = shopStorageService;
+        this.shopStorageProductService = shopStorageProductService;
+        this.purchaseProductService = purchaseProductService;
         this.purchaseService = purchaseService;
         this.shopBaseResponseBuilder = shopBaseResponseBuilder;
         this.shopStorageBaseResponseBuilder = shopStorageBaseResponseBuilder;
+        this.purchaseBaseResponseBuilder = purchaseBaseResponseBuilder;
     }
 
     /**
@@ -102,7 +101,7 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/name/{name}")
     public ResponseEntity<?>  findByName(@PathVariable String name) {
-        return shopService.findByName(name);
+        return shopStorageBaseResponseBuilder.getAll(shopService.findByName(name));
     }
 
     /**
@@ -151,20 +150,20 @@ public class ShopController extends OrderController
         if(baseShopOptional.isPresent()) {
             return shopBaseResponseBuilder.save(shopService.update(id, shop));
         } else {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop", HttpStatus.NOT_FOUND);
         }
     }
 
     /**
      * Поиск склада по идентификтаору
      * @param id идентификтаор склада
-     * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Object, JpaRepository)}
      */
     @Override
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
-        return storageService.findById(id, stringQuery);
+        return storageServiceInterface.findById(id, stringQuery);
     }
 
 
@@ -175,19 +174,19 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?>  findAllStorage() {
-        return shopStorageBaseResponseBuilder.getAll(storageService.findAll());
+        return shopStorageBaseResponseBuilder.getAll(storageServiceInterface.findAll());
     }
 
     /**
      * Поиск складов по идентификтору магазина
      * @param id идентификтаор магазина
-     * @return {@link ts.tsc.system.service.storage.StorageServiceImplementation#findById(Long, String, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Long, String, JpaRepository)}
      */
     @Override
     @GetMapping(value = "/storage/list/{id}")
     public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.shop.id = ?1";
-        return storageService.findById(id, stringQuery);
+        return storageServiceInterface.findById(id, stringQuery);
     }
 
     /**
@@ -198,7 +197,9 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/order/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable Long id) {
-        return purchaseService.findById(id, purchaseRepository);
+        Optional<Purchase> purchaseOptional = purchaseService.findById(id);
+        return purchaseOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -206,7 +207,7 @@ public class ShopController extends OrderController
      * @param id идентификатор магазина
      * @param storage объект типа Storage, которы йбудет добавлен
      * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *          2) {@link ts.tsc.system.service.storage.StorageServiceImplementation#addStorage(Object, BaseStorage, JpaRepository)}
+     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, JpaRepository)}
      */
     @Override
     @PostMapping(value = "/storage/{id}")
@@ -214,7 +215,7 @@ public class ShopController extends OrderController
         if(storage.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return storageService.addStorage(id, storage, shopService);
+        return storageServiceInterface.addStorage(id, storage, shopService);
     }
 
 
@@ -226,7 +227,7 @@ public class ShopController extends OrderController
     @SuppressWarnings("unchecked")
     @GetMapping(value = "/storage/product/list/{id}")
     public ResponseEntity<?> getStorageProducts(@PathVariable Long id) {
-        return getStorageProducts(id, shopStorageRepository);
+        return getStorageProducts(id, shopStorageService);
     }
 
     /**
@@ -236,7 +237,7 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/order/list")
     public ResponseEntity<?> getAllOrders() {
-        return purchaseService.findAll(purchaseRepository);
+        return purchaseBaseResponseBuilder.getAll(purchaseService.findAll());
     }
 
     /**
@@ -315,7 +316,7 @@ public class ShopController extends OrderController
         purchase.setOrderStatus(OrderStatus.RECEIVED);
 
         try {
-            purchaseRepository.save(purchase);
+            purchaseService.save(purchase);
         } catch (Exception e) {
             logger.error("Error: ", e);
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
@@ -374,7 +375,7 @@ public class ShopController extends OrderController
                 purchaseProduct.setSumPrice(sumPrice);
 
                 try {
-                    purchaseProductRepository.save(purchaseProduct);
+                    purchaseProductService.save(purchaseProduct);
                 } catch (Exception e) {
                     logger.error("Error: ", e);
                     return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase",
@@ -394,7 +395,7 @@ public class ShopController extends OrderController
                     .multiply(new BigDecimal(coefficient))));
 
             try {
-                shopStorageProductRepository.save(shopStorageProduct);
+                shopStorageProductService.save(shopStorageProduct);
             } catch (Exception e) {
                 logger.error("Error: ", e);
                 return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage_product",
@@ -403,7 +404,7 @@ public class ShopController extends OrderController
         }
 
         try {
-            shopStorageRepository.save(shopStorage);
+            shopStorageService.save(shopStorage);
         } catch (Exception e) {
             logger.error("Error: ", e);
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage",
@@ -417,7 +418,7 @@ public class ShopController extends OrderController
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return purchaseRepository.findById(purchase.getId())
+        return purchaseService.findById(purchase.getId())
                 .<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
@@ -457,7 +458,7 @@ public class ShopController extends OrderController
         purchase.setOrderStatus(OrderStatus.DELIVERING);
 
         try {
-            purchaseRepository.save(purchase);
+            purchaseService.save(purchase);
         } catch (Exception e) {
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase ",
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -489,7 +490,7 @@ public class ShopController extends OrderController
         purchase.setOrderStatus(OrderStatus.COMPLETED);
 
         try {
-            purchaseRepository.save(purchase);
+            purchaseService.save(purchase);
         } catch (Exception e) {
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase",
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -568,7 +569,7 @@ public class ShopController extends OrderController
         }
 
         try {
-            purchaseRepository.save(purchase);
+            purchaseService.save(purchase);
             logger.info(purchase.getOrderStatus().toString());
         } catch (Exception e) {
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase",
@@ -610,9 +611,9 @@ public class ShopController extends OrderController
         }
 
         Optional<ShopStorage> targetShopStorageOptional
-                = shopStorageRepository.findById(targetShopStorageID);
+                = shopStorageService.findById(targetShopStorageID);
         Optional<ShopStorage> shopStorageOptional
-                = shopStorageRepository.findById(shopStorageID);
+                = shopStorageService.findById(shopStorageID);
 
         if(!shopStorageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":source_storage",
@@ -689,10 +690,10 @@ public class ShopController extends OrderController
             targetShopStorage.setFreeSpace(targetShopStorage.getFreeSpace()-count);
 
             try {
-                 shopStorageProductRepository.save(shopStorageProductMain);
-                 shopStorageProductRepository.save(shopStorageProduct);
-                 shopStorageRepository.save(shopStorage);
-                 shopStorageRepository.save(targetShopStorage);
+                 shopStorageProductService.save(shopStorageProductMain);
+                 shopStorageProductService.save(shopStorageProduct);
+                 shopStorageService.save(shopStorage);
+                 shopStorageService.save(targetShopStorage);
             } catch (Exception e) {
                 logger.error("Error", e);
                 new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
@@ -700,7 +701,7 @@ public class ShopController extends OrderController
             }
         }
 
-        return shopStorageRepository.findById(targetShopStorageID)
+        return shopStorageService.findById(targetShopStorageID)
                 .<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
@@ -741,7 +742,7 @@ public class ShopController extends OrderController
     }
 
     private Purchase isPurchaseExist(Long id) {
-        Optional<Purchase> deliveryOptional = purchaseRepository.findById(id);
+        Optional<Purchase> deliveryOptional = purchaseService.findById(id);
         return deliveryOptional.orElse(null);
     }
 }

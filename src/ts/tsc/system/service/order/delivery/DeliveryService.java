@@ -1,4 +1,4 @@
-package ts.tsc.system.service.delivery;
+package ts.tsc.system.service.order.delivery;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

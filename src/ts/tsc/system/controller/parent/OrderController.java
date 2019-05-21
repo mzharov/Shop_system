@@ -1,17 +1,20 @@
 package ts.tsc.system.controller.parent;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
+import ts.tsc.system.entity.parent.BaseEntity;
 import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.parent.OrderEntity;
+import ts.tsc.system.entity.shop.Shop;
+import ts.tsc.system.service.base.BaseService;
 
 import java.util.Optional;
 
-public abstract class OrderController<B, P, T extends BaseStorage<B, P>> {
+public abstract class OrderController<B extends BaseEntity, P, T extends BaseStorage<B, P>> {
     protected abstract ResponseEntity<?> deliverOrder(Long id);
     protected abstract ResponseEntity<?> completeOrder(Long id);
     protected abstract ResponseEntity<?> cancelOrder(Long id);
@@ -57,7 +60,7 @@ public abstract class OrderController<B, P, T extends BaseStorage<B, P>> {
      *         2) если товаров на складе нет возвращается код 404 с сообщением NO_PRODUCTS_IN_STORAGE,
      *         3) если склад с указанным идентификатором не найден код 404 c сообщением ELEMENT_NOT_FOUND
      */
-    protected ResponseEntity<?> getStorageProducts(Long id, JpaRepository<T, Long> repository) {
+    protected ResponseEntity<?> getStorageProducts(Long id, BaseService<T, Long> repository) {
         Optional<T> storageOptional = repository.findById(id);
         if(!storageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,

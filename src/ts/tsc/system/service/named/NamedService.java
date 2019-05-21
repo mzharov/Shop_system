@@ -1,12 +1,11 @@
 package ts.tsc.system.service.named;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.http.ResponseEntity;
 import ts.tsc.system.entity.parent.NamedEntity;
-import ts.tsc.system.repository.named.NamedRepository;
 import ts.tsc.system.service.base.BaseService;
 
+import java.util.List;
+
 public interface NamedService<T extends NamedEntity, ID> extends BaseService<T, ID> {
-    ResponseEntity<?> findByName(String name, NamedRepository<T, ID> repository);
-    ResponseEntity<?> findByName(String name);
+    List<T> findByName(String name);
+    T update(ID id, T entity);
 }

@@ -1,4 +1,4 @@
-package ts.tsc.system.service.purchase;
+package ts.tsc.system.service.order.purchase;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,9 +11,9 @@ import ts.tsc.system.service.base.BaseServiceImplementation;
 @Transactional
 public class PurchaseService extends BaseServiceImplementation<Purchase, Long> {
 
-    @Autowired
     private final PurchaseRepository purchaseRepository;
 
+    @Autowired
     public PurchaseService(PurchaseRepository purchaseRepository) {
         this.purchaseRepository = purchaseRepository;
     }

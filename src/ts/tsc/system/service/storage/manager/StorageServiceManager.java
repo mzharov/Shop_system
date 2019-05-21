@@ -1,6 +1,5 @@
-package ts.tsc.system.service.storage;
+package ts.tsc.system.service.storage.manager;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -25,8 +24,8 @@ import java.util.Optional;
  */
 @Service("storageService")
 @Transactional
-public class StorageServiceImplementation<B extends NamedEntity<ID>, P, T extends BaseStorage<B, P>, ID>
-        extends BaseServiceImplementation<T, ID> implements StorageService<B, T, ID>{
+public abstract class StorageServiceManager<B extends NamedEntity<ID>, P, T extends BaseStorage<B, P>, ID>
+        extends BaseServiceImplementation<T, ID> implements StorageServiceInterface<B, T, ID> {
     @PersistenceContext
     EntityManager entityManager;
 
