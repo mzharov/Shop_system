@@ -1,7 +1,6 @@
 package ts.tsc.system.controller.shop;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,8 +33,7 @@ public class ShopController extends OrderController
         ExtendedControllerInterface<Shop, ShopStorage> {
 
     private final ShopInterface shopService;
-    private final StorageServiceInterface<Shop, ShopStorage, Long> storageServiceInterface;
-    private final BaseServiceInterface<ShopStorage, Long> shopStorageService;
+    private final StorageServiceInterface<Shop, ShopStorage, Long> shopStorageService;
     private final BaseServiceInterface<Purchase, Long> purchaseService;
 
     private final BaseResponseBuilder<Shop> shopBaseResponseBuilder;
@@ -43,15 +41,13 @@ public class ShopController extends OrderController
     private final BaseResponseBuilder<Purchase> purchaseBaseResponseBuilder;
 
     @Autowired
-    public ShopController(@Qualifier(value = "shopService") ShopInterface shopService,
-                          @Qualifier(value = "shopStorageService") StorageServiceInterface<Shop, ShopStorage, Long> storageServiceInterface,
-                          BaseServiceInterface<ShopStorage, Long> shopStorageService,
-                          @Qualifier(value = "purchaseService") BaseServiceInterface<Purchase, Long> purchaseService,
+    public ShopController(ShopInterface shopService,
+                          StorageServiceInterface<Shop, ShopStorage, Long> shopStorageService,
+                          BaseServiceInterface<Purchase, Long> purchaseService,
                           BaseResponseBuilder<Shop> shopBaseResponseBuilder,
                           BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder,
                           BaseResponseBuilder<Purchase> purchaseBaseResponseBuilder) {
         this.shopService = shopService;
-        this.storageServiceInterface = storageServiceInterface;
         this.shopStorageService = shopStorageService;
         this.purchaseService = purchaseService;
         this.shopBaseResponseBuilder = shopBaseResponseBuilder;
@@ -139,7 +135,7 @@ public class ShopController extends OrderController
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
-        return storageServiceInterface.findById(id, stringQuery);
+        return shopStorageService.findById(id, stringQuery);
     }
 
 
@@ -150,7 +146,7 @@ public class ShopController extends OrderController
     @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?>  findAllStorage() {
-        return shopStorageBaseResponseBuilder.getAll(storageServiceInterface.findAll());
+        return shopStorageBaseResponseBuilder.getAll(shopStorageService.findAll());
     }
 
     /**
@@ -162,7 +158,7 @@ public class ShopController extends OrderController
     @GetMapping(value = "/storage/list/{id}")
     public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
         String stringQuery = "select entity from ShopStorage entity where entity.shop.id = ?1";
-        return storageServiceInterface.findById(id, stringQuery);
+        return shopStorageService.findById(id, stringQuery);
     }
 
     /**
@@ -191,7 +187,7 @@ public class ShopController extends OrderController
         if(storage.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return storageServiceInterface.addStorage(id, storage, shopService);
+        return shopStorageService.addStorage(id, storage, shopService);
     }
 
 

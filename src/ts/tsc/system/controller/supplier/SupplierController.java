@@ -1,7 +1,6 @@
 package ts.tsc.system.controller.supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,26 +34,22 @@ public class SupplierController
 
     private final SupplierInterface supplierService;
     private final BaseServiceInterface<Delivery, Long> deliveryService;
-    private final BaseServiceInterface<SupplierStorage, Long> supplierStorageService;
-    private final StorageServiceInterface<Supplier, SupplierStorage, Long> storageServiceInterface;
+    private final StorageServiceInterface<Supplier, SupplierStorage, Long> supplierStorageService;
 
     private final BaseResponseBuilder<Supplier> supplierBaseResponseBuilder;
     private final BaseResponseBuilder<Delivery> deliveryBaseResponseBuilder;
     private final BaseResponseBuilder<SupplierStorage> supplierStorageBaseResponseBuilder;
 
     @Autowired
-    public SupplierController(@Qualifier(value = "deliveryService") BaseServiceInterface<Delivery, Long> deliveryService,
-                              @Qualifier(value = "supplierStorageService")
-                                      StorageServiceInterface<Supplier, SupplierStorage, Long> storageServiceInterface,
-                              @Qualifier(value = "supplierService") SupplierInterface supplierService,
-                              BaseServiceInterface<SupplierStorage, Long> supplierStorageService,
+    public SupplierController(BaseServiceInterface<Delivery, Long> deliveryService,
+                              StorageServiceInterface<Supplier, SupplierStorage, Long> supplierStorageService,
+                              SupplierInterface supplierService,
                               BaseResponseBuilder<Supplier> supplierBaseResponseBuilder,
                               BaseResponseBuilder<Delivery> deliveryBaseResponseBuilder,
                               BaseResponseBuilder<SupplierStorage> supplierStorageBaseResponseBuilder) {
         this.deliveryService = deliveryService;
-        this.storageServiceInterface = storageServiceInterface;
-        this.supplierService = supplierService;
         this.supplierStorageService = supplierStorageService;
+        this.supplierService = supplierService;
         this.supplierBaseResponseBuilder = supplierBaseResponseBuilder;
         this.deliveryBaseResponseBuilder = deliveryBaseResponseBuilder;
         this.supplierStorageBaseResponseBuilder = supplierStorageBaseResponseBuilder;
@@ -140,7 +135,7 @@ public class SupplierController
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<?> findStorageById(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
-        return storageServiceInterface.findById(id, stringQuery);
+        return supplierStorageService.findById(id, stringQuery);
     }
 
     /**
@@ -150,7 +145,7 @@ public class SupplierController
     @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?> findAllStorage() {
-        return supplierStorageBaseResponseBuilder.getAll(storageServiceInterface.findAll());
+        return supplierStorageBaseResponseBuilder.getAll(supplierStorageService.findAll());
     }
 
     /**
@@ -162,7 +157,7 @@ public class SupplierController
     @GetMapping(value = "/storage/list/{id}")
     public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
         String stringQuery = "select entity from SupplierStorage entity where entity.supplier.id = ?1";
-        return storageServiceInterface.findById(id, stringQuery);
+        return supplierStorageService.findById(id, stringQuery);
     }
 
     /**
@@ -191,7 +186,7 @@ public class SupplierController
         if(storage.getId() !=null) {
             return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
         }
-        return storageServiceInterface.addStorage(id, storage, supplierService);
+        return supplierStorageService.addStorage(id, storage, supplierService);
     }
 
 
