@@ -29,6 +29,8 @@ import ts.tsc.system.repository.shop.ShopRepository;
 import ts.tsc.system.repository.shop.ShopStorageProductRepository;
 import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.named.NamedService;
+import ts.tsc.system.service.order.OrderInterface;
+import ts.tsc.system.service.order.SupplierInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
@@ -54,7 +56,7 @@ public class SupplierController
     EntityManager entityManager;
 
     private final ShopRepository shopRepository;
-    private final NamedService<Supplier, Long> supplierService;
+    private final SupplierInterface supplierService;
     private final BaseService<Delivery, Long> deliveryService;
     private final BaseService<ShopStorage, Long> shopStorageService;
     private final BaseService<SupplierStorage, Long> supplierStorageService;
@@ -73,7 +75,7 @@ public class SupplierController
                               BaseService<ShopStorage, Long> shopStorageService,
                               @Qualifier(value = "supplierStorageService")
                                       StorageServiceInterface<Supplier, SupplierStorage, Long> storageServiceInterface,
-                              @Qualifier(value = "supplierService") NamedService<Supplier, Long> supplierService,
+                              @Qualifier(value = "supplierService") SupplierInterface supplierService,
                               BaseService<SupplierStorage, Long> supplierStorageService,
                               BaseService<SupplierStorageProduct, SupplierStorageProductPrimaryKey> supplierStorageProductService,
                               BaseService<DeliveryProduct, DeliveryProductPrimaryKey> deliveryProductService,
@@ -489,7 +491,6 @@ public class SupplierController
      *         3) код 500 с сообщением ERROR_WHILE_SAVING:deliver, если не удалось сохранить изменения
      *         4) код 200 с объектом заказа, если удалось изменить состояние
      */
-    @Override
     protected ResponseEntity<?> deliverOrder(Long id) {
         Delivery delivery = isExist(id);
         if(delivery == null) {
@@ -526,7 +527,6 @@ public class SupplierController
      *         8) код 500 с сообщением ERROR_WHILE_SAVING:delivery, если не удалось сохранить изменения в заказе
      *         9) код 200 с объектом заказа, если удалось завершить запрос
      */
-    @Override
     protected ResponseEntity<?> completeOrder(Long id) {
         Optional<Delivery> deliveryOptional = deliveryService.findById(id);
 
@@ -635,7 +635,6 @@ public class SupplierController
      *         7) код 404 с сообщением ELEMENT_NOT_FOUND:shop, если магазин не найден
      *         8) {@link #transfer(List, List, SupplierStorage, Delivery, Shop)}
      */
-    @Override
     protected ResponseEntity<?> cancelOrder(Long id) {
         Delivery delivery = isExist(id);
         if(delivery == null) {
@@ -702,6 +701,11 @@ public class SupplierController
         Shop shop = shopOptional.get();
 
         return transfer(productIdList, countList, supplierStorage, delivery, shop);
+    }
+
+    @Override
+    protected OrderInterface getService() {
+        return supplierService;
     }
 
     /**

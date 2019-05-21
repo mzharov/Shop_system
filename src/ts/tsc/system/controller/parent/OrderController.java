@@ -11,13 +11,12 @@ import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.parent.OrderEntity;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.service.order.OrderInterface;
 
 import java.util.Optional;
 
 public abstract class OrderController<B extends BaseEntity, P, T extends BaseStorage<B, P>> {
-    protected abstract ResponseEntity<?> deliverOrder(Long id);
-    protected abstract ResponseEntity<?> completeOrder(Long id);
-    protected abstract ResponseEntity<?> cancelOrder(Long id);
+    protected abstract OrderInterface getService();
 
     /**
      * Изменения статуса заказа
@@ -40,12 +39,12 @@ public abstract class OrderController<B extends BaseEntity, P, T extends BaseSto
         }
 
         if(orderStatus.equals(OrderStatus.DELIVERING)) {
-            return deliverOrder(id);
+            return getService().deliverOrder(id);
         }
         if(orderStatus.equals(OrderStatus.COMPLETED)) {
-            return completeOrder(id);
+            return getService().completeOrder(id);
         }
-        return cancelOrder(id);
+        return getService().cancelOrder(id);
     }
     protected boolean isNotCancelable(OrderEntity orderEntity) {
         return !(orderEntity.getOrderStatus().equals(OrderStatus.RECEIVED)

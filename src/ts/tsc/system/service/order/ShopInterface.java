@@ -1,16 +1,25 @@
 package ts.tsc.system.service.order;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.shop.Shop;
+import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.service.named.NamedService;
 
 import java.util.List;
 
-public interface ShopInterface extends NamedService<Shop, Long> {
-    ResponseEntity<?> deliverOrder(Long id);
-    ResponseEntity<?> completeOrder(Long id);
-    ResponseEntity<?> cancelOrder(Long id);
+public interface ShopInterface extends OrderInterface<Shop> {
     ResponseEntity<?> receiveOrder(Long shopID,
-                                   List<Long> productID,
-                                   List<Integer> count);
+                                   List<Long> productIDList,
+                                   List<Integer> countList);
+    ResponseEntity<?> transfer(List<Long> productIDList,
+                               List<Integer> countList,
+                               ShopStorage shopStorage,
+                               Purchase purchase, Shop shop);
+    ResponseEntity<?> addBudget(Long id, String budgetString);
+    ResponseEntity<?> transferProducts(Long shopStorageID,
+                                       Long targetShopStorageID,
+                                       List<Long> productIDList,
+                                       List<Integer> countList);
 }
