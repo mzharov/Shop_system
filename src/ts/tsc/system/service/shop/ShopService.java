@@ -26,7 +26,6 @@ import ts.tsc.system.repository.shop.ShopStorageRepository;
 import ts.tsc.system.service.named.NamedService;
 
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
