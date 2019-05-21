@@ -4,11 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.repository.supplier.SupplierStorageProductRepository;
-import ts.tsc.system.service.base.BaseServiceImplementation;
+import ts.tsc.system.service.base.BaseService;
 
 @Service("supplierStorageProductService")
 @Transactional
-public class SupplierStorageProductService extends BaseServiceImplementation {
+public class SupplierStorageProductService extends BaseService {
 
     private final SupplierStorageProductRepository supplierStorageProductRepository;
 

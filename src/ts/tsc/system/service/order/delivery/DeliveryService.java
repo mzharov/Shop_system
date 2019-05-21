@@ -5,11 +5,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.repository.delivery.DeliveryRepository;
-import ts.tsc.system.service.base.BaseServiceImplementation;
+import ts.tsc.system.service.base.BaseService;
 
 @Service("deliveryService")
 @Transactional
-public class DeliveryService extends BaseServiceImplementation<Delivery, Long> {
+public class DeliveryService extends BaseService<Delivery, Long> {
 
     private final DeliveryRepository deliveryRepository;
 

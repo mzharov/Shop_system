@@ -3,14 +3,11 @@ package ts.tsc.system.controller.parent;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.parent.BaseEntity;
 import ts.tsc.system.entity.parent.BaseStorage;
-import ts.tsc.system.entity.parent.OrderEntity;
-import ts.tsc.system.entity.shop.Shop;
-import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.service.base.BaseServiceInterface;
 import ts.tsc.system.service.order.OrderInterface;
 
 import java.util.Optional;
@@ -24,9 +21,13 @@ public abstract class OrderController<B extends BaseEntity, P, T extends BaseSto
      * @param stringStatus новое состояние
      * @return 1) объект заказа с кодом 200, если успешно,
      *         2) код 400 с описанием UNKNOWN_DELIVER_STATUS, если передано неизвестное состояние,
-     *         3) {@link #deliverOrder(Long)},
-     *         4) {@link #cancelOrder(Long)},
-     *         5) {@link #completeOrder(Long)}
+     *         3) Остальные возможные значения:
+     *                      3.1) {@link ts.tsc.system.service.shop.ShopService#deliverOrder(Long)}
+     *                      3.2) {@link ts.tsc.system.service.supplier.SupplierService#deliverOrder(Long)}
+     *                      3.3) {@link ts.tsc.system.service.shop.ShopService#completeOrder(Long)} (Long)}
+     *                      3.4) {@link ts.tsc.system.service.supplier.SupplierService#completeOrder(Long)}
+     *                      3.5) {@link ts.tsc.system.service.shop.ShopService#cancelOrder(Long)} (Long)}
+     *                      3.6) {@link ts.tsc.system.service.supplier.SupplierService#cancelOrder(Long)}
      */
     public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable String stringStatus) {
 
@@ -55,7 +56,7 @@ public abstract class OrderController<B extends BaseEntity, P, T extends BaseSto
      *         2) если товаров на складе нет возвращается код 404 с сообщением NO_PRODUCTS_IN_STORAGE,
      *         3) если склад с указанным идентификатором не найден код 404 c сообщением ELEMENT_NOT_FOUND
      */
-    protected ResponseEntity<?> getStorageProducts(Long id, BaseService<T, Long> repository) {
+    protected ResponseEntity<?> getStorageProducts(Long id, BaseServiceInterface<T, Long> repository) {
         Optional<T> storageOptional = repository.findById(id);
         if(!storageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,

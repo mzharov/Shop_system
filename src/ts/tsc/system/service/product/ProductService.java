@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.repository.product.ProductRepository;
-import ts.tsc.system.service.named.NamedServiceImplementation;
+import ts.tsc.system.service.named.NamedService;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ import java.util.List;
 @Service("productService")
 @Transactional
 public class ProductService
-        extends NamedServiceImplementation<Product, Long>
+        extends NamedService<Product, Long>
         implements ProductServiceInterface {
 
     private final ProductRepository productRepository;
@@ -29,7 +29,8 @@ public class ProductService
     /**
      * Поиск по типу товара
      * @param category тип товара
-     * @return объект и код 200, если удалось найти список товаров; иначе код 404
+     * @return 1) код 200 с объектом в теле ответа
+     *         2) иначе код 404
      */
     @Transactional(readOnly = true)
     public ResponseEntity<List<Product>> findByCategory(String category) {
@@ -37,6 +38,13 @@ public class ProductService
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Обновление состояния объекта
+     * @param id идентификатор объекта
+     * @param product тело объекта, содержжащего изменения
+     * @return 1) объект, если удалось сохранить
+     *         2) null - если не удалось
+     */
     @Override
     public Product update(Long id, Product product) {
         return productRepository.findById(id)

@@ -1,7 +1,6 @@
 package ts.tsc.system.service.supplier;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.service.order.OrderInterface;
 

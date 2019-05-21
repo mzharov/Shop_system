@@ -2,7 +2,6 @@ package ts.tsc.system.controller.supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,11 +12,12 @@ import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.parent.BaseStorage;
-import ts.tsc.system.entity.shop.*;
 import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
-import ts.tsc.system.repository.named.NamedRepository;
 import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.service.base.BaseServiceInterface;
+import ts.tsc.system.service.named.NamedService;
+import ts.tsc.system.service.named.NamedServiceInterface;
 import ts.tsc.system.service.order.OrderInterface;
 import ts.tsc.system.service.supplier.SupplierInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceInterface;
@@ -34,8 +34,8 @@ public class SupplierController
         ExtendedControllerInterface<Supplier, SupplierStorage> {
 
     private final SupplierInterface supplierService;
-    private final BaseService<Delivery, Long> deliveryService;
-    private final BaseService<SupplierStorage, Long> supplierStorageService;
+    private final BaseServiceInterface<Delivery, Long> deliveryService;
+    private final BaseServiceInterface<SupplierStorage, Long> supplierStorageService;
     private final StorageServiceInterface<Supplier, SupplierStorage, Long> storageServiceInterface;
 
     private final BaseResponseBuilder<Supplier> supplierBaseResponseBuilder;
@@ -43,11 +43,11 @@ public class SupplierController
     private final BaseResponseBuilder<SupplierStorage> supplierStorageBaseResponseBuilder;
 
     @Autowired
-    public SupplierController(@Qualifier(value = "deliveryService") BaseService<Delivery, Long> deliveryService,
+    public SupplierController(@Qualifier(value = "deliveryService") BaseServiceInterface<Delivery, Long> deliveryService,
                               @Qualifier(value = "supplierStorageService")
                                       StorageServiceInterface<Supplier, SupplierStorage, Long> storageServiceInterface,
                               @Qualifier(value = "supplierService") SupplierInterface supplierService,
-                              BaseService<SupplierStorage, Long> supplierStorageService,
+                              BaseServiceInterface<SupplierStorage, Long> supplierStorageService,
                               BaseResponseBuilder<Supplier> supplierBaseResponseBuilder,
                               BaseResponseBuilder<Delivery> deliveryBaseResponseBuilder,
                               BaseResponseBuilder<SupplierStorage> supplierStorageBaseResponseBuilder) {
@@ -62,7 +62,7 @@ public class SupplierController
 
     /**
      * Поиск всех поставщиков
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
+     * @return {@link BaseService#findAll()}
      */
     @Override
     @GetMapping(value = "/list")
@@ -73,7 +73,7 @@ public class SupplierController
     /**
      * Поиск по названию магазина
      * @param name название, по которому будет происходить поиск
-     * @return {@link ts.tsc.system.service.named.NamedServiceImplementation#findByName(String, NamedRepository)}
+     * @return {@link NamedService#findByName(String)}
      */
     @Override
     @GetMapping(value = "/name/{name}")
@@ -84,7 +84,7 @@ public class SupplierController
     /**
      * Поиск магазина по идентификатору
      * @param id идентификатор запрашиваемого объекта
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link BaseService#findById(Object)}
      */
     @Override
     @GetMapping(value = "/{id}")
@@ -98,7 +98,7 @@ public class SupplierController
      * Добавление нового магазина
      * @param supplier объект типа Supplier
      * @return 1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON
-     *         2) {@link ts.tsc.system.service.base.BaseServiceImplementation#save(Object, JpaRepository)}
+     *         2) {@link BaseService#save(Object)}
      */
     @Override
     @PostMapping(value = "/")
@@ -134,7 +134,7 @@ public class SupplierController
     /**
      * Поиск склада по идентификтаору
      * @param id идентификтаор склада
-     * @return {@link StorageServiceManager#findById(Object, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Object)}
      */
     @Override
     @GetMapping(value = "/storage/{id}")
@@ -145,7 +145,7 @@ public class SupplierController
 
     /**
      * Поиск всех складов магазинов
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
+     * @return {@link BaseService#findAll()}
      */
     @Override
     @GetMapping(value = "/storage/list")
@@ -156,7 +156,7 @@ public class SupplierController
     /**
      * Поиск складов по идентификтору магазина
      * @param id идентификтаор магазина
-     * @return {@link StorageServiceManager#findById(Long, String, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Long, String)}
      */
     @Override
     @GetMapping(value = "/storage/list/{id}")
@@ -168,7 +168,7 @@ public class SupplierController
     /**
      * Поиск заказа по идентификатору
      * @param id идентификатор заказа
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link BaseService#findById(Object)}
      */
     @Override
     @GetMapping(value = "/order/{id}")
@@ -183,7 +183,7 @@ public class SupplierController
      * @param id идентификатор магазина
      * @param storage объект типа Storage, который будет добавлен
      * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, JpaRepository, JpaRepository)}
+     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, NamedServiceInterface)} )}
      */
     @Override
     @PostMapping(value = "/storage/{id}")
@@ -197,7 +197,7 @@ public class SupplierController
 
     /**
      * Получение списка продуктов со склада
-     * @return {@link OrderController#getStorageProducts(Long, JpaRepository)}
+     * @return {@link OrderController#getStorageProducts(Long, BaseServiceInterface)}
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -223,7 +223,7 @@ public class SupplierController
      *         8) код 404 с сообщением ELEMENT_NOT_FOUND:shop, если не удалось найти магазин
      *         9) код 400 с сообщением NOT_ENOUGH_MONEY, если у магазина не хватает бюджета
      *         10) код 500 с сообщением ERROR_WHILE_SAVING, если не удалось сохранить заказ
-     *         11) {@link #transfer(List, List, SupplierStorage, Delivery, Shop)}
+     *         11) {@see ts.tsc.system.service.supplier.SupplierService#transfer(List, List, SupplierStorage, Delivery, Shop)}
      *
      */
     @Override
@@ -249,7 +249,7 @@ public class SupplierController
 
     /**
      * Поиск всех доставок
-     * @return {@link ts.tsc.system.service.base.BaseService#findAll(JpaRepository)}
+     * @return {@link BaseServiceInterface#findAll()}
      */
     @GetMapping(value = "/order/list")
     public ResponseEntity<?> getAllOrders() {

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
-import ts.tsc.system.entity.parent.OrderEntity;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.purchase.PurchaseProduct;
@@ -23,7 +22,7 @@ import ts.tsc.system.repository.purchase.PurchaseRepository;
 import ts.tsc.system.repository.shop.ShopRepository;
 import ts.tsc.system.repository.shop.ShopStorageProductRepository;
 import ts.tsc.system.repository.shop.ShopStorageRepository;
-import ts.tsc.system.service.named.NamedServiceImplementation;
+import ts.tsc.system.service.named.NamedService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -36,10 +35,12 @@ import java.util.Optional;
 
 @Service("shopService")
 @Transactional
-public class ShopService extends NamedServiceImplementation<Shop, Long> implements ShopInterface {
+public class ShopService extends NamedService<Shop, Long> implements ShopInterface {
 
     @PersistenceContext
     EntityManager entityManager;
+
+    private final Logger logger = LoggerFactory.getLogger(ShopService.class);
 
     private final ShopRepository shopRepository;
     private final PurchaseRepository purchaseRepository;
@@ -47,10 +48,12 @@ public class ShopService extends NamedServiceImplementation<Shop, Long> implemen
     private final ShopStorageProductRepository shopStorageProductRepository;
     private final ShopStorageRepository shopStorageRepository;
 
-    private final Logger logger = LoggerFactory.getLogger(ShopService.class);
-
     @Autowired
-    public ShopService(ShopRepository shopRepository, PurchaseRepository purchaseRepository, PurchaseProductRepository purchaseProductRepository, ShopStorageProductRepository shopStorageProductRepository, ShopStorageRepository shopStorageRepository) {
+    public ShopService(ShopRepository shopRepository,
+                       PurchaseRepository purchaseRepository,
+                       PurchaseProductRepository purchaseProductRepository,
+                       ShopStorageProductRepository shopStorageProductRepository,
+                       ShopStorageRepository shopStorageRepository) {
         this.shopRepository = shopRepository;
         this.purchaseRepository = purchaseRepository;
         this.purchaseProductRepository = purchaseProductRepository;
@@ -63,6 +66,13 @@ public class ShopService extends NamedServiceImplementation<Shop, Long> implemen
         return this.shopRepository;
     }
 
+    /**
+     * Обновление состояния объекта
+     * @param id идентификатор объекта
+     * @param shop тело объекта, содержащее изменения
+     * @return 1) измененный объект
+     *         2) null - если не удалось произвести сохранение
+     */
     @Override
     public Shop update(Long id, Shop shop) {
         return shopRepository.findById(id)
@@ -139,6 +149,18 @@ public class ShopService extends NamedServiceImplementation<Shop, Long> implemen
         return new ResponseEntity<>(purchase, HttpStatus.OK);
     }
 
+    /**
+     * Отмена заказа
+     * @param id идентификтаор заказа
+     * @return 1) код 404 с сообщением ELEMENT_NOT_FOUND:purchase, если заказ не найден
+     *         2) код 400 с сообщением WRONG_DELIVERY_STATUS, если нельзя перевести заказ в состояние CANCELED
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:shop_storage, если склад не найден
+     *         4) код 400 с сообщением BAD_REQUEST, если не удалось выполнить запрос
+     *         5) код 400 с сообщением NOT_ENOUGH_SPACE:shop_storage, если на складе магазина не хватает места
+     *         6) код 500 с сообщением ERROR_WHILE_SAVING:purchase, если не удалось сохранить изменения
+     *         7) {@link #transfer(List, List, ShopStorage, Purchase, Shop)}
+     *
+     */
     @Override
     public ResponseEntity<?> cancelOrder(Long id) {
         Purchase purchase = isPurchaseExist(id);
@@ -213,6 +235,20 @@ public class ShopService extends NamedServiceImplementation<Shop, Long> implemen
         return transfer(productIdList, countList, shopStorage, purchase, shop);
     }
 
+    /**
+     * Обработка поступившего заказа
+     * @param shopID идентификатор магазина, в котором запрошена покупка
+     * @param productIDList списко идентификтаоров продуктов
+     * @param countList список количества продуктов
+     * @return 1) Если количество элементов списке идентификаторов товаров и их количества разное
+     *            возвращается код 400 с сообщением WRONG_NUMBER_OF_PARAMETERS
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND:shop - если не найден магазин с указанным id
+     *         3) код 404 с сообщением ELEMENT_NOT_FOUND:internal_storage - если не найден внутренний склад у магазина
+     *         4) код 404 с сообщением ELEMENT_NOT_FOUND:product - если не удалось найти какой-то товар на складе
+     *         5) код 400 с оообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-либо товара
+     *         6) код 500 с сообщением ERROR_WHILE_SAVING - если не удалось сохранить заказ
+     *         7) {@link #transfer(List, List, ShopStorage, Purchase, Shop)}
+     */
     @Override
     public ResponseEntity<?> receiveOrder(Long shopID, List<Long> productIDList, List<Integer> countList) {
         if(productIDList.size() != countList.size()) {
@@ -295,8 +331,7 @@ public class ShopService extends NamedServiceImplementation<Shop, Long> implemen
      *         5) код 500 с сообщением ERROR_WHILE_SAVING:shop если не удалось сохранить изменения в магазине
      *         6) код 200 с объектом заказа, если удалось обработать запрос
      */
-    @Override
-    public ResponseEntity<?> transfer(List<Long> productIdList, List<Integer> countList, ShopStorage shopStorage, Purchase purchase, Shop shop) {
+    private ResponseEntity<?> transfer(List<Long> productIdList, List<Integer> countList, ShopStorage shopStorage, Purchase purchase, Shop shop) {
         for(int orderIterator = 0; orderIterator < productIdList.size(); orderIterator++) {
             Long productID = productIdList.get(orderIterator);
             Integer count = countList.get(orderIterator);
@@ -533,7 +568,7 @@ public class ShopService extends NamedServiceImplementation<Shop, Long> implemen
         return deliveryOptional.orElse(null);
     }
 
-    protected boolean isNotCancelable(Purchase purchase) {
+    private boolean isNotCancelable(Purchase purchase) {
         return !(purchase.getOrderStatus().equals(OrderStatus.RECEIVED)
                 || purchase.getOrderStatus().equals(OrderStatus.DELIVERING));
     }

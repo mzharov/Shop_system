@@ -2,15 +2,14 @@ package ts.tsc.system.controller.product;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.product.Product;
-import ts.tsc.system.repository.named.NamedRepository;
-import ts.tsc.system.service.base.BaseServiceImplementation;
+import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.service.named.NamedService;
 import ts.tsc.system.service.product.ProductService;
 import ts.tsc.system.service.product.ProductServiceInterface;
 
@@ -33,7 +32,7 @@ public class ProductController implements ProductControllerInterface {
 
     /**
      * Поиск всех товаров
-     * @return {@link BaseServiceImplementation#findAll(JpaRepository)}
+     * @return {@link BaseService#findAll()}
      */
     @Override
     @GetMapping(value = "/list")
@@ -44,7 +43,7 @@ public class ProductController implements ProductControllerInterface {
     /**
      * Поиск товара по названию
      * @param name название товара
-     * @return {@link ts.tsc.system.service.named.NamedServiceImplementation#findByName(String, NamedRepository)}
+     * @return {@link NamedService#findByName(String)}
      */
     @Override
     @GetMapping(value = "/name/{name}")
@@ -55,7 +54,7 @@ public class ProductController implements ProductControllerInterface {
     /**
      * Поиск товара по идентификатору
      * @param id идентификатор
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link BaseService#findById(Object)}
      */
     @Override
     @GetMapping(value = "/{id}")
@@ -69,7 +68,7 @@ public class ProductController implements ProductControllerInterface {
      * Добавление нового товара
      * @param product объект, представляющий товар
      * @return 1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *         2) {@link ts.tsc.system.service.base.BaseServiceImplementation#save(Object, JpaRepository)}
+     *         2) {@link ProductService#save(Object)}
      */
     @Override
     @PostMapping(value = "/")

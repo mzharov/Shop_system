@@ -1,10 +1,7 @@
 package ts.tsc.system.controller.shop;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,15 +14,15 @@ import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.entity.shop.ShopStorage;
-import ts.tsc.system.repository.named.NamedRepository;
 import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.service.base.BaseServiceInterface;
+import ts.tsc.system.service.named.NamedService;
+import ts.tsc.system.service.named.NamedServiceInterface;
 import ts.tsc.system.service.order.OrderInterface;
 import ts.tsc.system.service.shop.ShopInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,15 +33,10 @@ public class ShopController extends OrderController
         ShopOrderInterface,
         ExtendedControllerInterface<Shop, ShopStorage> {
 
-    private final Logger logger = LoggerFactory.getLogger(ShopController.class);
-
-    @PersistenceContext
-    EntityManager entityManager;
-
     private final ShopInterface shopService;
     private final StorageServiceInterface<Shop, ShopStorage, Long> storageServiceInterface;
-    private final BaseService<ShopStorage, Long> shopStorageService;
-    private final BaseService<Purchase, Long> purchaseService;
+    private final BaseServiceInterface<ShopStorage, Long> shopStorageService;
+    private final BaseServiceInterface<Purchase, Long> purchaseService;
 
     private final BaseResponseBuilder<Shop> shopBaseResponseBuilder;
     private final BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder;
@@ -53,8 +45,8 @@ public class ShopController extends OrderController
     @Autowired
     public ShopController(@Qualifier(value = "shopService") ShopInterface shopService,
                           @Qualifier(value = "shopStorageService") StorageServiceInterface<Shop, ShopStorage, Long> storageServiceInterface,
-                          BaseService<ShopStorage, Long> shopStorageService,
-                          @Qualifier(value = "purchaseService") BaseService<Purchase, Long> purchaseService,
+                          BaseServiceInterface<ShopStorage, Long> shopStorageService,
+                          @Qualifier(value = "purchaseService") BaseServiceInterface<Purchase, Long> purchaseService,
                           BaseResponseBuilder<Shop> shopBaseResponseBuilder,
                           BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder,
                           BaseResponseBuilder<Purchase> purchaseBaseResponseBuilder) {
@@ -69,7 +61,7 @@ public class ShopController extends OrderController
 
     /**
      * Поиск всех магазинов
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
+     * @return {@link BaseService#findAll()}
      */
     @Override
     @GetMapping(value = "/list")
@@ -80,7 +72,7 @@ public class ShopController extends OrderController
     /**
      * Поиск по названию магазина
      * @param name название, по которому будет происходить поиск
-     * @return {@link ts.tsc.system.service.named.NamedServiceImplementation#findByName(String, NamedRepository)}
+     * @return {@link NamedService#findByName(String)}
      */
     @Override
     @GetMapping(value = "/name/{name}")
@@ -91,7 +83,7 @@ public class ShopController extends OrderController
     /**
      * Поиск магазина по идентификатору
      * @param id идентификатор запрашиваемого объекта
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link BaseService#findById(Object)}
      */
     @Override
     @GetMapping(value = "/{id}")
@@ -105,7 +97,7 @@ public class ShopController extends OrderController
      * Добавление нового магазина
      * @param shop объект типа Shop
      * @return 1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *         2) {@link ts.tsc.system.service.base.BaseServiceImplementation#save(Object, JpaRepository)}
+     *         2) {@link BaseService#save(Object)}
      */
     @Override
     @PostMapping(value = "/")
@@ -141,7 +133,7 @@ public class ShopController extends OrderController
     /**
      * Поиск склада по идентификтаору
      * @param id идентификатор склада
-     * @return {@link StorageServiceManager#findById(Object, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Object)}
      */
     @Override
     @GetMapping(value = "/storage/{id}")
@@ -153,7 +145,7 @@ public class ShopController extends OrderController
 
     /**
      * Поиск всех складов магазинов
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
+     * @return {@link BaseService#findAll()}
      */
     @Override
     @GetMapping(value = "/storage/list")
@@ -164,7 +156,7 @@ public class ShopController extends OrderController
     /**
      * Поиск складов по идентификтору магазина
      * @param id идентификтаор магазина
-     * @return {@link StorageServiceManager#findById(Long, String, JpaRepository)}
+     * @return {@link StorageServiceManager#findById(Long, String)}
      */
     @Override
     @GetMapping(value = "/storage/list/{id}")
@@ -176,7 +168,7 @@ public class ShopController extends OrderController
     /**
      * Поиск заказа по идентификатору
      * @param id идентификатор заказа
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findById(Object, JpaRepository)}
+     * @return {@link BaseService#findById(Object)}
      */
     @Override
     @GetMapping(value = "/order/{id}")
@@ -191,7 +183,7 @@ public class ShopController extends OrderController
      * @param id идентификатор магазина
      * @param storage объект типа Storage, которы йбудет добавлен
      * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, JpaRepository)}
+     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, NamedServiceInterface)}
      */
     @Override
     @PostMapping(value = "/storage/{id}")
@@ -205,7 +197,7 @@ public class ShopController extends OrderController
 
     /**
      * Получение списка продуктов со склада
-     * @return {@link OrderController#getStorageProducts(Long, JpaRepository)}
+     * @return {@link OrderController#getStorageProducts(Long, BaseServiceInterface)}
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -216,7 +208,7 @@ public class ShopController extends OrderController
 
     /**
      * Получение списка заказов
-     * @return {@link ts.tsc.system.service.base.BaseServiceImplementation#findAll(JpaRepository)}
+     * @return {@link BaseService#findAll()}
      */
     @Override
     @GetMapping(value = "/order/list")
@@ -236,7 +228,7 @@ public class ShopController extends OrderController
      *         4) код 404 с сообщением ELEMENT_NOT_FOUND:product - если не удалось найти какой-то товар на складе
      *         5) код 400 с оообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-либо товара
      *         6) код 500 с сообщением ERROR_WHILE_SAVING - если не удалось сохранить заказ
-     *         7) {@link #transfer(List, List, ShopStorage, Purchase, Shop)}
+     *         7) {@see ShopService#transfer(List, List, ShopStorage, Purchase, Shop)}
      */
     @Override
     @PostMapping (value = "/order/{shopID}/{productIdList}/{countList}")

@@ -3,10 +3,10 @@ package ts.tsc.system.service.order.purchase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ts.tsc.system.repository.purchase.PurchaseProductRepository;
-import ts.tsc.system.service.base.BaseServiceImplementation;
+import ts.tsc.system.service.base.BaseService;
 
 @Service("purchaseProductService")
-public class PurchaseProductService extends BaseServiceImplementation {
+public class PurchaseProductService extends BaseService {
 
     private final PurchaseProductRepository purchaseProductRepository;
 

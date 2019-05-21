@@ -12,7 +12,6 @@ import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.delivery.DeliveryProduct;
 import ts.tsc.system.entity.delivery.DeliveryProductPrimaryKey;
-import ts.tsc.system.entity.parent.OrderEntity;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.entity.shop.ShopStorage;
@@ -30,7 +29,7 @@ import ts.tsc.system.repository.shop.ShopStorageRepository;
 import ts.tsc.system.repository.supplier.SupplierRepository;
 import ts.tsc.system.repository.supplier.SupplierStorageProductRepository;
 import ts.tsc.system.repository.supplier.SupplierStorageRepository;
-import ts.tsc.system.service.named.NamedServiceImplementation;
+import ts.tsc.system.service.named.NamedService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -43,7 +42,7 @@ import java.util.Optional;
 
 @Service("supplierService")
 @Transactional
-public class SupplierService extends NamedServiceImplementation<Supplier, Long> implements SupplierInterface {
+public class SupplierService extends NamedService<Supplier, Long> implements SupplierInterface {
 
     @PersistenceContext
     EntityManager entityManager;
@@ -65,7 +64,8 @@ public class SupplierService extends NamedServiceImplementation<Supplier, Long> 
                            SupplierStorageProductRepository supplierStorageProductRepository,
                            DeliveryRepository deliveryRepository, ShopRepository shopRepository,
                            DeliveryProductRepository deliveryProductRepository,
-                           ShopStorageProductRepository shopStorageProductRepository, ShopStorageRepository shopStorageRepository) {
+                           ShopStorageProductRepository shopStorageProductRepository,
+                           ShopStorageRepository shopStorageRepository) {
         this.supplierRepository = supplierRepository;
         this.supplierStorageRepository = supplierStorageRepository;
         this.supplierStorageProductRepository = supplierStorageProductRepository;
@@ -82,6 +82,13 @@ public class SupplierService extends NamedServiceImplementation<Supplier, Long> 
         return this.supplierRepository;
     }
 
+    /**
+     * Обновление объекта
+     * @param id идентификатор объекта
+     * @param supplier измененный объект
+     * @return 1) измененный объект после сохранения в БД
+     *         2) null - если произошла ошибка входе сохранения
+     */
     @Override
     public Supplier update(Long id, Supplier supplier) {
         return supplierRepository.findById(id)
@@ -655,7 +662,7 @@ public class SupplierService extends NamedServiceImplementation<Supplier, Long> 
         return deliveryOptional.orElse(null);
     }
 
-    protected boolean isNotCancelable(Delivery delivery) {
+    private boolean isNotCancelable(Delivery delivery) {
         return !((delivery.getOrderStatus().equals(OrderStatus.RECEIVED)
                 || delivery.getOrderStatus().equals(OrderStatus.DELIVERING)));
     }

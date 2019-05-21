@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.parent.NamedEntity;
-import ts.tsc.system.service.base.BaseServiceImplementation;
-import ts.tsc.system.service.named.NamedService;
+import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.service.named.NamedServiceInterface;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -25,7 +25,7 @@ import java.util.Optional;
 @Service("storageService")
 @Transactional
 public abstract class StorageServiceManager<B extends NamedEntity<ID>, P, T extends BaseStorage<B, P>, ID>
-        extends BaseServiceImplementation<T, ID> implements StorageServiceInterface<B, T, ID> {
+        extends BaseService<T, ID> implements StorageServiceInterface<B, T, ID> {
     @PersistenceContext
     EntityManager entityManager;
 
@@ -33,7 +33,8 @@ public abstract class StorageServiceManager<B extends NamedEntity<ID>, P, T exte
      * Поиск складов по заданному запросу
      * @param id входной параметр
      * @param stringQuery строковый запрос HQL
-     * @return объект, с указанным идентификатором и кодом 200, если найден; иначе код 404
+     * @return 1) код 200 с объектм в теле ответа
+     *         2) код 404 если по указанному идентификатору ничего не найдено
      */
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
@@ -57,10 +58,10 @@ public abstract class StorageServiceManager<B extends NamedEntity<ID>, P, T exte
      * @param namedService репозиторий таблицы целевых объектов
      * @return 1) код 200 и объект, если удалось добавить;
      *         2) код 404 - если не йдалось найти целевой объект;
-     *         3) код 422 с описанием - если в ходе добавления произошла ошибка
+     *         3) код 422 - если в ходе добавления произошла ошибка
      */
     @Override
-    public ResponseEntity<?> addStorage(ID id, T storage, NamedService<B, ID> namedService) {
+    public ResponseEntity<?> addStorage(ID id, T storage, NamedServiceInterface<B, ID> namedService) {
         try {
             Optional<B> optionalSupplier = namedService.findById(id);
             if(optionalSupplier.isPresent()) {
