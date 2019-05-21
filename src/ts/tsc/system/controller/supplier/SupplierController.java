@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controller.parent.ExtendedControllerInterface;
 import ts.tsc.system.controller.parent.OrderController;
-import ts.tsc.system.controller.parent.SupplierOrderInterface;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.delivery.Delivery;
@@ -29,8 +28,7 @@ import java.util.Optional;
 @RequestMapping(value = "/supplier")
 public class SupplierController
         extends OrderController
-        implements SupplierOrderInterface,
-        ExtendedControllerInterface<Supplier, SupplierStorage> {
+        implements ExtendedControllerInterface<Supplier, SupplierStorage> {
 
     private final SupplierInterface supplierService;
     private final BaseServiceInterface<Delivery, Long> deliveryService;
@@ -221,7 +219,6 @@ public class SupplierController
      *         11) {@see ts.tsc.system.service.supplier.SupplierService#transfer(List, List, SupplierStorage, Delivery, Shop)}
      *
      */
-    @Override
     @PostMapping(value = "/order/{supplierID}/{shopStorageID}/{productIdList}/{countList}")
     public ResponseEntity<?> receiveOrder(@PathVariable Long supplierID,
                              @PathVariable Long shopStorageID,
@@ -250,8 +247,6 @@ public class SupplierController
     public ResponseEntity<?> getAllOrders() {
         return deliveryBaseResponseBuilder.getAll(deliveryService.findAll());
     }
-
-
 
     @Override
     protected OrderInterface getService() {

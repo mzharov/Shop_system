@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.parent.ExtendedControllerInterface;
 import ts.tsc.system.controller.parent.OrderController;
-import ts.tsc.system.controller.parent.ShopOrderInterface;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.purchase.Purchase;
@@ -27,10 +26,9 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/shop")
-public class ShopController extends OrderController
-        implements
-        ShopOrderInterface,
-        ExtendedControllerInterface<Shop, ShopStorage> {
+public class ShopController
+        extends OrderController
+        implements ExtendedControllerInterface<Shop, ShopStorage> {
 
     private final ShopInterface shopService;
     private final StorageServiceInterface<Shop, ShopStorage, Long> shopStorageService;
@@ -226,7 +224,6 @@ public class ShopController extends OrderController
      *         6) код 500 с сообщением ERROR_WHILE_SAVING - если не удалось сохранить заказ
      *         7) {@see ShopService#transfer(List, List, ShopStorage, Purchase, Shop)}
      */
-    @Override
     @PostMapping (value = "/order/{shopID}/{productIdList}/{countList}")
     public ResponseEntity<?> receiveOrder(@PathVariable Long shopID,
                                           @PathVariable List<Long> productIdList,

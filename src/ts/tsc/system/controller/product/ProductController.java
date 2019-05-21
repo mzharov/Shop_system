@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ts.tsc.system.controller.parent.BaseControllerInterface;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.product.Product;
@@ -18,7 +19,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/product")
-public class ProductController implements ProductControllerInterface {
+public class ProductController implements BaseControllerInterface<Product> {
 
     private final ProductServiceInterface productService;
     private final BaseResponseBuilder<Product> productBaseResponseBuilder;
@@ -106,7 +107,6 @@ public class ProductController implements ProductControllerInterface {
      * @param category категория
      * @return {@link ProductService#findByCategory(String)}
      */
-    @Override
     @GetMapping(value = "/category/{category}")
     public ResponseEntity<List<Product>> findByCategory(@PathVariable String category) {
         return productService.findByCategory(category);
