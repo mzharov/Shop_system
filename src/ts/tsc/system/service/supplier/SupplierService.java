@@ -163,13 +163,13 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
 
         delivery.setOrderStatus(OrderStatus.COMPLETED);
         ShopStorage shopStorage = delivery.getShopStorage();
-        int sumProductCount = 0;
+        Long sumProductCount = 0L;
 
         try {
-            TypedQuery<Integer> sumProductTypedQuery = entityManager.createQuery(
-                    "select  sum(p.count) from DeliveryProduct " +
+            TypedQuery<Long> sumProductTypedQuery = entityManager.createQuery(
+                    "select sum(p.count) from DeliveryProduct p " +
                             "where p.primaryKey.delivery.id = ?1",
-                    Integer.class).setParameter(1, delivery.getId());
+                    Long.class).setParameter(1, delivery.getId());
             sumProductCount = sumProductTypedQuery.getSingleResult();
         } catch (Exception e) {
             logger.error("Error", e);
