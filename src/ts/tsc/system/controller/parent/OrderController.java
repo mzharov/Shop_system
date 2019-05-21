@@ -46,10 +46,6 @@ public abstract class OrderController<B extends BaseEntity, P, T extends BaseSto
         }
         return getService().cancelOrder(id);
     }
-    protected boolean isNotCancelable(OrderEntity orderEntity) {
-        return !(orderEntity.getOrderStatus().equals(OrderStatus.RECEIVED)
-                || orderEntity.getOrderStatus().equals(OrderStatus.DELIVERING));
-    }
 
     /**
      * Получение списка продуктов со склада

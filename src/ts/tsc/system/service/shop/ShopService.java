@@ -24,7 +24,6 @@ import ts.tsc.system.repository.shop.ShopRepository;
 import ts.tsc.system.repository.shop.ShopStorageProductRepository;
 import ts.tsc.system.repository.shop.ShopStorageRepository;
 import ts.tsc.system.service.named.NamedServiceImplementation;
-import ts.tsc.system.service.order.ShopInterface;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -534,8 +533,8 @@ public class ShopService extends NamedServiceImplementation<Shop, Long> implemen
         return deliveryOptional.orElse(null);
     }
 
-    protected boolean isNotCancelable(OrderEntity orderEntity) {
-        return !(orderEntity.getOrderStatus().equals(OrderStatus.RECEIVED)
-                || orderEntity.getOrderStatus().equals(OrderStatus.DELIVERING));
+    protected boolean isNotCancelable(Purchase purchase) {
+        return !(purchase.getOrderStatus().equals(OrderStatus.RECEIVED)
+                || purchase.getOrderStatus().equals(OrderStatus.DELIVERING));
     }
 }
