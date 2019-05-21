@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.product.Product;
@@ -25,6 +26,7 @@ import ts.tsc.system.repository.shop.ShopStorageRepository;
 import ts.tsc.system.service.named.NamedService;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
@@ -228,6 +230,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
 
         Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
         if(!shopOptional.isPresent()) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop ", HttpStatus.NOT_FOUND);
         }
         Shop shop = shopOptional.get();
@@ -252,12 +255,14 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
     @Override
     public ResponseEntity<?> receiveOrder(Long shopID, List<Long> productIDList, List<Integer> countList) {
         if(productIDList.size() != countList.size()) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS,
                     HttpStatus.BAD_REQUEST);
         }
 
         Optional<Shop> shopOptional = findById(shopID);
         if(!shopOptional.isPresent()) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop",
                     HttpStatus.NOT_FOUND);
         }
@@ -276,6 +281,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
             shopStorage = shopStorageTypedQuery.getSingleResult();
         } catch (Exception e) {
             logger.error(ErrorStatus.ELEMENT_NOT_FOUND + ":internal_storage", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":storage", HttpStatus.NOT_FOUND);
         }
 
@@ -292,11 +298,13 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
                         .setParameter(2, productID);
                 int productCountInStorage = productCountInStorageQuery.getSingleResult();
                 if(productCountInStorage < count) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
                             HttpStatus.BAD_REQUEST);
                 }
             } catch (Exception e) {
                 logger.error("Error: ", e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
                         HttpStatus.NOT_FOUND);
             }
@@ -309,6 +317,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
         try {
             purchaseRepository.save(purchase);
         } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             logger.error("Error: ", e);
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -349,6 +358,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
                 shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
             } catch (Exception e) {
                 logger.error("Error", e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE, HttpStatus.NOT_FOUND);
             }
 
@@ -366,6 +376,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
                     purchaseProductRepository.save(purchaseProduct);
                 } catch (Exception e) {
                     logger.error("Error: ", e);
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":purchase",
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
@@ -386,6 +397,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
                 shopStorageProductRepository.save(shopStorageProduct);
             } catch (Exception e) {
                 logger.error("Error: ", e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -395,6 +407,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
             shopStorageRepository.save(shopStorage);
         } catch (Exception e) {
             logger.error("Error: ", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -402,6 +415,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
             shopRepository.save(shop);
         } catch (Exception e) {
             logger.error("Error: ", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -461,6 +475,7 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
      *         7) код 200 с объектом, если удалось выполнить запрос
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<?> transferProducts(Long shopStorageID, Long targetShopStorageID, List<Long> productIDList, List<Integer> countList) {
         if(productIDList.size() != countList.size()) {
             return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS,
@@ -506,9 +521,17 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
                         ShopStorageProduct.class)
                         .setParameter(1, shopStorageID)
                         .setParameter(2, productID);
-                shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
 
+                List<ShopStorageProduct> shopStorageProductList = shopStorageProductTypedQuery.getResultList();
+                if(shopStorageProductList.size() < 1) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
+                            HttpStatus.FOUND);
+                }
+
+                shopStorageProduct = shopStorageProductList.get(0);
                 if(count > shopStorageProduct.getCount()) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS + ":source_storage",
                             HttpStatus.BAD_REQUEST);
                 }
@@ -553,7 +576,8 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
                 shopStorageRepository.save(targetShopStorage);
             } catch (Exception e) {
                 logger.error("Error", e);
-                new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }

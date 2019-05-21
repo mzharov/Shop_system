@@ -45,7 +45,10 @@ public abstract class OrderController<B extends BaseEntity, P, T extends BaseSto
         if(orderStatus.equals(OrderStatus.COMPLETED)) {
             return getService().completeOrder(id);
         }
-        return getService().cancelOrder(id);
+        if(orderStatus.equals(OrderStatus.CANCELED)) {
+            return getService().cancelOrder(id);
+        }
+        return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
     }
 
     /**

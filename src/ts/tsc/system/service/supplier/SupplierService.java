@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.delivery.Delivery;
@@ -219,6 +220,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 shopStorageProductRepository.save(shopStorageProduct);
             } catch (Exception e) {
                 logger.error("Error", e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -226,6 +228,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 shopStorageRepository.save(shopStorage);
             } catch (Exception e) {
                 logger.error("Error", e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -235,6 +238,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             deliveryRepository.save(delivery);
         } catch (Exception e) {
             logger.error("Error", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -307,6 +311,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
         try {
             deliveryRepository.save(delivery);
         } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -356,6 +361,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 supplierStorageProduct = sumCountTypedQuery.getSingleResult();
             } catch (Exception e) {
                 logger.error("Error", e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE, HttpStatus.NOT_FOUND);
             }
 
@@ -373,7 +379,8 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                     deliveryProductRepository.save(deliveryProduct);
                 } catch (Exception e) {
                     logger.error("Error: ", e);
-                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery_product",
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery_product" + productID,
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
@@ -392,6 +399,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 supplierStorageProductRepository.save(supplierStorageProduct);
             } catch (Exception e) {
                 logger.error("Error: ", e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -400,6 +408,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             supplierStorageRepository.save(supplierStorage);
         } catch (Exception e) {
             logger.error("Error: ", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -407,6 +416,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             shopRepository.save(shop);
         } catch (Exception e) {
             logger.error("Error: ", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -534,6 +544,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             deliveryRepository.save(delivery);
         } catch (Exception e) {
             logger.error("Error: ", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING,
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -603,6 +614,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                                 Product.class).setParameter(1, productID);
                 product = productTypedQuery.getSingleResult();
             } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
                         HttpStatus.NOT_FOUND);
             }
@@ -622,7 +634,6 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 supplierStorageProduct.setCount(supplierStorageProduct.getCount()+count);
 
             } catch (Exception e) {
-                logger.error("Error " + e);
                 supplierStorageProduct = new SupplierStorageProduct();
                 supplierStorageProduct
                         .setPrimaryKey(new SupplierStorageProductPrimaryKey(supplierStorage, product));
@@ -638,6 +649,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             try {
                 supplierStorageProductRepository.save(supplierStorageProduct);
             } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -647,6 +659,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             supplierStorageRepository.save(supplierStorage);
         } catch (Exception e) {
             logger.error("Error ", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
