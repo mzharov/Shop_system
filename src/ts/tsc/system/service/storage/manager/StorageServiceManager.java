@@ -33,7 +33,7 @@ public abstract class StorageServiceManager<B extends NamedEntity<ID>, P, T exte
      * Поиск складов по заданному запросу
      * @param id входной параметр
      * @param stringQuery строковый запрос HQL
-     * @return 1) код 200 с объектм в теле ответа
+     * @return 1) код 200 с объектом в теле ответа
      *         2) код 404 если по указанному идентификатору ничего не найдено
      */
     @Transactional(readOnly = true)
@@ -56,8 +56,8 @@ public abstract class StorageServiceManager<B extends NamedEntity<ID>, P, T exte
      * @param id идентификатор целевого объекта
      * @param storage объект склада
      * @param namedService репозиторий таблицы целевых объектов
-     * @return 1) код 200 и объект, если удалось добавить;
-     *         2) код 404 - если не йдалось найти целевой объект;
+     * @return 1) код 200 и объект, если удалось добавить склад;
+     *         2) код 404 - если не удалось найти целевой объект;
      *         3) код 422 - если в ходе добавления произошла ошибка
      */
     @Override
