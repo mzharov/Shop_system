@@ -1,9 +1,11 @@
 package ts.tsc.system.entity.shop;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.parent.BaseStorage;
+import ts.tsc.system.serializer.shop.ShopStorageDeserializer;
 import ts.tsc.system.serializer.shop.ShopStorageSerializer;
 
 import javax.persistence.*;
@@ -14,6 +16,7 @@ import java.util.Set;
 @Entity
 @Table(name = "shop_storage")
 @JsonSerialize(using = ShopStorageSerializer.class)
+@JsonDeserialize(using = ShopStorageDeserializer.class)
 public class ShopStorage implements Serializable, BaseStorage<Shop, ShopStorageProduct> {
 
     @Id

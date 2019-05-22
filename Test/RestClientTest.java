@@ -4,12 +4,18 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
 import ts.tsc.system.entity.shop.Shop;
+import ts.tsc.system.entity.shop.ShopStorage;
+import ts.tsc.system.entity.shop.ShopStorageProduct;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -30,17 +36,36 @@ public class RestClientTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testFindAll() {
         logger.info("Начало теста");
-        List<Shop> shops = restTemplate.getForObject(URL_GET_ALL_SHOPS, List.class);
-        assert shops != null;
-        assertEquals(1, shops.size());
-        listShops(shops);
+        ResponseEntity<List<Shop>> shopResponseEntity =
+                restTemplate.exchange(URL_GET_ALL_SHOPS,
+                        HttpMethod.GET, null,
+                        new ParameterizedTypeReference<List<Shop>>() {});
+        assert shopResponseEntity != null;
+        assert shopResponseEntity.getBody() != null;
+        List<Shop> shopList = shopResponseEntity.getBody();
+        assertEquals(2, shopList.size());
+        listShops(shopList);
     }
 
-
     private void listShops(List<Shop> shops) {
-        shops.forEach(s -> logger.info(s.getId() + " " + s.getName() + " " + s.getBudget()));
+        shops.forEach(s -> {
+            logger.info("Shop:");
+            logger.info("id: " + s.getId() + "; name: " + s.getName() + "; budget: " + s.getBudget());
+            Set<ShopStorage> shopStorageSet = s.getStorages();
+            logger.info("Storages:");
+            shopStorageSet.forEach(shopStorage -> {
+                logger.info("id: " + shopStorage.getId() + "; type: "
+                        + shopStorage.getType() + "; totalSpace: " +
+                        shopStorage.getTotalSpace() + "; freeSpace: "
+                        + shopStorage.getFreeSpace());
+                Set<ShopStorageProduct> shopStorageProductSet = shopStorage.getProducts();
+                logger.info("Products: " + shopStorageProductSet.size());
+                shopStorageProductSet.forEach(shopStorageProduct ->
+                    logger.info("count: " + shopStorageProduct.getCount()
+                            + "; price: " + shopStorageProduct.getPrice()));
+        });
+        });
     }
 }
