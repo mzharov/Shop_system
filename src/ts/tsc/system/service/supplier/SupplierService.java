@@ -33,8 +33,6 @@ import ts.tsc.system.repository.supplier.SupplierStorageProductRepository;
 import ts.tsc.system.repository.supplier.SupplierStorageRepository;
 import ts.tsc.system.service.named.NamedService;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.LinkedList;
@@ -44,9 +42,6 @@ import java.util.Optional;
 @Service("supplierService")
 @Transactional
 public class SupplierService extends NamedService<Supplier, Long> implements SupplierInterface {
-
-    @PersistenceContext
-    EntityManager entityManager;
 
     private final Logger logger = LoggerFactory.getLogger(SupplierService.class);
 

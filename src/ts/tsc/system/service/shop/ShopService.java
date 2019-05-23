@@ -25,8 +25,6 @@ import ts.tsc.system.repository.shop.ShopStorageProductRepository;
 import ts.tsc.system.repository.shop.ShopStorageRepository;
 import ts.tsc.system.service.named.NamedService;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -35,9 +33,6 @@ import java.util.Optional;
 @Service("shopService")
 @Transactional
 public class ShopService extends NamedService<Shop, Long> implements ShopInterface {
-
-    @PersistenceContext
-    EntityManager entityManager;
 
     private final Logger logger = LoggerFactory.getLogger(ShopService.class);
 
