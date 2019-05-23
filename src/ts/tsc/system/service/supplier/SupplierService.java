@@ -24,6 +24,7 @@ import ts.tsc.system.entity.supplier.SupplierStorageProduct;
 import ts.tsc.system.entity.supplier.SupplierStorageProductPrimaryKey;
 import ts.tsc.system.repository.delivery.DeliveryProductRepository;
 import ts.tsc.system.repository.delivery.DeliveryRepository;
+import ts.tsc.system.repository.product.ProductRepository;
 import ts.tsc.system.repository.shop.ShopRepository;
 import ts.tsc.system.repository.shop.ShopStorageProductRepository;
 import ts.tsc.system.repository.shop.ShopStorageRepository;
@@ -34,7 +35,6 @@ import ts.tsc.system.service.named.NamedService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.LinkedList;
@@ -58,6 +58,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
     private final DeliveryProductRepository deliveryProductRepository;
     private final ShopStorageProductRepository shopStorageProductRepository;
     private final ShopStorageRepository shopStorageRepository;
+    private final ProductRepository productRepository;
 
     @Autowired
     public SupplierService(SupplierRepository supplierRepository,
@@ -66,7 +67,8 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                            DeliveryRepository deliveryRepository, ShopRepository shopRepository,
                            DeliveryProductRepository deliveryProductRepository,
                            ShopStorageProductRepository shopStorageProductRepository,
-                           ShopStorageRepository shopStorageRepository) {
+                           ShopStorageRepository shopStorageRepository,
+                           ProductRepository productRepository) {
         this.supplierRepository = supplierRepository;
         this.supplierStorageRepository = supplierStorageRepository;
         this.supplierStorageProductRepository = supplierStorageProductRepository;
@@ -75,6 +77,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
         this.deliveryProductRepository = deliveryProductRepository;
         this.shopStorageProductRepository = shopStorageProductRepository;
         this.shopStorageRepository = shopStorageRepository;
+        this.productRepository = productRepository;
     }
 
 
@@ -163,38 +166,20 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
 
         delivery.setOrderStatus(OrderStatus.COMPLETED);
         ShopStorage shopStorage = delivery.getShopStorage();
-        Long sumProductCount = 0L;
-
-        try {
-            TypedQuery<Long> sumProductTypedQuery = entityManager.createQuery(
-                    "select sum(p.count) from DeliveryProduct p " +
-                            "where p.primaryKey.delivery.id = ?1",
-                    Long.class).setParameter(1, delivery.getId());
-            sumProductCount = sumProductTypedQuery.getSingleResult();
-        } catch (Exception e) {
-            logger.error("Error", e);
-            new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":delivery", HttpStatus.NOT_FOUND);
+        Optional<Integer> sumProductCountOptional =
+                deliveryProductRepository.findSumOfCountByPrimaryKeyDeliveryId(delivery.getId());
+        if(!sumProductCountOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND
+                    + ":delivery", HttpStatus.NOT_FOUND);
         }
-
+        Integer sumProductCount = sumProductCountOptional.get();
         if(shopStorage.getFreeSpace() < sumProductCount) {
             return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + ":shop_storage",
                     HttpStatus.BAD_REQUEST);
         }
 
-        List<DeliveryProduct> deliveryProductList = new LinkedList<>();
-        try {
-            TypedQuery<DeliveryProduct> deliveryProductQuery =
-                    entityManager.createQuery(
-                            "select p from DeliveryProduct p " +
-                                    "where p.primaryKey.delivery.id = ?1",
-                            DeliveryProduct.class)
-                            .setParameter(1, delivery.getId());
-            deliveryProductList = deliveryProductQuery.getResultList();
-        } catch (Exception e) {
-            logger.error("Error", e);
-            new ResponseEntity<>(ErrorStatus.BAD_QUERY,
-                    HttpStatus.NOT_FOUND);
-        }
+        List<DeliveryProduct> deliveryProductList
+                = deliveryProductRepository.findByPrimaryKeyDeliveryId(delivery.getId());
 
         for(DeliveryProduct deliveryProduct : deliveryProductList) {
             ShopStorageProductPrimaryKey primaryKey = new ShopStorageProductPrimaryKey(shopStorage,
@@ -279,26 +264,11 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                     HttpStatus.NOT_FOUND);
         }
 
-        List<Long> productIdList = new LinkedList<>();
-        List<Integer> countList = new LinkedList<>();
-
-        try {
-            TypedQuery<DeliveryProduct> sumCountTypedQuery = entityManager.createQuery(
-                    "select p from DeliveryProduct p " +
-                            "where p.primaryKey.delivery.id = ?1",
-                    DeliveryProduct.class)
-                    .setParameter(1, delivery.getId());
-
-            List<DeliveryProduct> deliveryProductList = sumCountTypedQuery.getResultList();
-            for(DeliveryProduct deliveryProduct : deliveryProductList) {
-                productIdList.add(deliveryProduct.getPrimaryKey().getProduct().getId());
-                countList.add(deliveryProduct.getCount());
-            }
-        } catch (Exception e) {
-            logger.error("Error: ", e);
-            return new ResponseEntity<>(ErrorStatus.BAD_QUERY,
-                    HttpStatus.BAD_REQUEST);
-        }
+        List<Long> productIdList
+                = deliveryProductRepository
+                .findPrimaryKeyProductIdByPrimaryKeyDeliveryId(delivery.getId());
+        List<Integer> countList
+                = deliveryProductRepository.findCountByPrimaryKeyDeliveryId(delivery.getId());
 
         int productsSumCount = countList.stream().reduce(0, Integer::sum);
 
@@ -348,22 +318,17 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
         for(int deliveryIterator = 0; deliveryIterator < productIdList.size(); deliveryIterator++) {
             Long productID = productIdList.get(deliveryIterator);
             Integer count = countList.get(deliveryIterator);
-            SupplierStorageProduct supplierStorageProduct;
 
-            try {
-                TypedQuery<SupplierStorageProduct> sumCountTypedQuery = entityManager.createQuery(
-                        "select p from SupplierStorageProduct p " +
-                                "where p.primaryKey.storage.id = ?1 " +
-                                "and p.primaryKey.product.id = ?2",
-                        SupplierStorageProduct.class)
-                        .setParameter(1, supplierStorage.getId())
-                        .setParameter(2, productID);
-                supplierStorageProduct = sumCountTypedQuery.getSingleResult();
-            } catch (Exception e) {
-                logger.error("Error", e);
+
+            Optional<SupplierStorageProduct> supplierStorageProductOptional
+                    = supplierStorageProductRepository
+                    .findByPrimaryKeyStorageIdAndPrimaryKeyProductId(supplierStorage.getId(), productID);
+            if(!supplierStorageProductOptional.isPresent()) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE + "",
+                        HttpStatus.NOT_FOUND);
             }
+            SupplierStorageProduct supplierStorageProduct = supplierStorageProductOptional.get();
 
             if(delivery.getOrderStatus().equals(OrderStatus.RECEIVED)) {
                 DeliveryProduct deliveryProduct = new DeliveryProduct();
@@ -380,7 +345,8 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 } catch (Exception e) {
                     logger.error("Error: ", e);
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":delivery_product" + productID,
+                    return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING
+                            + ":delivery_product" + productID,
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
@@ -400,7 +366,8 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             } catch (Exception e) {
                 logger.error("Error: ", e);
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
+                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING
+                        + ":supplier_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
@@ -423,7 +390,8 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
 
         return deliveryRepository.findById(delivery.getId())
                 .<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
+                        HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -483,43 +451,37 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
         for(int deliveryIterator = 0; deliveryIterator < productIdList.size(); deliveryIterator++) {
             Long productID = productIdList.get(deliveryIterator);
             Integer count = countList.get(deliveryIterator);
-            try {
-                TypedQuery<Integer> sumCountTypedQuery = entityManager.createQuery(
-                        "select p.count from SupplierStorageProduct p " +
-                                "where p.primaryKey.storage.id = ?1 " +
-                                "and p.primaryKey.product.id = ?2",
-                        Integer.class)
-                        .setParameter(1, supplierStorage.getId())
-                        .setParameter(2, productID);
-                Integer sumCount = sumCountTypedQuery.getSingleResult();
-                if(sumCount < count) {
-                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
-                            HttpStatus.BAD_REQUEST);
-                }
-            } catch (Exception e) {
-                logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product",
+
+            Optional<Integer> countOptional
+                    = supplierStorageProductRepository
+                    .findCountByPrimaryKeyStorageIdAndPrimaryKeyProductId(supplierStorage.getId(),
+                            productID);
+            if(!countOptional.isPresent()) {
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product "
+                        + productID,
                         HttpStatus.NOT_FOUND);
+            }
+            Integer sumCount = countOptional.get();
+            if(sumCount < count) {
+                return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
+                        HttpStatus.BAD_REQUEST);
             }
         }
 
-        BigDecimal sumPrice = new BigDecimal(0);
-
-        for (Long productID : productIdList) {
-            try {
-                TypedQuery<BigDecimal> sumCountTypedQuery = entityManager.createQuery(
-                        "select sum(p.price) from SupplierStorageProduct p " +
-                                "where p.primaryKey.storage.id = ?1 " +
-                                "and p.primaryKey.product.id = ?2",
-                        BigDecimal.class)
-                        .setParameter(1, supplierStorage.getId())
-                        .setParameter(2, productID);
-                sumPrice = sumCountTypedQuery.getSingleResult();
-            } catch (Exception e) {
-                logger.error("Error: ", e);
-                return new ResponseEntity<>(ErrorStatus.BAD_QUERY,
-                        HttpStatus.INTERNAL_SERVER_ERROR);
+        BigDecimal sumPrice = new BigDecimal("0");
+        for(int iterator = 0; iterator < productIdList.size(); iterator++) {
+            Optional<BigDecimal> sumPriceOptional
+                    = supplierStorageProductRepository
+                    .findPriceByPrimaryKeyStorageIdAndPrimaryKeyProductId(supplierStorage.getId(),
+                            productIdList.get(iterator));
+            if(!sumPriceOptional.isPresent()) {
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product "
+                        + productIdList.get(iterator),
+                        HttpStatus.NOT_FOUND);
             }
+            BigDecimal tmp = sumPriceOptional.get();
+            tmp = tmp.multiply(new BigDecimal(countList.get(iterator)));
+            sumPrice = sumPrice.add(tmp);
         }
 
         Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
@@ -566,7 +528,9 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
      *         8) код 200 с объектом, если удалось выполнить запрос
      */
     @Override
-    public ResponseEntity<?> addProductsToStorage(Long id, List<Long> productIDList, List<Integer> countList, List<String> stringPriceList) {
+    public ResponseEntity<?> addProductsToStorage(Long id, List<Long> productIDList,
+                                                  List<Integer> countList,
+                                                  List<String> stringPriceList) {
         if((productIDList.size() != countList.size())
                 || (productIDList.size() != stringPriceList.size())) {
             return new ResponseEntity<>(ErrorStatus.WRONG_NUMBER_OF_PARAMETERS,
@@ -577,7 +541,8 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
 
         for(String stringPrice : stringPriceList) {
             try {
-                BigDecimal decimal = new BigDecimal(stringPrice).setScale(5, RoundingMode.HALF_UP);
+                BigDecimal decimal =
+                        new BigDecimal(stringPrice).setScale(5, RoundingMode.HALF_UP);
                 priceList.add(decimal);
             } catch (Exception e) {
                 return new ResponseEntity<>(ErrorStatus.NUMBER_FORMAT_EXCEPTION,
@@ -588,14 +553,16 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
 
         Optional<SupplierStorage> supplierStorageOptional = supplierStorageRepository.findById(id);
         if(!supplierStorageOptional.isPresent()) {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND
+                    + ":supplier_storage",
                     HttpStatus.NOT_FOUND);
         }
 
         SupplierStorage supplierStorage = supplierStorageOptional.get();
         int countSum = countList.stream().reduce(0, Integer::sum);
         if(supplierStorage.getFreeSpace() < countSum) {
-            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + "", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + "",
+                    HttpStatus.BAD_REQUEST);
         }
 
         List<SupplierStorageProduct> supplierStorageProductList = new LinkedList<>();
@@ -604,36 +571,26 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
             Integer count = countList.get(iterator);
             BigDecimal price = priceList.get(iterator);
 
-            Product product;
-
-            try {
-                TypedQuery<Product> productTypedQuery =
-                        entityManager.createQuery(
-                                "select  p from Product p " +
-                                        "where p.id = ?1",
-                                Product.class).setParameter(1, productID);
-                product = productTypedQuery.getSingleResult();
-            } catch (Exception e) {
+            Optional<Product> productOptional  = productRepository.findById(productID);
+            if(!productOptional.isPresent()) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND
+                        + ":product " + productID,
                         HttpStatus.NOT_FOUND);
             }
+            Product product = productOptional.get();
+
 
             SupplierStorageProduct supplierStorageProduct;
-            try {
-                TypedQuery<SupplierStorageProduct> supplierStorageProductTypedQuery
-                        =  entityManager.createQuery(
-                        "select p from SupplierStorageProduct p " +
-                                "where p.primaryKey.product.id =?1 " +
-                                "and p.primaryKey.storage.id = ?2",
-                        SupplierStorageProduct.class)
-                        .setParameter(1, productID)
-                        .setParameter(2, supplierStorage.getId());
-                supplierStorageProduct = supplierStorageProductTypedQuery.getSingleResult();
+            Optional<SupplierStorageProduct> supplierStorageProductOptional
+                    = supplierStorageProductRepository
+                    .findByPrimaryKeyStorageIdAndPrimaryKeyProductId
+                            (supplierStorage.getId(), productID);
+            if(supplierStorageProductOptional.isPresent()) {
+                supplierStorageProduct = supplierStorageProductOptional.get();
                 supplierStorageProduct.setPrice(price);
                 supplierStorageProduct.setCount(supplierStorageProduct.getCount()+count);
-
-            } catch (Exception e) {
+            } else {
                 supplierStorageProduct = new SupplierStorageProduct();
                 supplierStorageProduct
                         .setPrimaryKey(new SupplierStorageProductPrimaryKey(supplierStorage, product));
@@ -641,6 +598,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 supplierStorageProduct.setPrice(price);
                 supplierStorage.addProducts(supplierStorageProduct);
             }
+
             supplierStorage.setFreeSpace(supplierStorage.getFreeSpace()-count);
             supplierStorageProductList.add(supplierStorageProduct);
         }
@@ -650,7 +608,8 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
                 supplierStorageProductRepository.save(supplierStorageProduct);
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":supplier_storage_product",
+                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING
+                        + ":supplier_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
