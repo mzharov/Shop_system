@@ -1,7 +1,6 @@
 package ts.tsc.system.service.product;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.entity.product.Product;
@@ -32,10 +31,10 @@ public class ProductService
      * @return 1) код 200 с объектом в теле ответа
      *         2) иначе код 404
      */
+    @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<List<Product>> findByCategory(String category) {
-        return productRepository.getByCategory(category).map(record -> ResponseEntity.ok().body(record))
-                .orElse(ResponseEntity.notFound().build());
+    public List<Product> findByCategory(String category) {
+        return productRepository.getByCategory(category);
     }
 
     /**

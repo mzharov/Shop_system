@@ -14,7 +14,6 @@ import ts.tsc.system.service.named.NamedService;
 import ts.tsc.system.service.product.ProductService;
 import ts.tsc.system.service.product.ProductServiceInterface;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -108,7 +107,7 @@ public class ProductController implements BaseControllerInterface<Product> {
      * @return {@link ProductService#findByCategory(String)}
      */
     @GetMapping(value = "/category/{category}")
-    public ResponseEntity<List<Product>> findByCategory(@PathVariable String category) {
-        return productService.findByCategory(category);
+    public ResponseEntity<?> findByCategory(@PathVariable String category) {
+        return productBaseResponseBuilder.getAll(productService.findByCategory(category));
     }
 }
