@@ -27,10 +27,8 @@ import ts.tsc.system.service.named.NamedService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -176,42 +174,19 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
         }
 
         purchase.setOrderStatus(OrderStatus.CANCELED);
-        ShopStorage shopStorage;
-        try {
-            TypedQuery<ShopStorage> shopStorageTypedQuery =
-                    entityManager.createQuery(
-                            "select p from ShopStorage p " +
-                                    "where p.shop.id = ?1 " +
-                                    "and p.type = ?2",
-                            ShopStorage.class)
-                            .setParameter(1, purchase.getShop().getId())
-                            .setParameter(2, 1);
-            shopStorage = shopStorageTypedQuery.getSingleResult();
-        } catch (Exception e) {
-            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + ":shop_storage", e);
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+
+        Optional<ShopStorage> shopStorageOptional
+                = shopStorageRepository.findByShopIdAndType(purchase.getShop().getId(), 1);
+        if(!shopStorageOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND
+                    + ":shop_storage", HttpStatus.NOT_FOUND);
         }
+        ShopStorage shopStorage = shopStorageOptional.get();
 
-        List<Long> productIdList = new LinkedList<>();
-        List<Integer> countList = new LinkedList<>();
-
-        try {
-            TypedQuery<PurchaseProduct> sumCountTypedQuery = entityManager.createQuery(
-                    "select p from PurchaseProduct p " +
-                            "where p.primaryKey.purchase.id = ?1",
-                    PurchaseProduct.class)
-                    .setParameter(1, purchase.getId());
-
-            List<PurchaseProduct> purchaseProductList = sumCountTypedQuery.getResultList();
-            for(PurchaseProduct purchaseProduct : purchaseProductList) {
-                productIdList.add(purchaseProduct.getPrimaryKey().getProduct().getId());
-                countList.add(purchaseProduct.getCount());
-            }
-        } catch (Exception e) {
-            logger.error("Error: ", e);
-            return new ResponseEntity<>(ErrorStatus.BAD_QUERY,
-                    HttpStatus.BAD_REQUEST);
-        }
+        List<Long> productIdList = purchaseProductRepository
+                .findPrimaryKeyProductIdByPrimaryKeyPurchaseId(purchase.getId());
+        List<Integer> countList = purchaseProductRepository
+                .findCountByPrimaryKeyPurchaseId(purchase.getId());
 
         int productsSumCount = countList.stream().reduce(0, Integer::sum);
         if(shopStorage.getFreeSpace() < productsSumCount) {
@@ -230,7 +205,8 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
         Optional<Shop> shopOptional = shopRepository.findById(shopStorage.getShop().getId());
         if(!shopOptional.isPresent()) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop ", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop ",
+                    HttpStatus.NOT_FOUND);
         }
         Shop shop = shopOptional.get();
 
@@ -267,45 +243,36 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
         }
         Shop shop = shopOptional.get();
 
-        ShopStorage shopStorage;
-        try {
-            TypedQuery<ShopStorage> shopStorageTypedQuery =
-                    entityManager.createQuery(
-                            "select p from ShopStorage p " +
-                                    "where p.shop.id = ?1 " +
-                                    "and p.type = ?2",
-                            ShopStorage.class)
-                            .setParameter(1, shopID)
-                            .setParameter(2, 1);
-            shopStorage = shopStorageTypedQuery.getSingleResult();
-        } catch (Exception e) {
-            logger.error(ErrorStatus.ELEMENT_NOT_FOUND + ":internal_storage", e);
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":storage", HttpStatus.NOT_FOUND);
+
+        Optional<ShopStorage> shopStorageOptional
+                = shopStorageRepository.findByShopIdAndType(shopID, 1);
+        if(!shopStorageOptional.isPresent()) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND
+                    + ":storage", HttpStatus.NOT_FOUND);
         }
+
+        ShopStorage shopStorage = shopStorageOptional.get();
 
         for(int orderIterator = 0; orderIterator < productIDList.size(); orderIterator++) {
             Long productID = productIDList.get(orderIterator);
             Integer count = countList.get(orderIterator);
-            try {
-                TypedQuery<Integer> productCountInStorageQuery
-                        = entityManager.createQuery(
-                        "select p.count from ShopStorageProduct p " +
-                                "where p.primaryKey.storage.id = ?1 " +
-                                "and p.primaryKey.product.id =?2" ,
-                        Integer.class).setParameter(1, shopStorage.getId())
-                        .setParameter(2, productID);
-                int productCountInStorage = productCountInStorageQuery.getSingleResult();
-                if(productCountInStorage < count) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
-                            HttpStatus.BAD_REQUEST);
-                }
-            } catch (Exception e) {
-                logger.error("Error: ", e);
+
+            Optional<Integer> productCountInStorageOptional
+                    = shopStorageProductRepository
+                    .findCountByPrimaryKeyStorageIdAndPrimaryKeyProductId(shopStorage.getId(),
+                            productID);
+            if(!productCountInStorageOptional.isPresent()) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND
+                        + ":product "
+                        + productID,
                         HttpStatus.NOT_FOUND);
+            }
+            int productCountInStorage = productCountInStorageOptional.get();
+            if(productCountInStorage < count) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS,
+                        HttpStatus.BAD_REQUEST);
             }
         }
 
@@ -344,22 +311,15 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
             Long productID = productIdList.get(orderIterator);
             Integer count = countList.get(orderIterator);
 
-            ShopStorageProduct shopStorageProduct;
-
-            try {
-                TypedQuery<ShopStorageProduct> shopStorageProductTypedQuery =
-                        entityManager.createQuery(
-                                "select p from ShopStorageProduct p " +
-                                        "where p.primaryKey.storage.id = ?1 " +
-                                        "and p.primaryKey.product.id = ?2",
-                                ShopStorageProduct.class)
-                                .setParameter(1, shopStorage.getId()).setParameter(2, productID);
-                shopStorageProduct = shopStorageProductTypedQuery.getSingleResult();
-            } catch (Exception e) {
-                logger.error("Error", e);
+            Optional<ShopStorageProduct> shopStorageProductOptional
+                    = shopStorageProductRepository.findByPrimaryKeyStorageIdAndPrimaryKeyProductId
+                    (shopStorage.getId(),productID);
+            if(!shopStorageProductOptional.isPresent()) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return new ResponseEntity<>(ErrorStatus.NO_PRODUCTS_IN_STORAGE, HttpStatus.NOT_FOUND);
             }
+            ShopStorageProduct shopStorageProduct = shopStorageProductOptional.get();
+
 
             if(purchase.getOrderStatus().equals(OrderStatus.RECEIVED)) {
                 Product product = shopStorageProduct.getPrimaryKey().getProduct();
@@ -397,7 +357,8 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
             } catch (Exception e) {
                 logger.error("Error: ", e);
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING + ":shop_storage_product",
+                return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING
+                        + ":shop_storage_product",
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
@@ -499,7 +460,6 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
         ShopStorage shopStorage = shopStorageOptional.get();
 
         int sumCount = countList.stream().reduce(0, Integer::sum);
-
         if(targetShopStorage.getFreeSpace() < sumCount) {
             return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_SPACE + ":target_storage",
                     HttpStatus.BAD_REQUEST);
@@ -509,53 +469,33 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
             Long productID = productIDList.get(queryIterator);
             Integer count = countList.get(queryIterator);
 
-            ShopStorageProduct shopStorageProduct = new ShopStorageProduct();
 
-            try {
-                TypedQuery<ShopStorageProduct> shopStorageProductTypedQuery
-                        = entityManager.createQuery(
-                        "select p from ShopStorageProduct p " +
-                                "where  p.primaryKey.storage.id = ?1 " +
-                                "and p.primaryKey.product.id = ?2",
-                        ShopStorageProduct.class)
-                        .setParameter(1, shopStorageID)
-                        .setParameter(2, productID);
+            Optional<ShopStorageProduct> shopStorageProductOptional
+                    = shopStorageProductRepository
+                    .findByPrimaryKeyStorageIdAndPrimaryKeyProductId(shopStorageID, productID);
+            if(!shopStorageProductOptional.isPresent()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product "
+                        + productID,
+                        HttpStatus.FOUND);
+            }
 
-                List<ShopStorageProduct> shopStorageProductList = shopStorageProductTypedQuery.getResultList();
-                if(shopStorageProductList.size() < 1) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":product " + productID,
-                            HttpStatus.FOUND);
-                }
-
-                shopStorageProduct = shopStorageProductList.get(0);
-                if(count > shopStorageProduct.getCount()) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS + ":source_storage",
-                            HttpStatus.BAD_REQUEST);
-                }
-
-            } catch (Exception e) {
-                logger.error("Error", e);
-                new ResponseEntity<>(ErrorStatus.BAD_QUERY,
+            ShopStorageProduct shopStorageProduct = shopStorageProductOptional.get();
+            if(count > shopStorageProduct.getCount()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return new ResponseEntity<>(ErrorStatus.NOT_ENOUGH_PRODUCTS
+                        + ":source_storage",
                         HttpStatus.BAD_REQUEST);
             }
 
             ShopStorageProduct shopStorageProductMain;
-
-            try {
-                TypedQuery<ShopStorageProduct> shopStorageProductTypedQuery
-                        = entityManager.createQuery(
-                        "select p from ShopStorageProduct p " +
-                                "where  p.primaryKey.storage.id = ?1 " +
-                                "and p.primaryKey.product.id = ?2",
-                        ShopStorageProduct.class)
-                        .setParameter(1, targetShopStorageID)
-                        .setParameter(2, productID);
-                shopStorageProductMain = shopStorageProductTypedQuery.getSingleResult();
+            Optional<ShopStorageProduct> shopStorageProductMainOptional
+                    = shopStorageProductRepository
+                    .findByPrimaryKeyStorageIdAndPrimaryKeyProductId(targetShopStorageID, productID);
+            if(shopStorageProductMainOptional.isPresent()) {
+                shopStorageProductMain = shopStorageProductMainOptional.get();
                 shopStorageProductMain.setCount(shopStorageProductMain.getCount() + count);
-
-            } catch (Exception e) {
+            } else {
                 shopStorageProductMain = new ShopStorageProduct();
                 shopStorageProductMain
                         .setPrimaryKey(new ShopStorageProductPrimaryKey(targetShopStorage,
