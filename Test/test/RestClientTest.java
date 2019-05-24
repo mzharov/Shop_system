@@ -1,3 +1,5 @@
+package test;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -7,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 import ts.tsc.system.entity.shop.Shop;
@@ -20,12 +24,12 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
+@ActiveProfiles("test")
 @ContextConfiguration(classes = {RestClientConfig.class})
 public class RestClientTest {
 
     private final static Logger logger = LoggerFactory.getLogger(RestClientTest.class);
     private static final String URL_GET_ALL_SHOPS = "http://localhost:8080/shop/list";
-
 
     @Autowired
     RestTemplate restTemplate;
