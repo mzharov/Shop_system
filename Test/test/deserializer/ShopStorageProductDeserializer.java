@@ -1,7 +1,6 @@
-package deserializer;
+package test.deserializer;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,7 +13,7 @@ public class ShopStorageProductDeserializer
         extends JsonDeserializer<ShopStorageProduct> {
     @Override
     public ShopStorageProduct deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-            throws IOException, JsonProcessingException {
+            throws IOException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         ShopStorageProduct shopStorageProduct = new ShopStorageProduct();
         shopStorageProduct.setCount(node.get("count").asInt());

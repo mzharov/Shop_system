@@ -425,9 +425,8 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
      *         2) код 404 с сообщением ELEMENT_NOT_FOUND:source_storage, если не найден исходный склад
      *         3) код 404 с сообщением ELEMENT_NOT_FOUND:target_storage, если не найден целевой склад
      *         4) код 400 с сообщением NOT_ENOUGH_SPACE:target_storage - если не хватает места на складе магазина
-     *         5) код 500 с сообщением BAD_QUERY, если не удалось выполнить запрос
-     *         6) код 400 с сообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-нибудь товара
-     *         7) код 200 с объектом, если удалось выполнить запрос
+     *         5) код 400 с сообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-нибудь товара
+     *         6) код 200 с объектом, если удалось выполнить запрос
      */
     @Override
     @Transactional(rollbackFor = Exception.class)

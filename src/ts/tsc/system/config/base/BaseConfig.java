@@ -1,64 +1,48 @@
-package config;
+package ts.tsc.system.config.base;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
-import ts.tsc.system.config.DataServiceConfig;
 
-import javax.persistence.Embedded;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.Objects;
 import java.util.Properties;
 
 @Configuration
-@EnableJpaRepositories(basePackages = {"ts.tsc.system.repository"})
-@EnableTransactionManagement
-@ComponentScan(basePackages  = {"ts.tsc.system"} )
 @PropertySource("classpath:application.properties")
-@Profile("test")
-public class TestDataServiceConfig {
-
-    private final static Logger logger
-            = LoggerFactory.getLogger(ts.tsc.system.config.DataServiceConfig.class);
-    private final Environment environment;
+public abstract class BaseConfig {
 
     @Autowired
-    public TestDataServiceConfig(Environment environment) {
+    private final Environment environment;
+
+    protected BaseConfig(Environment environment) {
         this.environment = environment;
     }
 
     @Bean
-    public DataSource dataSource() {
-        try {
-            logger.info("Инициализация БД");
-            EmbeddedDatabaseBuilder dbBuilder = new EmbeddedDatabaseBuilder();
-            return dbBuilder.setType(EmbeddedDatabaseType.H2).build();
-        } catch (Exception e) {
-            logger.error("Не удалось подключиться к БД", e);
-            return null;
-        }
+    public abstract DataSource dataSource();
+
+    @Bean
+    public PlatformTransactionManager transactionManager() {
+        return new JpaTransactionManager(entityManagerFactory());
+    }
+
+    @Bean
+    public JpaVendorAdapter jpaVendorAdapter() {
+        return new HibernateJpaVendorAdapter();
     }
 
     @Bean
     public Properties hibernateProperties() {
         Properties hibernateProp = new Properties();
-        hibernateProp.put("hibernate.dialect",
-                Objects.requireNonNull(
-                        environment.getProperty("spring.jpa.properties.hibernate.dialect")));
         hibernateProp.put("hibernate.hbm2ddl.auto",
                 Objects.requireNonNull(
                         environment.getProperty("spring.jpa.properties.hibernate.hbm2ddl.auto")));
@@ -87,18 +71,9 @@ public class TestDataServiceConfig {
     }
 
     @Bean
-    public PlatformTransactionManager transactionManager() {
-        return new JpaTransactionManager(entityManagerFactory());
-    }
-
-    @Bean
-    public JpaVendorAdapter jpaVendorAdapter() {
-        return new HibernateJpaVendorAdapter();
-    }
-
-    @Bean
     public EntityManagerFactory entityManagerFactory() {
-        LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        LocalContainerEntityManagerFactoryBean factoryBean
+                = new LocalContainerEntityManagerFactoryBean();
         factoryBean.setPackagesToScan("ts.tsc.system.entity");
         factoryBean.setDataSource(dataSource());
         factoryBean.setJpaProperties(hibernateProperties());

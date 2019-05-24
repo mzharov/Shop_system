@@ -1,4 +1,4 @@
-package test;
+package test.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,8 +15,8 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
 import org.springframework.web.client.RestTemplate;
-import deserializer.ShopStorageDeserializer;
-import deserializer.ShopStorageProductDeserializer;
+import test.deserializer.ShopStorageDeserializer;
+import test.deserializer.ShopStorageProductDeserializer;
 import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.entity.shop.ShopStorageProduct;
 

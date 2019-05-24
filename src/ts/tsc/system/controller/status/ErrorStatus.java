@@ -1,7 +1,6 @@
 package ts.tsc.system.controller.status;
 
 public enum ErrorStatus {
-    BAD_QUERY,
     ID_CAN_NOT_BE_SET_IN_JSON,
     NUMBER_FORMAT_EXCEPTION,
     NO_PRODUCTS_IN_STORAGE,

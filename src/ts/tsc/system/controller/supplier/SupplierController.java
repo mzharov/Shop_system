@@ -212,11 +212,10 @@ public class SupplierController
      *         4) код 400 с сообщением NOT_ENOUGH_SPACE - если не хватает места на складе магазина для товаров
      *         5) код 400 с сообщением NOT_ENOUGH_PRODUCTS - если на складе не хватает какого-нибудь товара
      *         6) код 404 с сообщением ELEMENT_NOT_FOUND:product - если не удалось найти какой-то товар на складе
-     *         7) код 500 с сообщением BAD_QUERY, если не удалось выполнить запрос
-     *         8) код 404 с сообщением ELEMENT_NOT_FOUND:shop, если не удалось найти магазин
-     *         9) код 400 с сообщением NOT_ENOUGH_MONEY, если у магазина не хватает бюджета
-     *         10) код 500 с сообщением ERROR_WHILE_SAVING, если не удалось сохранить заказ
-     *         11) {@see ts.tsc.system.service.supplier.SupplierService#transfer(List, List, SupplierStorage, Delivery, Shop)}
+     *         7) код 404 с сообщением ELEMENT_NOT_FOUND:shop, если не удалось найти магазин
+     *         8) код 400 с сообщением NOT_ENOUGH_MONEY, если у магазина не хватает бюджета
+     *         9) код 500 с сообщением ERROR_WHILE_SAVING, если не удалось сохранить заказ
+     *         10) {@see ts.tsc.system.service.supplier.SupplierService#transfer(List, List, SupplierStorage, Delivery, Shop)}
      *
      */
     @PostMapping(value = "/order/{supplierID}/{shopStorageID}/{productIdList}/{countList}")

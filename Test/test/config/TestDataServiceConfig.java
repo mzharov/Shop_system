@@ -1,4 +1,4 @@
-package ts.tsc.system.config;
+package test.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import ts.tsc.system.config.base.BaseConfig;
 
@@ -17,27 +18,27 @@ import java.util.Properties;
 @Configuration
 @EnableJpaRepositories(basePackages = {"ts.tsc.system.repository"})
 @EnableTransactionManagement
-@ComponentScan(basePackages  = {"ts.tsc.system"} )
+@ComponentScan(basePackages  = {"ts.tsc.system", "test.config"} )
 @PropertySource("classpath:application.properties")
-public class DataServiceConfig extends BaseConfig {
+@Profile("test")
+public class TestDataServiceConfig extends BaseConfig {
 
     private final Environment environment;
     private final static Logger logger
-            = LoggerFactory.getLogger(DataServiceConfig.class);
+            = LoggerFactory.getLogger(TestDataServiceConfig.class);
 
     @Autowired
-    public DataServiceConfig(Environment environment) {
+    public TestDataServiceConfig(Environment environment) {
         super(environment);
         this.environment = environment;
     }
 
     @Bean
-    @Override
     public Properties hibernateProperties() {
         Properties properties = super.hibernateProperties();
         properties.put("hibernate.dialect",
                 Objects.requireNonNull(
-                        environment.getProperty("spring.jpa.properties.hibernate.dialect")));
+                        environment.getProperty("spring.jpa.properties.hibernate.dialect.test")));
         return properties;
     }
 
@@ -45,16 +46,8 @@ public class DataServiceConfig extends BaseConfig {
     public DataSource dataSource() {
         try {
             logger.info("Инициализация БД");
-            DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setDriverClassName(Objects.requireNonNull(environment
-                    .getProperty("spring.datasource.driver-class-name")));
-            dataSource.setUrl(environment
-                    .getProperty("spring.datasource.url"));
-            dataSource.setUsername(environment
-                    .getProperty("spring.datasource.username"));
-            dataSource.setPassword(environment
-                    .getProperty("spring.datasource.password"));
-            return dataSource;
+            EmbeddedDatabaseBuilder dbBuilder = new EmbeddedDatabaseBuilder();
+            return dbBuilder.setType(EmbeddedDatabaseType.H2).build();
         } catch (Exception e) {
             logger.error("Не удалось подключиться к БД", e);
             return null;

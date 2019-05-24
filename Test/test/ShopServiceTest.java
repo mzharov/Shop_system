@@ -1,18 +1,15 @@
 package test;
 
-import config.TestDataServiceConfig;
-import jdk.net.SocketFlow;
+import test.config.TestDataServiceConfig;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import ts.tsc.system.controller.status.ErrorStatus;
@@ -21,15 +18,9 @@ import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.purchase.PurchaseProduct;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.entity.shop.ShopStorage;
-import ts.tsc.system.entity.shop.ShopStorageProduct;
-import ts.tsc.system.entity.shop.ShopStorageProductPrimaryKey;
 import ts.tsc.system.repository.shop.ShopStorageRepository;
-import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.base.BaseServiceInterface;
-import ts.tsc.system.service.order.purchase.PurchaseService;
 import ts.tsc.system.service.shop.ShopInterface;
-import ts.tsc.system.service.shop.ShopService;
-import ts.tsc.system.service.storage.manager.StorageServiceInterface;
 
 import java.math.BigDecimal;
 import java.util.*;
