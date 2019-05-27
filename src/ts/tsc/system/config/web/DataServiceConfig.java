@@ -1,4 +1,4 @@
-package ts.tsc.system.config;
+package ts.tsc.system.config.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +8,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import ts.tsc.system.config.base.BaseConfig;
+import ts.tsc.system.config.web.base.BaseConfig;
 
 import javax.sql.DataSource;
 import java.util.Objects;

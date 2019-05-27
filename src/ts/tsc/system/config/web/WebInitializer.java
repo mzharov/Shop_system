@@ -1,7 +1,8 @@
-package ts.tsc.system.config;
+package ts.tsc.system.config.web;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+import ts.tsc.system.config.security.SecurityConfig;
 
 @Configuration
 class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -10,7 +11,7 @@ class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitialize
     @Override
     protected Class<?>[] getRootConfigClasses() {
         return new Class<?>[]{
-                DataServiceConfig.class
+                DataServiceConfig.class, SecurityConfig.class
         };
     }
 

@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import ts.tsc.system.config.base.BaseConfig;
+import ts.tsc.system.config.web.base.BaseConfig;
 
 import javax.sql.DataSource;
 import java.util.Objects;

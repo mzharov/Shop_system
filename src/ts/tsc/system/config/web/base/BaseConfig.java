@@ -1,4 +1,4 @@
-package ts.tsc.system.config.base;
+package ts.tsc.system.config.web.base;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

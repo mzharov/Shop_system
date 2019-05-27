@@ -1,4 +1,4 @@
-package ts.tsc.system.config;
+package ts.tsc.system.config.web;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;

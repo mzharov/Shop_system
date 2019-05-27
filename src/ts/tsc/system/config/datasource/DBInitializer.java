@@ -1,4 +1,4 @@
-package ts.tsc.system.config;
+package ts.tsc.system.config.datasource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
