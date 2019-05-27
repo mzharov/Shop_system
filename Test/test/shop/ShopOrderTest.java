@@ -1,4 +1,4 @@
-package test;
+package test.shop;
 
 import test.config.TestDataServiceConfig;
 import org.junit.*;
@@ -12,7 +12,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
 import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.purchase.PurchaseProduct;
@@ -28,13 +27,16 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
+/**
+ * Тестирование заказов в магазине
+ */
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {TestDataServiceConfig.class})
 @WebAppConfiguration
-public class ShopServiceTest{
+public class ShopOrderTest{
 
-    private final static Logger logger = LoggerFactory.getLogger(ShopServiceTest.class);
+    private final static Logger logger = LoggerFactory.getLogger(ShopOrderTest.class);
 
     @Autowired
     public ShopInterface shopService;
@@ -43,33 +45,9 @@ public class ShopServiceTest{
     @Autowired
     public ShopStorageRepository shopStorageRepository;
 
-    @BeforeClass
-    public static void SetUp() {
-        logger.info("Начало теста ShopService");
-    }
-
-    @AfterClass
-    public static void tearDown() {
-        logger.info("Конец теста ShopService");
-    }
-
-
-    @Test
-    public void findAll() {
-        logger.info("Список всех магазинов");
-        List<Shop> shopList = shopService.findAll();
-        assert shopList !=null;
-        assertNotNull(shopList);
-        assertEquals(2, shopList.size());
-    }
-
-    @Test
-    public void findById() {
-        logger.info("Поиск магазина по идентификатору");
-        Optional<Shop> shopOptional = shopService.findById(1L);
-        assertTrue(shopOptional.isPresent());
-    }
-
+    /**
+     * Тестирование процесса поступления заказа, доставки и завершения
+     */
     @Test
     public void receiveAndDeliverAndCompleteOrderTest() {
         logger.info("Заказ, доставка и завершение заказа");
@@ -85,6 +63,9 @@ public class ShopServiceTest{
         shopBudgetTest(shopID, oldBudget, purchaseSumPrice);
     }
 
+    /**
+     * Тестирование процесса поступления заказа и его отмены
+     */
     @Test
     public void receiveAndCancelOrderTest() {
         logger.info("Заказ и отмена товара");
@@ -97,8 +78,12 @@ public class ShopServiceTest{
         cancelOrder(purchaseID);
         shopBudgetTest(shopID, oldBudget, new BigDecimal(0));
     }
+
+    /**
+     * Тестирование процесса поступления заказа, доставки и отмены
+     */
     @Test
-    public void ReceiveAndDeliverAndCancelOrderTest() {
+    public void receiveAndDeliverAndCancelOrderTest() {
         logger.info("Заказ, доставка и отмена заказа");
         Long shopID = 1L;
         List<Long> productIDList = Arrays.asList(1L, 2L);
@@ -106,12 +91,23 @@ public class ShopServiceTest{
         Object[] params= receiveOrder(shopID, productIDList, countList);
         Long purchaseID = (Long) params[0];
         BigDecimal oldBudget = (BigDecimal) params[1];
+
         deliverOrder(purchaseID);
         cancelOrder(purchaseID);
         shopBudgetTest(shopID, oldBudget, new BigDecimal(0));
     }
 
-
+    /**
+     * Тестирование операций при поступлении заказа
+     * @param shopID идентификатор магазина
+     * @param productIDList список идентификаторов товаров
+     * @param countList список поличества товаров
+     * @return массив переменных, которые могут понадобиться на других этапах заказа:
+     *          1) идентификатор заказа
+     *          2) бюджет магазина до заказа
+     *          3) сумма заказа
+     *          4) свободное место на складе до заказа
+     */
     private Object[] receiveOrder(Long shopID, List<Long> productIDList, List<Integer> countList) {
         Optional<Shop> shopOptional = shopService.findById(shopID);
         assertTrue(shopOptional.isPresent());
@@ -119,14 +115,15 @@ public class ShopServiceTest{
         BigDecimal oldBudget = shop.getBudget();
         int oldFreeSpace = getFreeSpaceInMainStorage(shopID);
 
+        //Проверка результата заказа
         ResponseEntity<?> responseEntity = shopService
                 .receiveOrder(shopID, Arrays.asList(1L,2L), Arrays.asList(10,10));
-        assert responseEntity.getStatusCode().equals(HttpStatus.OK);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         Purchase purchase = (Purchase) responseEntity.getBody();
         assertNotNull(purchase);
-        assert purchase.getOrderStatus().equals(OrderStatus.RECEIVED);
+        assertEquals(OrderStatus.RECEIVED, purchase.getOrderStatus());
         Optional<Purchase> purchaseOptional = purchaseService.findById(purchase.getId());
-        assert purchaseOptional.isPresent();
+        assertTrue(purchaseOptional.isPresent());
         purchase = purchaseOptional.get();
         assertNotNull(purchase.getPurchaseProducts());
         Set<PurchaseProduct> purchaseProductSet = purchase.getPurchaseProducts();
@@ -136,12 +133,12 @@ public class ShopServiceTest{
                 .sorted(Comparator.comparing(item->item.getPrimaryKey().getProduct().getId()))
                 .collect(Collectors.toList());
 
+        //Проверка в заказе указанных данных
         for (int iterator =0; iterator <  purchaseProductList.size(); iterator++) {
             assertEquals(purchaseProductList.get(iterator).getCount(),
                     (int) countList.get(iterator));
             assertEquals(purchaseProductList.get(iterator).getPrimaryKey().getProduct().getId(),
                     productIDList.get(iterator));
-            iterator++;
         }
 
         BigDecimal purchaseSumPrice = new BigDecimal(0);
@@ -151,26 +148,41 @@ public class ShopServiceTest{
             purchaseSumPrice = purchaseSumPrice.add(purchaseProduct.getSumPrice());
         }
 
+        //Проверка свободного места на складе магазина
         Optional<Shop> updatedShop = shopService.findById(shopID);
         assertTrue(updatedShop.isPresent());
         int newFreeSpace = getFreeSpaceInMainStorage(shopID);
         assertEquals(newFreeSpace, oldFreeSpace+purchaseProductCount);
 
-        return new Object[]{purchase.getId(), oldBudget, purchaseSumPrice};
+        return new Object[]{purchase.getId(), oldBudget, purchaseSumPrice, oldFreeSpace};
     }
 
+    /**
+     * Тестрование перевода заказа в статус DELIVERING
+     * @param id идентификатор заказа
+     */
     public void deliverOrder(Long id) {
         shopService.deliverOrder(id);
         Optional<Purchase> purchaseOptional = purchaseService.findById(id);
         assertTrue(purchaseOptional.isPresent());
         assertEquals(OrderStatus.DELIVERING, purchaseOptional.get().getOrderStatus());
     }
+
+    /**
+     * Тестирование завершения заказа
+     * @param id идентификатор заказа
+     */
     private void completeOrder(Long id) {
         shopService.completeOrder(id);
         Optional<Purchase> purchaseOptional = purchaseService.findById(id);
         assertTrue(purchaseOptional.isPresent());
         assertEquals(OrderStatus.COMPLETED, purchaseOptional.get().getOrderStatus());
     }
+
+    /**
+     * Тестирование отмены заказа
+     * @param id идентификатор заказа
+     */
     private void cancelOrder(Long id) {
         shopService.cancelOrder(id);
         Optional<Purchase> purchaseOptional = purchaseService.findById(id);
@@ -178,6 +190,12 @@ public class ShopServiceTest{
         assertEquals(OrderStatus.CANCELED, purchaseOptional.get().getOrderStatus());
     }
 
+    /**
+     * Проверка бюджета в магазине между разными операциями
+     * @param shopID идентификатор магазина
+     * @param oldBudget старый показатель бюджета
+     * @param purchaseSumPrice сумма заказа
+     */
     private void shopBudgetTest(Long shopID, BigDecimal oldBudget, BigDecimal purchaseSumPrice) {
         Optional<Shop> shopOptional = shopService.findById(shopID);
         assertTrue(shopOptional.isPresent());
@@ -191,42 +209,5 @@ public class ShopServiceTest{
                 = shopStorageRepository.findByShopIdAndType(shopID, 1);
         assertTrue(shopStorageOptional.isPresent());
         return shopStorageOptional.get().getFreeSpace();
-    }
-
-    @Test
-    public void addBudgetTest() {
-        logger.info("Добавление денег в бюджет магазина");
-        Long shopID = 1L;
-        Optional<Shop> shopOptional = shopService.findById(shopID);
-        assertTrue(shopOptional.isPresent());
-        Shop shop = shopOptional.get();
-        BigDecimal oldBudget = shop.getBudget();
-        String money1 = "1000.9990";
-        shopService.addBudget(1L, money1);
-
-        shopOptional = shopService.findById(shopID);
-        assertTrue(shopOptional.isPresent());
-        shop = shopOptional.get();
-        BigDecimal newBudget = shop.getBudget();
-        assertEquals(oldBudget.add(new BigDecimal(money1)), newBudget);
-    }
-
-    @Test
-    public void addBudgetNumberFormatExceptionTest() {
-        logger.info("Добавление денег в бюджет магазина");
-        Long shopID = 1L;
-        Optional<Shop> shopOptional = shopService.findById(shopID);
-        assertTrue(shopOptional.isPresent());
-        Shop shop = shopOptional.get();
-        BigDecimal oldBudget = shop.getBudget();
-        String money1 = "1000,9990";
-        ResponseEntity<?> responseEntity = shopService.addBudget(1L, money1);
-        assertEquals(ErrorStatus.NUMBER_FORMAT_EXCEPTION, responseEntity.getBody());
-
-        shopOptional = shopService.findById(shopID);
-        assertTrue(shopOptional.isPresent());
-        shop = shopOptional.get();
-        BigDecimal newBudget = shop.getBudget();
-        assertEquals(oldBudget, newBudget);
     }
 }
