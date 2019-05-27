@@ -11,9 +11,9 @@ import java.util.List;
 /**
  * Тестирование процесса поступления заказа, его доставки и отмены
  */
-public class SupplierReceiveAndDeliverAndCancel extends SupplierOrderTest{
+public class SupplierReceiveAndDeliverAndCancelTest extends SupplierOrderTest{
     private final static Logger logger
-            = LoggerFactory.getLogger(SupplierReceiveAndDeliverAndCancel.class);
+            = LoggerFactory.getLogger(SupplierReceiveAndDeliverAndCancelTest.class);
 
     @Test
     @SuppressWarnings("unchecked")
