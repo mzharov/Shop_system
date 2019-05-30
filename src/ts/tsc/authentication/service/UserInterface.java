@@ -1,5 +1,7 @@
 package ts.tsc.authentication.service;
 
-public interface UserInterface {
+import ts.tsc.authentication.entity.User;
 
+public interface UserInterface {
+    User save(User user);
 }

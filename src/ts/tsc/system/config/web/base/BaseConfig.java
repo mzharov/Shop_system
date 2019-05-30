@@ -74,7 +74,7 @@ public abstract class BaseConfig {
     public EntityManagerFactory entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean factoryBean
                 = new LocalContainerEntityManagerFactoryBean();
-        factoryBean.setPackagesToScan("ts.tsc.system.entity");
+        factoryBean.setPackagesToScan("ts.tsc.system.entity", "ts.tsc.authentication.entity");
         factoryBean.setDataSource(dataSource());
         factoryBean.setJpaProperties(hibernateProperties());
         factoryBean.setJpaVendorAdapter(jpaVendorAdapter());

@@ -15,9 +15,9 @@ import java.util.Objects;
 import java.util.Properties;
 
 @Configuration
-@EnableJpaRepositories(basePackages = {"ts.tsc.system.repository"})
+@EnableJpaRepositories(basePackages = {"ts.tsc.system.repository", "ts.tsc.authentication.repository"})
 @EnableTransactionManagement
-@ComponentScan(basePackages  = {"ts.tsc.system"} )
+@ComponentScan(basePackages  = {"ts.tsc.system", "ts.tsc.authentication"} )
 @PropertySource("classpath:application.properties")
 public class DataServiceConfig extends BaseConfig {
 

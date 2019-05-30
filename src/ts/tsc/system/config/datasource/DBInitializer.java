@@ -3,7 +3,13 @@ package ts.tsc.system.config.datasource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Service;
+import ts.tsc.authentication.entity.Role;
+import ts.tsc.authentication.entity.RoleName;
+import ts.tsc.authentication.entity.User;
+import ts.tsc.authentication.repository.RoleRepository;
+import ts.tsc.authentication.repository.UserRepository;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.entity.shop.*;
 import ts.tsc.system.entity.supplier.Supplier;
@@ -22,7 +28,7 @@ import ts.tsc.system.repository.supplier.SupplierStorageRepository;
 import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 
-@Service
+@Service("appDBInit")
 public class DBInitializer {
 
     private final static Logger logger = LoggerFactory.getLogger(DBInitializer.class);
@@ -89,7 +95,6 @@ public class DBInitializer {
                 shopStorage2, product1);
         addProductToShopStorage(33, new BigDecimal("68.34"),
                 shopStorage3, product1);
-
 
         logger.info("Инициализация БД завершена");
     }
@@ -166,5 +171,4 @@ public class DBInitializer {
         productRepository.save(product);
         return product;
     }
-
 }

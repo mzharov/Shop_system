@@ -1,11 +1,15 @@
 package ts.tsc.authentication.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "role")
-public class Role {
+public class Role implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,11 +18,19 @@ public class Role {
     @Column(name = "role")
     private RoleName roleName;
 
-    @ManyToMany(mappedBy = "roles")
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)
+    @JsonIgnore
     private Set<User> users;
 
     public Long getId() {
         return id;
+    }
+
+    public void addUser(User user) {
+        if(users == null) {
+            users = new HashSet<>();
+        }
+        users.add(user);
     }
 
     public void setId(Long id) {
