@@ -26,10 +26,10 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         //-- define URL patterns to enable OAuth2 security
         http.
                 anonymous().disable()
-                .requestMatchers().antMatchers("/app/**")
+                .requestMatchers().antMatchers("/app/**", "/user/list")
                 .and().authorizeRequests()
-                .antMatchers("/app/**")
-                .access("hasRole('ADMIN') or hasRole('USER')")
+                .antMatchers("/app/**").access("hasRole('ADMIN') or hasRole('USER')")
+                .antMatchers("/user/list").access("hasRole('ADMIN')")
                 .and().exceptionHandling().accessDeniedHandler(new OAuth2AccessDeniedHandler());
     }
 
