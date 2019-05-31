@@ -7,17 +7,18 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 
 @Configuration
 @EnableResourceServer
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
-    private final TokenStore tokenStore;
+    private final ResourceServerTokenServices tokenServices;
 
     @Autowired
-    public ResourceServerConfig(TokenStore tokenStore) {
-        this.tokenStore = tokenStore;
+    public ResourceServerConfig(ResourceServerTokenServices tokenServices) {
+        this.tokenServices = tokenServices;
     }
 
     @Override
@@ -34,7 +35,6 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
-        resources.tokenStore(tokenStore);
+        resources.tokenServices(tokenServices);
     }
-
 }

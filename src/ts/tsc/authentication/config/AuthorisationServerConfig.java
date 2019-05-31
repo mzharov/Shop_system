@@ -13,9 +13,13 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.approval.UserApprovalHandler;
+import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 
 import javax.sql.DataSource;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -42,9 +46,8 @@ public class AuthorisationServerConfig
 
     @Autowired
     private TokenStore tokenStore;
-
     @Autowired
-    private UserApprovalHandler userApprovalHandler;
+    private JwtAccessTokenConverter accessTokenConverter;
 
     @Autowired
     @Qualifier("authenticationManagerBean")
@@ -74,7 +77,11 @@ public class AuthorisationServerConfig
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-        endpoints.tokenStore(tokenStore).userApprovalHandler(userApprovalHandler)
+        TokenEnhancerChain enhancerChain = new TokenEnhancerChain();
+        enhancerChain.setTokenEnhancers(Collections.singletonList(accessTokenConverter));
+        endpoints.tokenStore(tokenStore)
+                .accessTokenConverter(accessTokenConverter)
+                .tokenEnhancer(enhancerChain)
                 .authenticationManager(authenticationManager)
                 .userDetailsService(userDetailsService);
     }

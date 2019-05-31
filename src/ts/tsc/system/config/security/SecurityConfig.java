@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,9 +24,12 @@ import org.springframework.security.oauth2.provider.approval.ApprovalStore;
 import org.springframework.security.oauth2.provider.approval.TokenApprovalStore;
 import org.springframework.security.oauth2.provider.approval.TokenStoreUserApprovalHandler;
 import org.springframework.security.oauth2.provider.request.DefaultOAuth2RequestFactory;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
 import javax.sql.DataSource;
 
@@ -41,6 +45,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Value("${security.token.realm}")
     private String realm;
+    @Value("${security.signing-key}")
+    private String signingKey;
 
     @Autowired
     public SecurityConfig(ClientDetailsService clientDetailsService,
@@ -91,25 +97,23 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     @Bean
-    public InMemoryTokenStore tokenStore() {
-        return new InMemoryTokenStore();
+    public JwtAccessTokenConverter accessTokenConverter() {
+        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+        converter.setSigningKey(signingKey);
+        return converter;
     }
 
     @Bean
-    @Autowired
-    public TokenStoreUserApprovalHandler userApprovalHandler(TokenStore tokenStore){
-        TokenStoreUserApprovalHandler handler = new TokenStoreUserApprovalHandler();
-        handler.setTokenStore(tokenStore);
-        handler.setRequestFactory(new DefaultOAuth2RequestFactory(clientDetailsService));
-        handler.setClientDetailsService(clientDetailsService);
-        return handler;
+    public TokenStore tokenStore() {
+        return new JwtTokenStore(accessTokenConverter());
     }
 
     @Bean
-    @Autowired
-    public ApprovalStore approvalStore(TokenStore tokenStore) throws Exception {
-        TokenApprovalStore store = new TokenApprovalStore();
-        store.setTokenStore(tokenStore);
-        return store;
+    @Primary
+    public DefaultTokenServices tokenServices() {
+        DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+        defaultTokenServices.setTokenStore(tokenStore());
+        defaultTokenServices.setSupportRefreshToken(true);
+        return defaultTokenServices;
     }
 }
