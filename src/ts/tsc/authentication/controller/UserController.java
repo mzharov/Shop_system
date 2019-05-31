@@ -3,18 +3,15 @@ package ts.tsc.authentication.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.authentication.entity.RoleName;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.system.controller.parent.BaseControllerInterface;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
-import ts.tsc.system.entity.product.Product;
-import ts.tsc.system.service.base.BaseServiceInterface;
 import ts.tsc.system.service.named.NamedServiceInterface;
 
 import java.util.Optional;
@@ -25,14 +22,17 @@ public class UserController implements BaseControllerInterface<User> {
 
     private final NamedServiceInterface<User, Long> userService;
     private final BaseResponseBuilder<User> userBaseResponseBuilder;
+    private final PasswordEncoder passwordEncoder;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     public UserController(NamedServiceInterface<User, Long> userService,
-                          BaseResponseBuilder<User> userBaseResponseBuilder) {
+                          BaseResponseBuilder<User> userBaseResponseBuilder,
+                          PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.userBaseResponseBuilder = userBaseResponseBuilder;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -60,8 +60,7 @@ public class UserController implements BaseControllerInterface<User> {
     public ResponseEntity<?> create(@PathVariable String username, @PathVariable String password) {
         User user = new User();
         user.setName(username);
-        user.setPassword(PasswordEncoderFactories.createDelegatingPasswordEncoder()
-                .encode(password));
+        user.setPassword(passwordEncoder.encode(password));
         return userBaseResponseBuilder.save(userService.save(user));
     }
 

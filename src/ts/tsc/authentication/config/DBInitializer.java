@@ -2,7 +2,7 @@ package ts.tsc.authentication.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.stereotype.Component;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ts.tsc.authentication.entity.Role;
 import ts.tsc.authentication.entity.RoleName;
@@ -17,12 +17,15 @@ public class DBInitializer {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public DBInitializer(UserRepository userRepository,
-                         RoleRepository roleRepository) {
+                         RoleRepository roleRepository,
+                         PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostConstruct
@@ -38,7 +41,7 @@ public class DBInitializer {
     private User addUser(String name, String password) {
         User user = new User();
         user.setName(name);
-        user.setPassword(PasswordEncoderFactories.createDelegatingPasswordEncoder().encode(password));
+        user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
         return user;
     }
