@@ -71,8 +71,8 @@
           <element id="library" level="project" name="Maven: org.bouncycastle:bcprov-jdk15on:1.60" />
           <element id="library" level="project" name="Maven: org.codehaus.jackson:jackson-core-asl:1.9.13" />
           <element id="library" level="project" name="Maven: org.codehaus.jackson:jackson-mapper-asl:1.9.13" />
-          <element id="library" level="project" name="Maven: org.springframework.security.oauth:spring-security-oauth2:2.1.0.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework.security:spring-security-jwt:1.0.10.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework.security.oauth:spring-security-oauth2:2.3.6.RELEASE" />
         </element>
       </element>
     </root>
