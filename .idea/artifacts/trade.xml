@@ -65,6 +65,14 @@
           <element id="library" level="project" name="Maven: org.springframework.security:spring-security-core:5.1.5.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework.security:spring-security-config:5.1.5.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework.security:spring-security-web:5.1.5.RELEASE" />
+          <element id="library" level="project" name="Maven: com.auth0:java-jwt:3.8.1" />
+          <element id="library" level="project" name="Maven: io.jsonwebtoken:jjwt:0.9.1" />
+          <element id="library" level="project" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.60" />
+          <element id="library" level="project" name="Maven: org.bouncycastle:bcprov-jdk15on:1.60" />
+          <element id="library" level="project" name="Maven: org.codehaus.jackson:jackson-core-asl:1.9.13" />
+          <element id="library" level="project" name="Maven: org.codehaus.jackson:jackson-mapper-asl:1.9.13" />
+          <element id="library" level="project" name="Maven: org.springframework.security.oauth:spring-security-oauth2:2.1.0.RELEASE" />
+          <element id="library" level="project" name="Maven: org.springframework.security:spring-security-jwt:1.0.10.RELEASE" />
         </element>
       </element>
     </root>

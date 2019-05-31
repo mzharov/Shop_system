@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(value = "/supplier")
+@RequestMapping(value = "/app/supplier")
 public class SupplierController
         extends OrderController
         implements ExtendedControllerInterface<Supplier, SupplierStorage> {

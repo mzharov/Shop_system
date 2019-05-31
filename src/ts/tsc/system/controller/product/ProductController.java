@@ -18,7 +18,7 @@ import ts.tsc.system.service.product.ProductServiceInterface;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(value = "/product")
+@RequestMapping(value = "/app/product")
 public class ProductController implements NamedControllerInterface<Product> {
 
     private final ProductServiceInterface productService;

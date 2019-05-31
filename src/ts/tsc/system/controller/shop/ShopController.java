@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(value = "/shop")
+@RequestMapping(value = "/app/shop")
 public class ShopController
         extends OrderController
         implements ExtendedControllerInterface<Shop, ShopStorage> {

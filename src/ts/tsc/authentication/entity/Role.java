@@ -16,7 +16,7 @@ public class Role implements Serializable {
     private Long id;
 
     @Column(name = "role")
-    private RoleName roleName;
+    private String roleName;
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)
     @JsonIgnore
@@ -37,12 +37,12 @@ public class Role implements Serializable {
         this.id = id;
     }
 
-    public RoleName getRoleName() {
+    public String getRoleName() {
         return roleName;
     }
 
     public void setRoleName(RoleName roleName) {
-        this.roleName = roleName;
+        this.roleName = roleName.toString();
     }
 
     public Set<User> getUsers() {
