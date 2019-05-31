@@ -103,6 +103,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public TokenStore tokenStore() {
+        //return new JdbcTokenStore(dataSource);
         return new JwtTokenStore(accessTokenConverter());
     }
 

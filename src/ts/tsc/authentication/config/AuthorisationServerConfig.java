@@ -65,6 +65,8 @@ public class AuthorisationServerConfig
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        //clients.jdbc(dataSource);
+
         clients.inMemory()
                 .withClient(clientID)
                 .secret(passwordEncoder.encode(secret))
@@ -89,6 +91,5 @@ public class AuthorisationServerConfig
     @Override
     public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
         oauthServer.realm(realm);
-        //oauthServer.allowFormAuthenticationForClients().checkTokenAccess("permitAll()");
     }
 }

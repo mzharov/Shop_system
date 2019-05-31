@@ -5,8 +5,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.init.DatabasePopulator;
+import org.springframework.jdbc.datasource.init.DatabasePopulatorUtils;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import ts.tsc.system.config.web.base.BaseConfig;
 
@@ -54,6 +59,11 @@ public class DataServiceConfig extends BaseConfig {
                     .getProperty("spring.datasource.username"));
             dataSource.setPassword(environment
                     .getProperty("spring.datasource.password"));
+
+            Resource initSchema = new ClassPathResource("token.sql");
+            DatabasePopulator databasePopulator = new ResourceDatabasePopulator(initSchema);
+            DatabasePopulatorUtils.execute(databasePopulator, dataSource);
+
             return dataSource;
         } catch (Exception e) {
             logger.error("Не удалось подключиться к БД", e);
