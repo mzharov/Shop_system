@@ -46,7 +46,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${security.token.realm}")
     private String realm;
     @Value("${security.signing-key}")
-    private String signingKey;
+    private String privateKey;
+
 
     @Autowired
     public SecurityConfig(ClientDetailsService clientDetailsService,
@@ -97,7 +98,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public JwtAccessTokenConverter accessTokenConverter() {
         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
-        converter.setSigningKey(signingKey);
+        converter.setSigningKey(privateKey);
         return converter;
     }
 
