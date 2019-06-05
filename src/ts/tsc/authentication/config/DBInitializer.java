@@ -1,7 +1,6 @@
 package ts.tsc.authentication.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ts.tsc.authentication.entity.Role;
@@ -46,13 +45,12 @@ public class DBInitializer {
         return user;
     }
 
-    private Role addRole(RoleName name, User user) {
+    private void addRole(RoleName name, User user) {
         Role role = new Role();
         role.setRoleName(name);
         role.addUser(user);
         roleRepository.save(role);
         user.addRole(role);
         userRepository.save(user);
-        return role;
     }
 }

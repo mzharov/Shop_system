@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.token.TokenService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
@@ -13,17 +12,8 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.approval.UserApprovalHandler;
-import org.springframework.security.oauth2.provider.token.AuthorizationServerTokenServices;
-import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
-import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-
-import javax.sql.DataSource;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 @Configuration
 @EnableAuthorizationServer
@@ -47,32 +37,30 @@ public class AuthorisationServerConfig
     @Value("${security.token.realm}")
     private String realm;
 
-    @Autowired
-    private TokenStore tokenStore;
-    @Autowired
-    private JwtAccessTokenConverter accessTokenConverter;
+    private final TokenStore tokenStore;
+    private final JwtAccessTokenConverter accessTokenConverter;
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    @Qualifier("authenticationManagerBean")
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    @Qualifier("userDetailService")
-    UserDetailsService userDetailsService;
-
-    @Autowired
-    DataSource dataSource;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    AuthorizationServerTokenServices tokenService;
+    public AuthorisationServerConfig(TokenStore tokenStore,
+                                     JwtAccessTokenConverter accessTokenConverter,
+                                     @Qualifier("authenticationManagerBean")
+                                                 AuthenticationManager authenticationManager,
+                                     @Qualifier("userDetailService")
+                                                 UserDetailsService userDetailsService,
+                                     PasswordEncoder passwordEncoder) {
+        this.tokenStore = tokenStore;
+        this.accessTokenConverter = accessTokenConverter;
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        //clients.jdbc(dataSource);
         clients.inMemory()
                 .withClient(clientID)
                 .secret(passwordEncoder.encode(secret))
@@ -84,7 +72,7 @@ public class AuthorisationServerConfig
     }
 
     @Override
-    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
         endpoints.tokenStore(tokenStore)
                 .accessTokenConverter(accessTokenConverter)
                 .authenticationManager(authenticationManager)
@@ -93,7 +81,7 @@ public class AuthorisationServerConfig
     }
 
     @Override
-    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) {
         oauthServer.realm(realm);
         oauthServer.allowFormAuthenticationForClients();
     }

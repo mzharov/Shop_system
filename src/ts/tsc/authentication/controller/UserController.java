@@ -3,9 +3,9 @@ package ts.tsc.authentication.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.authentication.entity.User;
@@ -23,8 +23,6 @@ public class UserController implements BaseControllerInterface<User> {
     private final NamedServiceInterface<User, Long> userService;
     private final BaseResponseBuilder<User> userBaseResponseBuilder;
     private final PasswordEncoder passwordEncoder;
-
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     public UserController(NamedServiceInterface<User, Long> userService,
@@ -76,10 +74,5 @@ public class UserController implements BaseControllerInterface<User> {
         } else {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":user", HttpStatus.NOT_FOUND);
         }
-    }
-
-    @GetMapping(value = "/me")
-    public ResponseEntity<?> getInfo() {
-        return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 }

@@ -11,11 +11,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public class CustomUserDetail implements UserDetails {
+class CustomUserDetail implements UserDetails {
 
-    private Collection<? extends GrantedAuthority> authorities;
-    private String password;
-    private String username;
+    private final Collection<? extends GrantedAuthority> authorities;
+    private final String password;
+    private final String username;
 
     CustomUserDetail(User user) {
         this.password = user.getPassword();

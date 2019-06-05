@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controller.parent.BaseControllerInterface;
 import ts.tsc.system.controller.parent.NamedControllerInterface;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;

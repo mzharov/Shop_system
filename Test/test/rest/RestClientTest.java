@@ -1,14 +1,11 @@
 package test.rest;
 
-import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.response.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -28,21 +25,14 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import test.config.RestClientConfig;
 import test.config.TestDataServiceConfig;
-import ts.tsc.system.config.security.SecurityConfig;
-import ts.tsc.system.config.security.SecurityWebInitializer;
-import ts.tsc.system.entity.shop.Shop;
-import ts.tsc.system.entity.shop.ShopStorage;
-import ts.tsc.system.entity.shop.ShopStorageProduct;
+import ts.tsc.system.entity.product.Product;
 
 import java.util.*;
 
-import static com.jayway.restassured.RestAssured.given;
 import static org.junit.Assert.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
@@ -51,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class RestClientTest {
 
     private final static Logger logger = LoggerFactory.getLogger(RestClientTest.class);
-    private static final String URL_GET_ALL_SHOPS = "http://localhost:8080/app/shop/list";
+    private static final String URL_GET_ALL_PRODUCTS = "http://localhost:8080/app/product/list";
     private static final String oAuthURL = "http://localhost:8080/oauth/token";
 
     @Value("${security.client-id}")
@@ -66,6 +56,7 @@ public class RestClientTest {
     WebApplicationContext wac;
 
     @Autowired
+    @SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection"})
     private FilterChainProxy springSecurityFilterChain;
 
     private MockMvc mockMvc;
@@ -87,7 +78,6 @@ public class RestClientTest {
 
         MockHttpServletResponse response = obtainAccessToken(clientID,
                 secret,
-                "password",
                 "User1",
                 "password");
 
@@ -100,34 +90,21 @@ public class RestClientTest {
         headers.set("Authorization", "Bearer "+accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<List<Shop>> shopResponseEntity =
-                restTemplate.exchange(URL_GET_ALL_SHOPS,
+        ResponseEntity<List<Product>> shopResponseEntity =
+                restTemplate.exchange(URL_GET_ALL_PRODUCTS,
                         HttpMethod.GET, entity,
-                        new ParameterizedTypeReference<List<Shop>>() {});
+                        new ParameterizedTypeReference<List<Product>>() {});
         assert shopResponseEntity != null;
         assert shopResponseEntity.getBody() != null;
-        List<Shop> shopList = shopResponseEntity.getBody();
-        assertEquals(2, shopList.size());
+        List<Product> shopList = shopResponseEntity.getBody();
         listShops(shopList);
     }
 
-    private void listShops(List<Shop> shops) {
-        shops.forEach(s -> {
-            logger.info("Shop:");
-            logger.info("id: " + s.getId() + "; name: " + s.getName() + "; budget: " + s.getBudget());
-            Set<ShopStorage> shopStorageSet = s.getStorages();
-            logger.info("Storages:");
-            shopStorageSet.forEach(shopStorage -> {
-                logger.info("id: " + shopStorage.getId() + "; type: "
-                        + shopStorage.getType() + "; totalSpace: " +
-                        shopStorage.getTotalSpace() + "; freeSpace: "
-                        + shopStorage.getFreeSpace());
-                Set<ShopStorageProduct> shopStorageProductSet = shopStorage.getProducts();
-                logger.info("Products: " + shopStorageProductSet.size());
-                shopStorageProductSet.forEach(shopStorageProduct ->
-                    logger.info("count: " + shopStorageProduct.getCount()
-                            + "; price: " + shopStorageProduct.getPrice()));
-        });
+    private void listShops(List<Product> products) {
+
+        products.forEach(s-> {
+            logger.info("Product: ");
+            logger.info("id: " + s.getId() + "; name: " + s.getName() + "; " + s.getCategory());
         });
     }
 
@@ -135,7 +112,6 @@ public class RestClientTest {
     public void testUserAuth() throws Exception {
         MockHttpServletResponse response = obtainAccessToken(clientID,
                 secret,
-                "password",
                 "User1",
                 "password");
         assertEquals(HttpStatus.OK.value(), response.getStatus());
@@ -146,7 +122,6 @@ public class RestClientTest {
     public void testAdminAuth() throws Exception {
         MockHttpServletResponse response = obtainAccessToken(clientID,
                 secret,
-                "password",
                 "Admin",
                 "admin");
         assertEquals(HttpStatus.OK.value(), response.getStatus());
@@ -155,11 +130,10 @@ public class RestClientTest {
 
     private MockHttpServletResponse obtainAccessToken(String clientId,
                                                       String secret,
-                                                      String grantType,
                                                       String username,
                                                       String password) throws Exception {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.put("grant_type", Collections.singletonList(grantType));
+        params.put("grant_type", Collections.singletonList("password"));
         params.put("client_id", Collections.singletonList(clientId));
         params.put("username", Collections.singletonList(username));
         params.put("password", Collections.singletonList(password));
@@ -182,10 +156,9 @@ public class RestClientTest {
 
     private MockHttpServletResponse obtainRefreshToken(String clientId,
                                                        String secret,
-                                                       String accessToken,
-                                                       String grantType) throws Exception {
+                                                       String accessToken) throws Exception {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.put("grant_type", Collections.singletonList(grantType));
+        params.put("grant_type", Collections.singletonList("refresh_token"));
         params.put("refresh_token", Collections.singletonList(accessToken));
 
         MockHttpServletResponse response;
@@ -206,7 +179,6 @@ public class RestClientTest {
     public void testRefreshToken() throws Exception {
         MockHttpServletResponse response = obtainAccessToken(clientID,
                 secret,
-                "password",
                 "Admin",
                 "admin");
         assertEquals(HttpStatus.OK.value(), response.getStatus());
@@ -216,7 +188,7 @@ public class RestClientTest {
         String refreshToken = jsonParser.parseMap(resultString).get("refresh_token").toString();
         assertNotNull(refreshToken);
 
-        response = obtainRefreshToken(clientID, secret, refreshToken, "refresh_token");
+        response = obtainRefreshToken(clientID, secret, refreshToken);
         assertEquals(HttpStatus.OK.value(), response.getStatus());
         System.out.print(response.getContentAsString());
     }
@@ -224,7 +196,6 @@ public class RestClientTest {
     public void testBadRefreshToken() throws Exception {
         MockHttpServletResponse response = obtainAccessToken(clientID,
                 secret,
-                "password",
                 "Admin",
                 "admin");
         assertEquals(HttpStatus.OK.value(), response.getStatus());
@@ -234,7 +205,7 @@ public class RestClientTest {
         String refreshToken = jsonParser.parseMap(resultString).get("refresh_token").toString()+"1";
         assertNotNull(refreshToken);
 
-        response = obtainRefreshToken(clientID, secret, refreshToken, "refresh_token");
+        response = obtainRefreshToken(clientID, secret, refreshToken);
         assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
         System.out.print(response.getContentAsString());
     }
@@ -243,7 +214,6 @@ public class RestClientTest {
         MockHttpServletResponse response = obtainAccessToken(
                 clientID+1,
                 secret,
-                "password",
                 "Admin",
                 "admin");
         assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
@@ -253,7 +223,6 @@ public class RestClientTest {
         MockHttpServletResponse response = obtainAccessToken(
                 clientID+1,
                 secret,
-                "password",
                 "Admin",
                 "admin");
         assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
@@ -264,15 +233,8 @@ public class RestClientTest {
         MockHttpServletResponse response = obtainAccessToken(
                 clientID,
                 secret,
-                "password",
                 "Admin1",
                 "admin");
         assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatus());
-    }
-    @Test
-    public void test() throws Exception {
-        String me = "/user/me";
-        ResultActions result = mockMvc.perform(get(me));
-        result.andExpect(status().isOk());
     }
 }
