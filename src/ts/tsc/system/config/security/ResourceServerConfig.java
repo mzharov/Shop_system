@@ -24,7 +24,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
     }
 
     /**
-     * Установка шаблонов URL для защиты ресурсов
+     * Установка шаблонов URL и уровней доступа к ним
      */
     @Override
     public void configure(HttpSecurity http) throws Exception {

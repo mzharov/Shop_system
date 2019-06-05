@@ -67,8 +67,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/**", "/user/**", "/oauth/**").permitAll()
-                .antMatchers("/app/**").authenticated()
-                .antMatchers("/user/list/**").authenticated()
                 .and()
                 .httpBasic()
                 .realmName(realm);
