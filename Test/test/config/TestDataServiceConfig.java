@@ -18,7 +18,14 @@ import java.util.Properties;
 @Configuration
 @EnableJpaRepositories(basePackages = {"ts.tsc.system.repository"})
 @EnableTransactionManagement
-@ComponentScan(basePackages  = {"ts.tsc.system", "test.config"} )
+@ComponentScan(basePackages  = {"ts.tsc.system", "ts.tsc.authentication", "test.config"}, excludeFilters = {
+        @ComponentScan.Filter(
+                type=FilterType.ASSIGNABLE_TYPE,
+                value = ts.tsc.system.config.web.DataServiceConfig.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                value = ts.tsc.system.config.web.WebConfig.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                value = ts.tsc.system.config.web.WebInitializer.class)})
 @PropertySource("classpath:application.properties")
 @Profile("test")
 public class TestDataServiceConfig extends BaseConfig {
@@ -45,7 +52,7 @@ public class TestDataServiceConfig extends BaseConfig {
     @Bean
     public DataSource dataSource() {
         try {
-            logger.info("Инициализация БД");
+            logger.info("Инициализация тестовой БД");
             EmbeddedDatabaseBuilder dbBuilder = new EmbeddedDatabaseBuilder();
             return dbBuilder.setType(EmbeddedDatabaseType.H2).build();
         } catch (Exception e) {

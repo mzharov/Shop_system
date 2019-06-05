@@ -5,7 +5,7 @@ import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatche
 import ts.tsc.system.config.security.SecurityConfig;
 
 @Configuration
-class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+public class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
 
     @Override
@@ -26,5 +26,4 @@ class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitialize
     protected String[] getServletMappings() {
         return new String[]{"/"};
     }
-
 }

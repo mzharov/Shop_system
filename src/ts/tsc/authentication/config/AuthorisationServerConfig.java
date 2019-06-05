@@ -95,5 +95,6 @@ public class AuthorisationServerConfig
     @Override
     public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
         oauthServer.realm(realm);
+        oauthServer.allowFormAuthenticationForClients();
     }
 }

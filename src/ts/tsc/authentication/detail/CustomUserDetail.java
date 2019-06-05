@@ -1,4 +1,4 @@
-package ts.tsc.authentication;
+package ts.tsc.authentication.detail;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

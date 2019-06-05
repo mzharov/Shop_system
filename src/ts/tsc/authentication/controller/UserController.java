@@ -77,4 +77,9 @@ public class UserController implements BaseControllerInterface<User> {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":user", HttpStatus.NOT_FOUND);
         }
     }
+
+    @GetMapping(value = "/me")
+    public ResponseEntity<?> getInfo() {
+        return new ResponseEntity<>("ok", HttpStatus.OK);
+    }
 }
