@@ -13,6 +13,7 @@ import java.util.Set;
 public class User extends NamedEntity<Long> implements Serializable {
 
     @Column(name = "password")
+    @JsonIgnore
     private String password;
 
     @JsonIgnore

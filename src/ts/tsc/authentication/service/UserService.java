@@ -1,6 +1,9 @@
 package ts.tsc.authentication.service;
 
+import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.authentication.entity.Role;
@@ -8,13 +11,14 @@ import ts.tsc.authentication.entity.RoleName;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.authentication.repository.RoleRepository;
 import ts.tsc.authentication.repository.UserRepository;
+import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.service.named.NamedService;
 
 import java.util.Optional;
 
 @Service("userService")
 @Transactional
-public class UserService extends NamedService<User, Long> {
+public class UserService extends NamedService<User, Long> implements UserInterface {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -41,7 +45,14 @@ public class UserService extends NamedService<User, Long> {
     }
 
     @Override
-    public User save(User entity) {
+    public boolean validateUser(User user) {
+        Optional<User> userOptional = userRepository.findUserByName(user.getName());
+        return !userOptional.isPresent();
+    }
+
+    @Override
+    public User save(User user) {
+
         Optional<Role> roleOptional
                 = roleRepository.findByRoleName(RoleName.USER.toString());
         if(!roleOptional.isPresent()) {
@@ -49,12 +60,12 @@ public class UserService extends NamedService<User, Long> {
         }
         try {
             Role role = roleOptional.get();
-            role.addUser(entity);
+            role.addUser(user);
             roleRepository.save(role);
         } catch (Exception e) {
             return null;
         }
-        entity.addRole(roleOptional.get());
-        return super.save(entity);
+        user.addRole(roleOptional.get());
+        return super.save(user);
     }
 }

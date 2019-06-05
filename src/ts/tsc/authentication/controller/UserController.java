@@ -1,11 +1,13 @@
 package ts.tsc.authentication.controller;
 
+import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.authentication.entity.User;
+import ts.tsc.authentication.service.UserInterface;
 import ts.tsc.system.controller.parent.BaseControllerInterface;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
@@ -17,12 +19,12 @@ import java.util.Optional;
 @RequestMapping(value = "/user")
 public class UserController implements BaseControllerInterface<User> {
 
-    private final NamedServiceInterface<User, Long> userService;
+    private final UserInterface userService;
     private final BaseResponseBuilder<User> userBaseResponseBuilder;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserController(NamedServiceInterface<User, Long> userService,
+    public UserController(UserInterface userService,
                           BaseResponseBuilder<User> userBaseResponseBuilder,
                           PasswordEncoder passwordEncoder) {
         this.userService = userService;
@@ -56,6 +58,11 @@ public class UserController implements BaseControllerInterface<User> {
         User user = new User();
         user.setName(username);
         user.setPassword(passwordEncoder.encode(password));
+
+        if(!userService.validateUser(user)) {
+            return new ResponseEntity<>(ErrorStatus.USERNAME_ALREADY_TAKEN, HttpStatus.BAD_REQUEST);
+        }
+
         return userBaseResponseBuilder.save(userService.save(user));
     }
 
