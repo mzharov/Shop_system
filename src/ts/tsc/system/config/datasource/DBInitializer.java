@@ -65,7 +65,7 @@ public class DBInitializer {
         SupplierStorage supplierStorage3 = addStorageToSupplier(100, supplier1);
 
         Product product1 = addProduct("milk", "drink");
-        Product product2 = addProduct("break", "food");
+        Product product2 = addProduct("bread", "food");
         Product product3 = addProduct("soap", "hygiene care");
         Product product4 = addProduct("apple juice", "drink");
 

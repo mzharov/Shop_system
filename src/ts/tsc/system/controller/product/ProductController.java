@@ -24,7 +24,7 @@ public class ProductController implements NamedControllerInterface<Product> {
     private final BaseResponseBuilder<Product> productBaseResponseBuilder;
 
     @Autowired
-    ProductController(@Qualifier("productService") ProductServiceInterface productService,
+    public ProductController(@Qualifier("productService") ProductServiceInterface productService,
                       BaseResponseBuilder<Product> productBaseResponseBuilder) {
         this.productService = productService;
         this.productBaseResponseBuilder = productBaseResponseBuilder;

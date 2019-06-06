@@ -1,6 +1,5 @@
 package ts.tsc.authentication.controller;
 
-import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +10,6 @@ import ts.tsc.authentication.service.UserInterface;
 import ts.tsc.system.controller.parent.BaseControllerInterface;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
-import ts.tsc.system.service.named.NamedServiceInterface;
 
 import java.util.Optional;
 

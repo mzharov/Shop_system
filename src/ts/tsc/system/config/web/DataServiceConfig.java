@@ -60,7 +60,7 @@ public class DataServiceConfig extends BaseConfig {
             dataSource.setPassword(environment
                     .getProperty("spring.datasource.password"));
 
-            Resource initSchema = new ClassPathResource("token.sql");
+            Resource initSchema = new ClassPathResource("db/token.sql");
             DatabasePopulator databasePopulator = new ResourceDatabasePopulator(initSchema);
             DatabasePopulatorUtils.execute(databasePopulator, dataSource);
 

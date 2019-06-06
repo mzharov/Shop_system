@@ -16,6 +16,9 @@ import org.springframework.security.oauth2.common.util.JacksonJsonParser;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlConfig;
+import org.springframework.test.context.jdbc.SqlGroup;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,6 +33,7 @@ import test.config.RestClientConfig;
 import test.config.TestDataServiceConfig;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.system.entity.product.Product;
+import ts.tsc.system.service.product.ProductServiceInterface;
 
 import java.util.*;
 
@@ -67,6 +71,9 @@ public class RestClientTest {
 
     private MockMvc mockMvc;
 
+    @Autowired
+    ProductServiceInterface productService;
+
     @Rule
     public final ExpectedException expectedException = ExpectedException.none();
 
@@ -88,14 +95,14 @@ public class RestClientTest {
     public void testFindAllProductsByAuthorizedUser() throws Exception{
         logger.info("Начало теста");
 
-        ResponseEntity<List<Product>> shopResponseEntity =
+        ResponseEntity<List<Product>> productResponseEntity =
                 restTemplate.exchange(URL_GET_ALL_PRODUCTS,
                         HttpMethod.GET, getHeaderWithAccessToken("User1", "password"),
                         new ParameterizedTypeReference<List<Product>>() {});
-        assert shopResponseEntity != null;
-        assert shopResponseEntity.getBody() != null;
-        List<Product> shopList = shopResponseEntity.getBody();
-        printProducts(shopList);
+        assert productResponseEntity != null;
+        assert productResponseEntity.getBody() != null;
+        List<Product> productList = productResponseEntity.getBody();
+        printProducts(productList);
     }
 
     /**
@@ -116,8 +123,8 @@ public class RestClientTest {
 
     private void printProducts(List<Product> products) {
         products.forEach(s-> {
-            logger.info("Product: ");
-            logger.info("id: " + s.getId() + "; name: " + s.getName() + "; " + s.getCategory());
+            System.out.println("Product: ");
+            System.out.println("id: " + s.getId() + "; name: " + s.getName() + "; " + s.getCategory());
         });
     }
 
@@ -341,8 +348,24 @@ public class RestClientTest {
 
     private void printUsers(List<User> products) {
         products.forEach(s-> {
-            logger.info("Product: ");
-            logger.info("id: " + s.getId() + "; name: " + s.getName() + "; " + s.getRoles());
+            System.out.println("Product: ");
+            System.out.println("id: " + s.getId() + "; name: " + s.getName() + "; " + s.getRoles());
         });
+    }
+
+    @Test
+    @SqlGroup({@Sql(value = "classpath:db/test-sql.sql",
+            config = @SqlConfig(encoding = "utf-8",
+                    separator = ";",
+                    commentPrefix = "--"),
+            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD),
+            @Sql(value = "classpath:db/testSqlClean.sql",
+                    config = @SqlConfig(encoding = "utf-8",
+                            separator = ";",
+                            commentPrefix = "--"),
+                    executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)})
+    public  void testGetAllProducts() {
+        List<Product> productList = productService.findAll();
+        printProducts(productList);
     }
 }

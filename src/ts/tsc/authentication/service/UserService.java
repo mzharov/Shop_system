@@ -1,9 +1,6 @@
 package ts.tsc.authentication.service;
 
-import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.authentication.entity.Role;
@@ -11,7 +8,6 @@ import ts.tsc.authentication.entity.RoleName;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.authentication.repository.RoleRepository;
 import ts.tsc.authentication.repository.UserRepository;
-import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.service.named.NamedService;
 
 import java.util.Optional;
