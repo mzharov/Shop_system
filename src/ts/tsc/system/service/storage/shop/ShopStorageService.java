@@ -39,7 +39,7 @@ public class ShopStorageService
 
         Optional<ShopStorage> shopStorageOptional
                 = shopStorageRepository.findByShopIdAndType(shopID, 1);
-        if(shopStorageOptional.isPresent()) {
+        if(shopStorageOptional.isPresent() && storage.getType() == 1) {
             return new ResponseEntity<>(ErrorStatus.MAIN_STORAGE_ALREADY_EXISTS,
                     HttpStatus.BAD_REQUEST);
         }

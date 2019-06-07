@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ts.tsc.system.controller.aspect.IDValidation;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.parent.ExtendedControllerInterface;
 import ts.tsc.system.controller.parent.OrderController;
@@ -95,10 +96,8 @@ public class ShopController
      */
     @Override
     @PostMapping(value = "/")
+    @IDValidation
     public ResponseEntity<?> create(@RequestBody Shop shop) {
-        if(shop.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         return shopBaseResponseBuilder.save(shopService.save(shop));
     }
 
@@ -112,10 +111,8 @@ public class ShopController
      */
     @Override
     @PutMapping(value = "/{id}")
+    @IDValidation
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Shop shop) {
-        if(shop.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         Optional<Shop> baseShopOptional = shopService.findById(id);
         if(baseShopOptional.isPresent()) {
             return shopBaseResponseBuilder.save(shopService.update(id, shop));
@@ -181,10 +178,8 @@ public class ShopController
      */
     @Override
     @PostMapping(value = "/storage/{id}")
+    @IDValidation
     public ResponseEntity<?> addStorage(@PathVariable Long id, @RequestBody ShopStorage storage) {
-        if(storage.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         return shopStorageService.addStorage(id, storage, shopService);
     }
 

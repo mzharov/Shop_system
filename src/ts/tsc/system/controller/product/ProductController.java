@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ts.tsc.system.controller.aspect.IDValidation;
 import ts.tsc.system.controller.parent.NamedControllerInterface;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
@@ -72,10 +73,8 @@ public class ProductController implements NamedControllerInterface<Product> {
      */
     @Override
     @PostMapping(value = "/")
+    @IDValidation
     public ResponseEntity<?> create(@RequestBody Product product) {
-        if(product.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         return productBaseResponseBuilder.save(productService.save(product));
     }
 
@@ -89,10 +88,8 @@ public class ProductController implements NamedControllerInterface<Product> {
      */
     @Override
     @PutMapping(value = "/{id}")
+    @IDValidation
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Product entity) {
-        if(entity.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         Optional<Product> productOptional = productService.findById(id);
         if(productOptional.isPresent()) {
             return productBaseResponseBuilder.save(productService.update(id, productOptional.get()));

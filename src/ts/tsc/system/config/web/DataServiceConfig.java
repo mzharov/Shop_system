@@ -22,6 +22,7 @@ import java.util.Properties;
 @Configuration
 @EnableJpaRepositories(basePackages = {"ts.tsc.system.repository", "ts.tsc.authentication.repository"})
 @EnableTransactionManagement
+@EnableAspectJAutoProxy
 @ComponentScan(basePackages  = {"ts.tsc.system", "ts.tsc.authentication"} )
 @PropertySource("classpath:application.properties")
 public class DataServiceConfig extends BaseConfig {

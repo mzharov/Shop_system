@@ -22,10 +22,7 @@ import org.springframework.test.context.jdbc.SqlGroup;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
@@ -34,13 +31,11 @@ import test.config.TestDataServiceConfig;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.service.product.ProductServiceInterface;
+import static test.token.TokenFabric.*;
 
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
@@ -97,7 +92,12 @@ public class RestClientTest {
 
         ResponseEntity<List<Product>> productResponseEntity =
                 restTemplate.exchange(URL_GET_ALL_PRODUCTS,
-                        HttpMethod.GET, getHeaderWithAccessToken("User1", "password"),
+                        HttpMethod.GET, getHeaderWithAccessToken(clientID,
+                                secret,
+                                "User1",
+                                "password",
+                                mockMvc,
+                                OAUTH_URL),
                         new ParameterizedTypeReference<List<Product>>() {});
         assert productResponseEntity != null;
         assert productResponseEntity.getBody() != null;
@@ -133,10 +133,13 @@ public class RestClientTest {
      */
     @Test
     public void testUserAuth() throws Exception {
-        MockHttpServletResponse response = obtainAccessToken(clientID,
+        MockHttpServletResponse response = obtainAccessToken(
+                clientID,
                 secret,
                 "User1",
-                "password");
+                "password",
+                mockMvc,
+                OAUTH_URL);
         assertEquals(HttpStatus.OK.value(), response.getStatus());
         System.out.print(response.getContentAsString() + " 1");
     }
@@ -146,94 +149,15 @@ public class RestClientTest {
      */
     @Test
     public void testAdminAuth() throws Exception {
-        MockHttpServletResponse response = obtainAccessToken(clientID,
+        MockHttpServletResponse response = obtainAccessToken(
+                clientID,
                 secret,
                 "Admin",
-                "admin");
+                "admin",
+                mockMvc,
+                OAUTH_URL);
         assertEquals(HttpStatus.OK.value(), response.getStatus());
         System.out.print(response.getContentAsString());
-    }
-
-    /**
-     * Запрос токена
-     * @param clientId id клиента
-     * @param secret секрет клиента
-     * @param username имя пользователя
-     * @param password пароль пользователя
-     */
-    private MockHttpServletResponse obtainAccessToken(String clientId,
-                                                      String secret,
-                                                      String username,
-                                                      String password) throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.put("grant_type", Collections.singletonList("password"));
-        params.put("client_id", Collections.singletonList(clientId));
-        params.put("username", Collections.singletonList(username));
-        params.put("password", Collections.singletonList(password));
-        params.put("client_secret", Collections.singletonList(secret));
-
-        MockHttpServletResponse response;
-
-        ResultActions result
-                = mockMvc.perform(post(OAUTH_URL)
-                .params(params)
-                .with(httpBasic(clientId, secret))
-                .accept("application/json;charset=UTF-8"))
-                .andExpect(content().contentType("application/json;charset=UTF-8"))
-                ;
-
-
-        response = result.andReturn().getResponse();
-        return response;
-    }
-
-    /**
-     * Формирование заголовка HTTP с токеном
-     * @param username имя пользователя
-     * @param password пароль пользователя
-     */
-    private HttpEntity<String> getHeaderWithAccessToken(String username,
-                                                        String password) throws Exception {
-        MockHttpServletResponse response = obtainAccessToken(clientID,
-                secret,
-                username,
-                password);
-
-        String resultString = response.getContentAsString();
-        JacksonJsonParser jsonParser = new JacksonJsonParser();
-        String accessToken = jsonParser.parseMap(resultString).get("access_token").toString();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer "+accessToken);
-        return new HttpEntity<>(headers);
-    }
-
-    /**
-     * Запрос токена на основе токена обновления
-     * @param clientId идентификатор клиента
-     * @param secret секрет клиента
-     * @param refreshToken токен обновления
-     */
-    private MockHttpServletResponse obtainAccessTokenByRefreshToken(String clientId,
-                                                       String secret,
-                                                       String refreshToken) throws Exception {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.put("grant_type", Collections.singletonList("refresh_token"));
-        params.put("refresh_token", Collections.singletonList(refreshToken));
-
-        MockHttpServletResponse response;
-
-        ResultActions result
-                = mockMvc.perform(post(OAUTH_URL)
-                .params(params)
-                .with(httpBasic(clientId, secret))
-                .accept("application/json;charset=UTF-8"))
-                .andExpect(content().contentType("application/json;charset=UTF-8"))
-                ;
-
-        response = result.andReturn().getResponse();
-        return response;
     }
 
 
@@ -245,7 +169,7 @@ public class RestClientTest {
         MockHttpServletResponse response = obtainAccessToken(clientID,
                 secret,
                 "Admin",
-                "admin");
+                "admin", mockMvc, OAUTH_URL);
         assertEquals(HttpStatus.OK.value(), response.getStatus());
 
         String resultString = response.getContentAsString();
@@ -253,7 +177,7 @@ public class RestClientTest {
         String refreshToken = jsonParser.parseMap(resultString).get("refresh_token").toString();
         assertNotNull(refreshToken);
 
-        response = obtainAccessTokenByRefreshToken(clientID, secret, refreshToken);
+        response = obtainAccessTokenByRefreshToken(clientID, secret, refreshToken, mockMvc, OAUTH_URL);
         assertEquals(HttpStatus.OK.value(), response.getStatus());
         System.out.print(response.getContentAsString());
     }
@@ -263,10 +187,11 @@ public class RestClientTest {
      */
     @Test
     public void testBadRefreshToken() throws Exception {
-        MockHttpServletResponse response = obtainAccessToken(clientID,
+        MockHttpServletResponse response = obtainAccessToken(
+                clientID,
                 secret,
                 "Admin",
-                "admin");
+                "admin", mockMvc, OAUTH_URL);
         assertEquals(HttpStatus.OK.value(), response.getStatus());
 
         String resultString = response.getContentAsString();
@@ -274,7 +199,7 @@ public class RestClientTest {
         String refreshToken = jsonParser.parseMap(resultString).get("refresh_token").toString()+"1";
         assertNotNull(refreshToken);
 
-        response = obtainAccessTokenByRefreshToken(clientID, secret, refreshToken);
+        response = obtainAccessTokenByRefreshToken(clientID, secret, refreshToken, mockMvc, OAUTH_URL);
         assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
         System.out.print(response.getContentAsString());
     }
@@ -288,7 +213,9 @@ public class RestClientTest {
                 clientID+1,
                 secret,
                 "Admin",
-                "admin");
+                "admin",
+                mockMvc,
+                OAUTH_URL);
         assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
     }
 
@@ -302,7 +229,9 @@ public class RestClientTest {
                 clientID,
                 secret,
                 "Admin1",
-                "admin");
+                "admin",
+                mockMvc,
+                OAUTH_URL);
         assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatus());
     }
 
@@ -313,15 +242,24 @@ public class RestClientTest {
     public void testUserListAccessByAdmin() throws Exception {
         logger.info("Начало теста");
 
-        MockHttpServletResponse response = obtainAccessToken(clientID,
+        MockHttpServletResponse response = obtainAccessToken(
+                clientID,
                 secret,
                 "Admin",
-                "admin");
+                "admin",
+                mockMvc,
+                OAUTH_URL);
 
         assertNotNull(response);
 
         ResponseEntity<List<User>> userResponseEntity = restTemplate.exchange(URL_GET_ALL_USERS,
-                        HttpMethod.GET, getHeaderWithAccessToken("Admin", "admin"),
+                        HttpMethod.GET, getHeaderWithAccessToken(
+                                clientID,
+                        secret,
+                        "Admin",
+                        "admin",
+                        mockMvc,
+                        OAUTH_URL),
                         new ParameterizedTypeReference<List<User>>() {});
 
         assert userResponseEntity != null;
@@ -342,7 +280,13 @@ public class RestClientTest {
         expectedException.expectMessage("403");
 
         restTemplate.exchange(URL_GET_ALL_USERS,
-                HttpMethod.GET, getHeaderWithAccessToken("User1", "password"),
+                HttpMethod.GET, getHeaderWithAccessToken(
+                        clientID,
+                        secret,
+                        "User1",
+                        "password",
+                        mockMvc,
+                        OAUTH_URL),
                 new ParameterizedTypeReference<List<User>>() {});
     }
 

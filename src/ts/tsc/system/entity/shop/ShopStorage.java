@@ -3,6 +3,7 @@ package ts.tsc.system.entity.shop;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ts.tsc.system.entity.delivery.Delivery;
+import ts.tsc.system.entity.parent.BaseEntity;
 import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.serializer.shop.ShopStorageSerializer;
 
@@ -14,12 +15,7 @@ import java.util.Set;
 @Entity
 @Table(name = "shop_storage")
 @JsonSerialize(using = ShopStorageSerializer.class)
-public class ShopStorage implements Serializable, BaseStorage<Shop, ShopStorageProduct> {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+public class ShopStorage extends BaseEntity<Long> implements Serializable, BaseStorage<Shop, ShopStorageProduct> {
 
     @Column(name = "type")
     private int type;
@@ -48,12 +44,6 @@ public class ShopStorage implements Serializable, BaseStorage<Shop, ShopStorageP
         setShop(shop);
     }
 
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
     public int getTotalSpace() {
         return totalSpace;
     }

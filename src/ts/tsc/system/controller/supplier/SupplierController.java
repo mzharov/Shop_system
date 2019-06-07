@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ts.tsc.system.controller.aspect.IDValidation;
 import ts.tsc.system.controller.parent.ExtendedControllerInterface;
 import ts.tsc.system.controller.parent.OrderController;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
@@ -95,10 +96,8 @@ public class SupplierController
      */
     @Override
     @PostMapping(value = "/")
+    @IDValidation
     public ResponseEntity<?> create(@RequestBody Supplier supplier) {
-        if(supplier.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         return supplierBaseResponseBuilder.save(supplierService.save(supplier));
     }
 
@@ -112,10 +111,8 @@ public class SupplierController
      */
     @Override
     @PutMapping(value = "/{id}")
+    @IDValidation
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Supplier supplier) {
-        if(supplier.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         Optional<Supplier> supplierOptional = supplierService.findById(id);
         if(supplierOptional.isPresent()) {
             return supplierBaseResponseBuilder.save(supplierService.update(id, supplier));
@@ -180,10 +177,8 @@ public class SupplierController
      */
     @Override
     @PostMapping(value = "/storage/{id}")
+    @IDValidation
     public ResponseEntity<?> addStorage(@PathVariable Long id, @RequestBody SupplierStorage storage) {
-        if(storage.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
         return supplierStorageService.addStorage(id, storage, supplierService);
     }
 
