@@ -1,38 +1,33 @@
 package ts.tsc.system.controller.shop;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controller.aspect.IDValidation;
+import ts.tsc.system.controller.parent.BaseControllerWithStorage;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
-import ts.tsc.system.controller.parent.ExtendedControllerInterface;
-import ts.tsc.system.controller.parent.OrderController;
-import ts.tsc.system.controller.status.ErrorStatus;
-import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.entity.shop.ShopStorage;
-import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.entity.shop.ShopStorageProduct;
 import ts.tsc.system.service.base.BaseServiceInterface;
-import ts.tsc.system.service.named.NamedService;
-import ts.tsc.system.service.named.NamedServiceInterface;
-import ts.tsc.system.service.order.OrderInterface;
 import ts.tsc.system.service.shop.ShopInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceInterface;
-import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/app/shop")
 public class ShopController
-        extends OrderController
-        implements ExtendedControllerInterface<Shop, ShopStorage> {
+        extends
+        BaseControllerWithStorage<Shop,
+        ShopInterface,
+        Long,
+        ShopStorage,
+        Purchase,
+        ShopStorageProduct> {
 
     private final ShopInterface shopService;
-    private final StorageServiceInterface<Shop, ShopStorage, Long> shopStorageService;
+    private final StorageServiceInterface<ShopStorage, Long> shopStorageService;
     private final BaseServiceInterface<Purchase, Long> purchaseService;
 
     private final BaseResponseBuilder<Shop> shopBaseResponseBuilder;
@@ -41,7 +36,7 @@ public class ShopController
 
     @Autowired
     public ShopController(ShopInterface shopService,
-                          StorageServiceInterface<Shop, ShopStorage, Long> shopStorageService,
+                          StorageServiceInterface<ShopStorage, Long> shopStorageService,
                           BaseServiceInterface<Purchase, Long> purchaseService,
                           BaseResponseBuilder<Shop> shopBaseResponseBuilder,
                           BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder,
@@ -52,157 +47,6 @@ public class ShopController
         this.shopBaseResponseBuilder = shopBaseResponseBuilder;
         this.shopStorageBaseResponseBuilder = shopStorageBaseResponseBuilder;
         this.purchaseBaseResponseBuilder = purchaseBaseResponseBuilder;
-    }
-
-    /**
-     * Поиск всех магазинов
-     * @return {@link BaseService#findAll()}
-     */
-    @Override
-    @GetMapping(value = "/list")
-    public ResponseEntity<?> findAll() {
-        return shopBaseResponseBuilder.getAll(shopService.findAll());
-    }
-
-    /**
-     * Поиск по названию магазина
-     * @param name название, по которому будет происходить поиск
-     * @return {@link NamedService#findByName(String)}
-     */
-    @Override
-    @GetMapping(value = "/name/{name}")
-    public ResponseEntity<?>  findByName(@PathVariable String name) {
-        return shopStorageBaseResponseBuilder.getAll(shopService.findByName(name));
-    }
-
-    /**
-     * Поиск магазина по идентификатору
-     * @param id идентификатор запрашиваемого объекта
-     * @return {@link BaseService#findById(Object)}
-     */
-    @Override
-    @GetMapping(value = "/{id}")
-    public ResponseEntity<?>  findById(@PathVariable Long id) {
-        Optional<Shop> shopOptional = shopService.findById(id);
-        return shopOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
-    }
-
-    /**
-     * Добавление нового магазина
-     * @param shop объект типа Shop
-     * @return 1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *         2) {@link BaseService#save(Object)}
-     */
-    @Override
-    @PostMapping(value = "/")
-    @IDValidation
-    public ResponseEntity<?> create(@RequestBody Shop shop) {
-        return shopBaseResponseBuilder.save(shopService.save(shop));
-    }
-
-    /**
-     * Обновление данных магазина
-     * @param id идентификатор искомого магазина
-     * @param shop объект
-     * @return 1) объект и код 200, если удалось обновить,
-     *         2) код 422, если не удалось найти
-     *         3) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     */
-    @Override
-    @PutMapping(value = "/{id}")
-    @IDValidation
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Shop shop) {
-        Optional<Shop> baseShopOptional = shopService.findById(id);
-        if(baseShopOptional.isPresent()) {
-            return shopBaseResponseBuilder.save(shopService.update(id, shop));
-        } else {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":shop", HttpStatus.NOT_FOUND);
-        }
-    }
-
-    /**
-     * Поиск склада по идентификтаору
-     * @param id идентификатор склада
-     * @return {@link StorageServiceManager#findById(Object)}
-     */
-    @Override
-    @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<?> findStorageById(@PathVariable Long id) {
-        String stringQuery = "select entity from ShopStorage entity where entity.id = ?1";
-        return shopStorageService.findById(id, stringQuery);
-    }
-
-
-    /**
-     * Поиск всех складов магазинов
-     * @return {@link BaseService#findAll()}
-     */
-    @Override
-    @GetMapping(value = "/storage/list")
-    public ResponseEntity<?>  findAllStorage() {
-        return shopStorageBaseResponseBuilder.getAll(shopStorageService.findAll());
-    }
-
-    /**
-     * Поиск складов по идентификтору магазина
-     * @param id идентификтаор магазина
-     * @return {@link StorageServiceManager#findById(Long, String)}
-     */
-    @Override
-    @GetMapping(value = "/storage/list/{id}")
-    public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
-        String stringQuery = "select entity from ShopStorage entity where entity.shop.id = ?1";
-        return shopStorageService.findById(id, stringQuery);
-    }
-
-    /**
-     * Поиск заказа по идентификатору
-     * @param id идентификатор заказа
-     * @return {@link BaseService#findById(Object)}
-     */
-    @Override
-    @GetMapping(value = "/order/{id}")
-    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
-        Optional<Purchase> purchaseOptional = purchaseService.findById(id);
-        return purchaseOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
-    }
-
-    /**
-     * Добавление склада магазину
-     * @param id идентификатор магазина
-     * @param storage объект типа Storage, которы йбудет добавлен
-     * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, NamedServiceInterface)}
-     */
-    @Override
-    @PostMapping(value = "/storage/{id}")
-    @IDValidation
-    public ResponseEntity<?> addStorage(@PathVariable Long id, @RequestBody ShopStorage storage) {
-        return shopStorageService.addStorage(id, storage, shopService);
-    }
-
-
-    /**
-     * Получение списка продуктов со склада
-     * @return {@link OrderController#getStorageProducts(Long, BaseServiceInterface)}
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    @GetMapping(value = "/storage/product/list/{id}")
-    public ResponseEntity<?> getStorageProducts(@PathVariable Long id) {
-        return getStorageProducts(id, shopStorageService);
-    }
-
-    /**
-     * Получение списка заказов
-     * @return {@link BaseService#findAll()}
-     */
-    @Override
-    @GetMapping(value = "/order/list")
-    public ResponseEntity<?> getAllOrders() {
-        return purchaseBaseResponseBuilder.getAll(purchaseService.findAll());
     }
 
     /**
@@ -228,25 +72,6 @@ public class ShopController
 
 
     /**
-     * Изменения состояния заказа
-     * @param id идентификтаор заказа
-     * @param status состояние
-     * @return {@link OrderController#changeStatus(Long, String)}
-     */
-    @Override
-    @PutMapping(value = "/order/status/{id}/{status}")
-    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable String status) {
-        return super.changeStatus(id, status);
-    }
-
-
-
-    @Override
-    protected OrderInterface getService() {
-        return shopService;
-    }
-
-    /**
      * Перевод товаров с одного склада в другой
      * @param shopStorageID идентификатор склада, с которого будет производиться перевоз товаров
      * @param targetShopStorageID идентификтаор целевого склада
@@ -267,11 +92,37 @@ public class ShopController
         return shopService.transferProducts(shopStorageID, targetShopStorageID, productIDList, countList);
     }
 
-
     @PutMapping(value = "/budget/{id}/{budgetString:.+}")
     public ResponseEntity<?> addBudget(@PathVariable Long id, @PathVariable String budgetString) {
         return shopService.addBudget(id, budgetString);
     }
 
+    @Override
+    protected StorageServiceInterface<ShopStorage, Long> getStorageService() { return shopStorageService; }
+
+    @Override
+    protected BaseResponseBuilder<ShopStorage> getStorageResponseBuilder() {
+        return shopStorageBaseResponseBuilder;
+    }
+
+    @Override
+    protected BaseServiceInterface<Purchase, Long> getOrderService() {
+        return purchaseService;
+    }
+
+    @Override
+    protected BaseResponseBuilder<Purchase> getOrderResponseBuilder() {
+        return purchaseBaseResponseBuilder;
+    }
+
+    @Override
+    protected BaseResponseBuilder<Shop> getResponseBuilder() {
+        return shopBaseResponseBuilder;
+    }
+
+    @Override
+    protected ShopInterface getService() {
+        return shopService;
+    }
 }
 

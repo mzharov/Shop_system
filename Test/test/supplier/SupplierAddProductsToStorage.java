@@ -11,7 +11,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import test.config.TestDataServiceConfig;
 import ts.tsc.system.controller.status.ErrorStatus;
-import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
 import ts.tsc.system.entity.supplier.SupplierStorageProduct;
 import ts.tsc.system.service.storage.manager.StorageServiceInterface;
@@ -36,7 +35,7 @@ public class SupplierAddProductsToStorage {
     @Autowired
     SupplierInterface supplierService;
     @Autowired
-    StorageServiceInterface<Supplier, SupplierStorage, Long> supplierStorageService;
+    StorageServiceInterface<SupplierStorage, Long> supplierStorageService;
 
     /**
      * Тестирование на валидных данных

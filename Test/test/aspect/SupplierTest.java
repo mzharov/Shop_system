@@ -1,7 +1,12 @@
 package test.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import test.deserializer.SupplierStorageDeserializer;
+import test.deserializer.SupplierStorageProductDeserializer;
 import ts.tsc.system.entity.supplier.Supplier;
+import ts.tsc.system.entity.supplier.SupplierStorage;
+import ts.tsc.system.entity.supplier.SupplierStorageProduct;
 
 import java.io.IOException;
 
@@ -41,7 +46,13 @@ public class SupplierTest extends CreateAndUpdateTest<Supplier>{
 
     @Override
     void validateUpdated(String json, Long id) throws IOException {
-        Supplier supplier = new ObjectMapper().readValue(json, Supplier.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addDeserializer(SupplierStorage.class, new SupplierStorageDeserializer());
+        simpleModule.addDeserializer(SupplierStorageProduct.class, new SupplierStorageProductDeserializer());
+        objectMapper.registerModule(simpleModule);
+
+        Supplier supplier = objectMapper.readValue(json, Supplier.class);
         assertNotNull(supplier);
         assertEquals(supplier.getName(), supplier.getName());
         assertEquals(id, supplier.getId());

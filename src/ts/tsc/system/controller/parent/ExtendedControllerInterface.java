@@ -2,12 +2,12 @@ package ts.tsc.system.controller.parent;
 
 import org.springframework.http.ResponseEntity;
 
-public interface ExtendedControllerInterface<T, S> extends NamedControllerInterface<T>{
-    ResponseEntity<?> findStorageById(Long id);
+public interface ExtendedControllerInterface<T, S, ID> extends NamedControllerInterface<T, ID>{
+    ResponseEntity<?> findStorageById(ID id);
     ResponseEntity<?> findAllStorage();
-    ResponseEntity<?> findStorageByOwnerId(Long id);
+    ResponseEntity<?> findStoragesByOwnerId(ID id);
     ResponseEntity<?> getAllOrders();
-    ResponseEntity<?> getOrderById(Long id);
-    ResponseEntity<?> addStorage(Long id, S storage);
-    ResponseEntity<?> getStorageProducts(Long id);
+    ResponseEntity<?> getOrderById(ID id);
+    ResponseEntity<?> addStorage(ID id, S storage);
+    ResponseEntity<?> getStorageProducts(ID id);
 }

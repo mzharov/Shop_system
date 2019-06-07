@@ -19,7 +19,6 @@ import ts.tsc.system.entity.delivery.DeliveryProduct;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.entity.shop.ShopStorageProduct;
-import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
 import ts.tsc.system.entity.supplier.SupplierStorageProduct;
 import ts.tsc.system.service.base.BaseServiceInterface;
@@ -50,9 +49,9 @@ public abstract class SupplierOrderTest {
     @Autowired
     BaseServiceInterface<Delivery, Long> deliveryService;
     @Autowired
-    StorageServiceInterface<Supplier, SupplierStorage, Long> supplierStorageService;
+    StorageServiceInterface<SupplierStorage, Long> supplierStorageService;
     @Autowired
-    StorageServiceInterface<Shop, ShopStorage, Long> shopStorageService;
+    StorageServiceInterface<ShopStorage, Long> shopStorageService;
     @Autowired
     ShopInterface shopService;
 

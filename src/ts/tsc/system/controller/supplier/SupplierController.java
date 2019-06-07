@@ -1,39 +1,29 @@
 package ts.tsc.system.controller.supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controller.aspect.IDValidation;
-import ts.tsc.system.controller.parent.ExtendedControllerInterface;
-import ts.tsc.system.controller.parent.OrderController;
+import ts.tsc.system.controller.parent.BaseControllerWithStorage;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
-import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.delivery.Delivery;
-import ts.tsc.system.entity.parent.BaseStorage;
 import ts.tsc.system.entity.supplier.Supplier;
 import ts.tsc.system.entity.supplier.SupplierStorage;
-import ts.tsc.system.service.base.BaseService;
+import ts.tsc.system.entity.supplier.SupplierStorageProduct;
 import ts.tsc.system.service.base.BaseServiceInterface;
-import ts.tsc.system.service.named.NamedService;
-import ts.tsc.system.service.named.NamedServiceInterface;
-import ts.tsc.system.service.order.OrderInterface;
 import ts.tsc.system.service.supplier.SupplierInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceInterface;
-import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/app/supplier")
 public class SupplierController
-        extends OrderController
-        implements ExtendedControllerInterface<Supplier, SupplierStorage> {
+        extends BaseControllerWithStorage<Supplier, SupplierInterface, Long,
+        SupplierStorage, Delivery, SupplierStorageProduct> {
 
     private final SupplierInterface supplierService;
     private final BaseServiceInterface<Delivery, Long> deliveryService;
-    private final StorageServiceInterface<Supplier, SupplierStorage, Long> supplierStorageService;
+    private final StorageServiceInterface<SupplierStorage, Long> supplierStorageService;
 
     private final BaseResponseBuilder<Supplier> supplierBaseResponseBuilder;
     private final BaseResponseBuilder<Delivery> deliveryBaseResponseBuilder;
@@ -41,7 +31,7 @@ public class SupplierController
 
     @Autowired
     public SupplierController(BaseServiceInterface<Delivery, Long> deliveryService,
-                              StorageServiceInterface<Supplier, SupplierStorage, Long> supplierStorageService,
+                              StorageServiceInterface<SupplierStorage, Long> supplierStorageService,
                               SupplierInterface supplierService,
                               BaseResponseBuilder<Supplier> supplierBaseResponseBuilder,
                               BaseResponseBuilder<Delivery> deliveryBaseResponseBuilder,
@@ -52,146 +42,6 @@ public class SupplierController
         this.supplierBaseResponseBuilder = supplierBaseResponseBuilder;
         this.deliveryBaseResponseBuilder = deliveryBaseResponseBuilder;
         this.supplierStorageBaseResponseBuilder = supplierStorageBaseResponseBuilder;
-    }
-
-    /**
-     * Поиск всех поставщиков
-     * @return {@link BaseService#findAll()}
-     */
-    @Override
-    @GetMapping(value = "/list")
-    public ResponseEntity<?> findAll() {
-        return supplierBaseResponseBuilder.getAll(supplierService.findAll());
-    }
-
-    /**
-     * Поиск по названию магазина
-     * @param name название, по которому будет происходить поиск
-     * @return {@link NamedService#findByName(String)}
-     */
-    @Override
-    @GetMapping(value = "/name/{name}")
-    public ResponseEntity<?> findByName(@PathVariable String name) {
-        return supplierStorageBaseResponseBuilder.getAll(supplierService.findByName(name));
-    }
-
-    /**
-     * Поиск магазина по идентификатору
-     * @param id идентификатор запрашиваемого объекта
-     * @return {@link BaseService#findById(Object)}
-     */
-    @Override
-    @GetMapping(value = "/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id) {
-        Optional<Supplier> supplierOptional = supplierService.findById(id);
-        return supplierOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
-    }
-
-    /**
-     * Добавление нового магазина
-     * @param supplier объект типа Supplier
-     * @return 1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON
-     *         2) {@link BaseService#save(Object)}
-     */
-    @Override
-    @PostMapping(value = "/")
-    @IDValidation
-    public ResponseEntity<?> create(@RequestBody Supplier supplier) {
-        return supplierBaseResponseBuilder.save(supplierService.save(supplier));
-    }
-
-    /**
-     * Обновление данных магазина
-     * @param id идентификатор искомого магазина
-     * @param supplier объект
-     * @return 1) объект и код 200, если удалось обновить,
-     *         2) иначе код 422
-     *         3) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан другой идентификатор
-     */
-    @Override
-    @PutMapping(value = "/{id}")
-    @IDValidation
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Supplier supplier) {
-        Optional<Supplier> supplierOptional = supplierService.findById(id);
-        if(supplierOptional.isPresent()) {
-            return supplierBaseResponseBuilder.save(supplierService.update(id, supplier));
-        } else {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier", HttpStatus.NOT_FOUND);
-        }
-    }
-
-    /**
-     * Поиск склада по идентификтаору
-     * @param id идентификтаор склада
-     * @return {@link StorageServiceManager#findById(Object)}
-     */
-    @Override
-    @GetMapping(value = "/storage/{id}")
-    public ResponseEntity<?> findStorageById(@PathVariable Long id) {
-        String stringQuery = "select entity from SupplierStorage entity where entity.id = ?1";
-        return supplierStorageService.findById(id, stringQuery);
-    }
-
-    /**
-     * Поиск всех складов магазинов
-     * @return {@link BaseService#findAll()}
-     */
-    @Override
-    @GetMapping(value = "/storage/list")
-    public ResponseEntity<?> findAllStorage() {
-        return supplierStorageBaseResponseBuilder.getAll(supplierStorageService.findAll());
-    }
-
-    /**
-     * Поиск складов по идентификтору магазина
-     * @param id идентификтаор магазина
-     * @return {@link StorageServiceManager#findById(Long, String)}
-     */
-    @Override
-    @GetMapping(value = "/storage/list/{id}")
-    public ResponseEntity<?> findStorageByOwnerId(@PathVariable Long id) {
-        String stringQuery = "select entity from SupplierStorage entity where entity.supplier.id = ?1";
-        return supplierStorageService.findById(id, stringQuery);
-    }
-
-    /**
-     * Поиск заказа по идентификатору
-     * @param id идентификатор заказа
-     * @return {@link BaseService#findById(Object)}
-     */
-    @Override
-    @GetMapping(value = "/order/{id}")
-    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
-        Optional<Delivery> deliveryOptional = deliveryService.findById(id);
-        return deliveryOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
-    }
-
-    /**
-     * Добавление склада магазину
-     * @param id идентификатор магазина
-     * @param storage объект типа Storage, который будет добавлен
-     * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
-     *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage, NamedServiceInterface)} )}
-     */
-    @Override
-    @PostMapping(value = "/storage/{id}")
-    @IDValidation
-    public ResponseEntity<?> addStorage(@PathVariable Long id, @RequestBody SupplierStorage storage) {
-        return supplierStorageService.addStorage(id, storage, supplierService);
-    }
-
-
-    /**
-     * Получение списка продуктов со склада
-     * @return {@link OrderController#getStorageProducts(Long, BaseServiceInterface)}
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    @GetMapping(value = "/storage/product/list/{id}")
-    public ResponseEntity<?> getStorageProducts(@PathVariable Long id) {
-        return getStorageProducts(id, supplierStorageService);
     }
 
     /**
@@ -221,32 +71,6 @@ public class SupplierController
         return supplierService.receiveOrder(supplierID, shopStorageID, productIdList, countList);
     }
 
-
-    /**
-     * Изменение состояние заказа
-     * @param id идентификатор заказа
-     * @param status новое состояние
-     * @return {@link OrderController#changeStatus(Long, String)}
-     */
-    @PutMapping(value = "/order/status/{id}/{status}")
-    public ResponseEntity<?> changeStatus(@PathVariable Long id, @PathVariable String status) {
-        return super.changeStatus(id, status);
-    }
-
-    /**
-     * Поиск всех доставок
-     * @return {@link BaseServiceInterface#findAll()}
-     */
-    @GetMapping(value = "/order/list")
-    public ResponseEntity<?> getAllOrders() {
-        return deliveryBaseResponseBuilder.getAll(deliveryService.findAll());
-    }
-
-    @Override
-    protected OrderInterface getService() {
-        return supplierService;
-    }
-
     /**
      * Добавление товаров на склад
      * @param id идентификатор склада
@@ -267,5 +91,35 @@ public class SupplierController
                                            @PathVariable List<Integer> countList,
                                            @PathVariable List<String> stringPriceList) {
         return supplierService.addProductsToStorage(id, productIDList, countList, stringPriceList);
+    }
+
+    @Override
+    protected StorageServiceInterface<SupplierStorage, Long> getStorageService() {
+        return supplierStorageService;
+    }
+
+    @Override
+    protected BaseResponseBuilder<SupplierStorage> getStorageResponseBuilder() {
+        return supplierStorageBaseResponseBuilder;
+    }
+
+    @Override
+    protected BaseServiceInterface<Delivery, Long> getOrderService() {
+        return deliveryService;
+    }
+
+    @Override
+    protected BaseResponseBuilder<Delivery> getOrderResponseBuilder() {
+        return deliveryBaseResponseBuilder;
+    }
+
+    @Override
+    protected BaseResponseBuilder<Supplier> getResponseBuilder() {
+        return supplierBaseResponseBuilder;
+    }
+
+    @Override
+    protected SupplierInterface getService() {
+        return supplierService;
     }
 }

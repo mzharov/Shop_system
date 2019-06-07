@@ -30,11 +30,11 @@ public class DBInitializer {
     @PostConstruct
     public void initDB() {
 
-        User user1 = addUser("User1", "password");
-        User user2 = addUser("Admin", "admin");
+        User user1 = addUser("Admin", "admin");
+        User user2 = addUser("User1", "password");
 
-        addRole(RoleName.USER, user1);
-        addRole(RoleName.ADMIN, user2);
+        addRole(RoleName.ADMIN, user1);
+        addRole(RoleName.USER, user2);
     }
 
     private User addUser(String name, String password) {

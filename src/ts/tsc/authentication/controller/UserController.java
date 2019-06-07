@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/user")
-public class UserController implements BaseControllerInterface<User> {
+public class UserController implements BaseControllerInterface<User, Long> {
 
     private final UserInterface userService;
     private final BaseResponseBuilder<User> userBaseResponseBuilder;

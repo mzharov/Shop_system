@@ -9,10 +9,11 @@ import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.entity.shop.ShopStorageProduct;
+import ts.tsc.system.repository.shop.ShopRepository;
 import ts.tsc.system.repository.shop.ShopStorageRepository;
-import ts.tsc.system.service.named.NamedServiceInterface;
 import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service("shopStorageService")
@@ -21,10 +22,13 @@ public class ShopStorageService
         extends StorageServiceManager<Shop, ShopStorageProduct, ShopStorage, Long> {
 
     private final ShopStorageRepository shopStorageRepository;
+    private final ShopRepository shopRepository;
 
     @Autowired
-    public ShopStorageService(ShopStorageRepository shopStorageRepository) {
+    public ShopStorageService(ShopStorageRepository shopStorageRepository,
+                              ShopRepository shopRepository) {
         this.shopStorageRepository = shopStorageRepository;
+        this.shopRepository = shopRepository;
     }
 
     @Override
@@ -33,9 +37,13 @@ public class ShopStorageService
     }
 
     @Override
+    public List<ShopStorage> findStoragesByOwnerId(Long id) {
+        return shopStorageRepository.findByOwnerId(id);
+    }
+
+    @Override
     public ResponseEntity<?> addStorage(Long shopID,
-                                        ShopStorage storage,
-                                        NamedServiceInterface<Shop, Long> namedService) {
+                                        ShopStorage storage) {
 
         Optional<ShopStorage> shopStorageOptional
                 = shopStorageRepository.findByShopIdAndType(shopID, 1);
@@ -43,6 +51,11 @@ public class ShopStorageService
             return new ResponseEntity<>(ErrorStatus.MAIN_STORAGE_ALREADY_EXISTS,
                     HttpStatus.BAD_REQUEST);
         }
-        return super.addStorage(shopID, storage, namedService);
+        return super.addStorage(shopID, storage);
+    }
+
+    @Override
+    public ShopRepository getOwnerService() {
+        return shopRepository;
     }
 }

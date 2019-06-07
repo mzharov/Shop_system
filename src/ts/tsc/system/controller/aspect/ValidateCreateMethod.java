@@ -22,8 +22,8 @@ import java.lang.reflect.Method;
 @Component
 public class ValidateCreateMethod{
     @Around("((execution(* *.create(*)) && args(entity))" +
-            "|| (execution(* *.addStorage(Long, *)) && args(Long, entity)) " +
-            "|| (execution(* *.update(Long, *)) && args(Long, entity)))" +
+            "|| (execution(* *.addStorage(*, *)) && args(*, entity)) " +
+            "|| (execution(* *.update(*, *)) && args(*, entity)))" +
             "&& @annotation(ts.tsc.system.controller.aspect.IDValidation)")
     public Object around(ProceedingJoinPoint proceedingJoinPoint, final BaseEntity entity) throws Throwable {
         MethodSignature methodSignature = (MethodSignature) proceedingJoinPoint.getSignature();

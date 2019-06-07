@@ -1,12 +1,12 @@
 package ts.tsc.system.service.storage.manager;
 
 import org.springframework.http.ResponseEntity;
-import ts.tsc.system.entity.parent.NamedEntity;
 import ts.tsc.system.service.base.BaseServiceInterface;
-import ts.tsc.system.service.named.NamedServiceInterface;
 
-public interface StorageServiceInterface<B extends NamedEntity<ID>, T, ID> extends BaseServiceInterface<T, ID> {
-    ResponseEntity<?>  findById(Long id, String stringQuery);
-    ResponseEntity<?> addStorage(ID id, T storage,
-                                 NamedServiceInterface<B, ID> repositoryBase);
+import java.util.List;
+
+public interface StorageServiceInterface<STORAGE, ID>
+        extends BaseServiceInterface<STORAGE, ID> {
+    List<STORAGE> findStoragesByOwnerId(ID id);
+    ResponseEntity<?> addStorage(ID id, STORAGE storage);
 }

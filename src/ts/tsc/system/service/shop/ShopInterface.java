@@ -6,7 +6,7 @@ import ts.tsc.system.service.order.OrderInterface;
 
 import java.util.List;
 
-public interface ShopInterface extends OrderInterface<Shop> {
+public interface ShopInterface extends OrderInterface<Shop, Long> {
     ResponseEntity<?> receiveOrder(Long shopID,
                                    List<Long> productIDList,
                                    List<Integer> countList);
