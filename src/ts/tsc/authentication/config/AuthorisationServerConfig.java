@@ -12,8 +12,11 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+
+import javax.sql.DataSource;
 
 @Configuration
 @EnableAuthorizationServer
@@ -44,6 +47,9 @@ public class AuthorisationServerConfig
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
+    DataSource dataSource;
+
+    @Autowired
     public AuthorisationServerConfig(TokenStore tokenStore,
                                      JwtAccessTokenConverter accessTokenConverter,
                                      @Qualifier("authenticationManagerBean")
@@ -70,6 +76,7 @@ public class AuthorisationServerConfig
                 .accessTokenValiditySeconds(accessTokenExpireLength)
                 .refreshTokenValiditySeconds(refreshTokenExpireLength);
     }
+
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) {

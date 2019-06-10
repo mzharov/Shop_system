@@ -3,7 +3,7 @@ package ts.tsc.system.controller.supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controller.parent.BaseControllerWithStorage;
+import ts.tsc.system.controller.parent.NamedControllerWithStorage;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.supplier.Supplier;
@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping(value = "/app/supplier")
 public class SupplierController
-        extends BaseControllerWithStorage<Supplier, SupplierInterface, Long,
+        extends NamedControllerWithStorage<Supplier, SupplierInterface, Long,
         SupplierStorage, Delivery, SupplierStorageProduct> {
 
     private final SupplierInterface supplierService;

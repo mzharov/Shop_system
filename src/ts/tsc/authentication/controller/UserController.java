@@ -3,11 +3,18 @@ package ts.tsc.authentication.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.OAuth2ClientContext;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.authentication.entity.User;
+import ts.tsc.authentication.error.UserError;
 import ts.tsc.authentication.service.UserInterface;
-import ts.tsc.system.controller.parent.BaseControllerInterface;
+import ts.tsc.system.controller.parent.BaseController;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.controller.status.ErrorStatus;
 
@@ -15,7 +22,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/user")
-public class UserController implements BaseControllerInterface<User, Long> {
+public class UserController extends BaseController<User, UserInterface, Long> {
 
     private final UserInterface userService;
     private final BaseResponseBuilder<User> userBaseResponseBuilder;
@@ -30,51 +37,55 @@ public class UserController implements BaseControllerInterface<User, Long> {
         this.passwordEncoder = passwordEncoder;
     }
 
-
-    @Override
-    @GetMapping(value = "/list")
-    public ResponseEntity<?> findAll() {
-        return userBaseResponseBuilder.getAll(userService.findAll());
-    }
-
-    @Override
-    @GetMapping("/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id) {
-        Optional<User> deliveryOptional = userService.findById(id);
-        return deliveryOptional.<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND,
-                        HttpStatus.NOT_FOUND));
-    }
-
-    @Override
-    public ResponseEntity<?> create(User entity) {
-        throw new UnsupportedOperationException();
-    }
-
     @PostMapping(value = "/{username}/{password}")
     public ResponseEntity<?> create(@PathVariable String username, @PathVariable String password) {
         User user = new User();
         user.setName(username);
         user.setPassword(passwordEncoder.encode(password));
 
-        if(!userService.validateUser(user)) {
+        if(!userService.validateCreatingUser(user)) {
             return new ResponseEntity<>(ErrorStatus.USERNAME_ALREADY_TAKEN, HttpStatus.BAD_REQUEST);
         }
 
         return userBaseResponseBuilder.save(userService.save(user));
     }
 
+    @PutMapping(value = "/{oldPassword}/{newPassword}")
+    public ResponseEntity<?> update(@PathVariable String oldPassword,
+                                    @PathVariable String newPassword) {
+
+        Optional<User> userOptional =
+                userService.findUserByName(SecurityContextHolder.getContext().getAuthentication().getName());
+
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        OAuth2Authentication oauth = (OAuth2Authentication)securityContext.getAuthentication();
+        OAuth2AuthenticationDetails details = (OAuth2AuthenticationDetails) oauth.getDetails();
+        String accessToken = details.getTokenValue();
+
+        System.out.println("PRT " + accessToken);
+
+        if(!userOptional.isPresent()) {
+            return new ResponseEntity<>(UserError.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        User user = userOptional.get();
+
+        int code = userService.validateUpdatingPassword(user, oldPassword);
+        if(code == -2) {
+            return new ResponseEntity<>(UserError.INVALID_PASSWORD, HttpStatus.BAD_REQUEST);
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userService.revokeToken(user.getName());
+        return super.update(user.getId(), user);
+    }
+
     @Override
-    @PutMapping(value = "/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody User entity) {
-        if(entity.getId() !=null) {
-            return new ResponseEntity<>(ErrorStatus.ID_CAN_NOT_BE_SET_IN_JSON, HttpStatus.BAD_REQUEST);
-        }
-        Optional<User> userOptional = userService.findById(id);
-        if(userOptional.isPresent()) {
-            return userBaseResponseBuilder.save(userService.update(id, userOptional.get()));
-        } else {
-            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":user", HttpStatus.NOT_FOUND);
-        }
+    protected BaseResponseBuilder<User> getResponseBuilder() {
+        return userBaseResponseBuilder;
+    }
+
+    @Override
+    protected UserInterface getService() {
+        return userService;
     }
 }

@@ -18,22 +18,20 @@ import ts.tsc.system.service.storage.manager.StorageServiceManager;
 
 import java.util.Optional;
 
-public abstract class BaseControllerWithStorage
+public abstract class NamedControllerWithStorage
         <ENTITY extends NamedEntity<ID>,
                 SERVICE extends OrderInterface<ENTITY, ID>,
                 ID,
                 STORAGE extends BaseEntity<ID> & BaseStorage<ENTITY, STORAGE_PRODUCT>,
                 ORDER,
                 STORAGE_PRODUCT>
-        extends BaseController<ENTITY, SERVICE, ID>
-        implements ExtendedControllerInterface<ENTITY, STORAGE, ID> {
+        extends NamedController<ENTITY, SERVICE, ID> {
 
 
     /**
-     * Поиск всех складов магазинов
+     * Список всех складов
      * @return {@link BaseService#findAll()}
      */
-    @Override
     @GetMapping(value = "/storage/list")
     public ResponseEntity<?>  findAllStorage() {
         return getStorageResponseBuilder().getAll(getStorageService().findAll());
@@ -45,7 +43,6 @@ public abstract class BaseControllerWithStorage
      * @param id идентификатор заказа
      * @return {@link BaseService#findById(Object)}
      */
-    @Override
     @GetMapping(value = "/order/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable ID id) {
         Optional<ORDER> purchaseOptional = getOrderService().findById(id);
@@ -58,7 +55,6 @@ public abstract class BaseControllerWithStorage
      * @param id идентификатор склада
      * @return {@link StorageServiceManager#findById(Object)}
      */
-    @Override
     @GetMapping(value = "/storage/{id}")
     public ResponseEntity<?> findStorageById(@PathVariable ID id) {
         Optional<STORAGE> purchaseOptional = getStorageService().findById(id);
@@ -67,24 +63,22 @@ public abstract class BaseControllerWithStorage
     }
 
     /**
-     * Поиск складов по идентификтору магазина
+     * Поиск складов по идентификтору владельца
      * @param id идентификтаор магазина
      * @return {@link StorageServiceManager#findStoragesByOwnerId(Object)}
      */
-    @Override
-    @GetMapping(value = "/storage/list/{id}")
+    @GetMapping(value = "/{id}/storage/list")
     public ResponseEntity<?> findStoragesByOwnerId(@PathVariable ID id) {
         return getOrderResponseBuilder().getAll(getStorageService().findStoragesByOwnerId(id));
     }
 
     /**
-     * Добавление склада магазину
+     * Добавление склада владельцу
      * @param id идентификатор магазина
-     * @param storage объект типа Storage, которы йбудет добавлен
+     * @param storage объект типа Storage, который будет добавлен
      * @return  1) код 400 с сообщением ID_CAN_NOT_BE_SET_IN_JSON, если в теле json задан идентификатор
      *          2) {@link StorageServiceManager#addStorage(Object, BaseStorage)}
      */
-    @Override
     @PostMapping(value = "/storage/{id}")
     @IDValidation
     public ResponseEntity<?> addStorage(@PathVariable ID id, @RequestBody STORAGE storage) {
@@ -99,8 +93,7 @@ public abstract class BaseControllerWithStorage
      *         2) если товаров на складе нет возвращается код 404 с сообщением NO_PRODUCTS_IN_STORAGE,
      *         3) если склад с указанным идентификатором не найден код 404 c сообщением ELEMENT_NOT_FOUND
      */
-    @Override
-    @GetMapping(value = "/storage/product/list/{id}")
+    @GetMapping(value = "/storage/{id}/product/list")
     public ResponseEntity<?> getStorageProducts(@PathVariable ID id) {
         Optional<STORAGE> storageOptional = getStorageService().findById(id);
         if(!storageOptional.isPresent()) {
@@ -120,7 +113,6 @@ public abstract class BaseControllerWithStorage
      * Получение списка заказов
      * @return {@link BaseService#findAll()}
      */
-    @Override
     @GetMapping(value = "/order/list")
     public ResponseEntity<?> getAllOrders() {
         return getOrderResponseBuilder().getAll(getOrderService().findAll());
@@ -141,7 +133,7 @@ public abstract class BaseControllerWithStorage
      *                      3.6) {@link ts.tsc.system.service.supplier.SupplierService#cancelOrder(Long)}
      *        4) код 400 с сообщением WRONG_DELIVERY_STATUS
      */
-    @PutMapping(value = "/order/status/{id}/{status}")
+    @PutMapping(value = "/order/{id}/status/{status}")
     public ResponseEntity<?> changeStatus(@PathVariable ID id, @PathVariable String status) {
         OrderStatus orderStatus;
 

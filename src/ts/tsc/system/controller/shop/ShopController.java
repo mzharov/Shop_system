@@ -3,7 +3,7 @@ package ts.tsc.system.controller.shop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controller.parent.BaseControllerWithStorage;
+import ts.tsc.system.controller.parent.NamedControllerWithStorage;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.shop.Shop;
@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping(value = "/app/shop")
 public class ShopController
         extends
-        BaseControllerWithStorage<Shop,
+        NamedControllerWithStorage<Shop,
         ShopInterface,
         Long,
         ShopStorage,
@@ -36,11 +36,11 @@ public class ShopController
 
     @Autowired
     public ShopController(ShopInterface shopService,
-                          StorageServiceInterface<ShopStorage, Long> shopStorageService,
-                          BaseServiceInterface<Purchase, Long> purchaseService,
-                          BaseResponseBuilder<Shop> shopBaseResponseBuilder,
-                          BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder,
-                          BaseResponseBuilder<Purchase> purchaseBaseResponseBuilder) {
+                                      StorageServiceInterface<ShopStorage, Long> shopStorageService,
+                                      BaseServiceInterface<Purchase, Long> purchaseService,
+                                      BaseResponseBuilder<Shop> shopBaseResponseBuilder,
+                                      BaseResponseBuilder<ShopStorage> shopStorageBaseResponseBuilder,
+                                      BaseResponseBuilder<Purchase> purchaseBaseResponseBuilder) {
         this.shopService = shopService;
         this.shopStorageService = shopStorageService;
         this.purchaseService = purchaseService;

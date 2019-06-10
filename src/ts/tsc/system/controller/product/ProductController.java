@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ts.tsc.system.controller.parent.BaseController;
+import ts.tsc.system.controller.parent.NamedController;
 import ts.tsc.system.controller.response.BaseResponseBuilder;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.service.product.ProductService;
@@ -12,14 +12,14 @@ import ts.tsc.system.service.product.ProductServiceInterface;
 
 @RestController
 @RequestMapping(value = "/app/product")
-public class ProductController extends BaseController<Product, ProductServiceInterface, Long> {
+public class ProductController extends NamedController<Product, ProductServiceInterface, Long> {
 
     private final ProductServiceInterface productService;
     private final BaseResponseBuilder<Product> productBaseResponseBuilder;
 
     @Autowired
     public ProductController(@Qualifier("productService") ProductServiceInterface productService,
-                      BaseResponseBuilder<Product> productBaseResponseBuilder) {
+                           BaseResponseBuilder<Product> productBaseResponseBuilder) {
         this.productService = productService;
         this.productBaseResponseBuilder = productBaseResponseBuilder;
     }
