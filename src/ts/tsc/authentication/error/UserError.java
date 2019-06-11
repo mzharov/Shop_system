@@ -5,7 +5,7 @@ public enum UserError {
     USER_NOT_FOUND(-1),
     VALID_USER(1);
 
-    private int code;
+    private final int code;
 
     UserError(int code) {
         this.code = code;

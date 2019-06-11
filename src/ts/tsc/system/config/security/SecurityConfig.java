@@ -17,38 +17,30 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
-import org.springframework.security.oauth2.common.OAuth2AccessToken;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
-import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
 import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserDetailsService userDetailsService;
+    private final DataSource dataSource;
 
     @Value("${security.token.realm}")
     private String realm;
     @Value("${security.signing-key}")
-    private String privateKey;
+    private String publicKey;
 
     @Autowired
-    DataSource dataSource;
-
-
-    @Autowired
-    public SecurityConfig(@Qualifier("userDetailService") UserDetailsService userDetailsService) {
+    public SecurityConfig(@Qualifier("userDetailService") UserDetailsService userDetailsService,
+                          DataSource dataSource) {
         this.userDetailsService = userDetailsService;
+        this.dataSource = dataSource;
     }
 
     @Bean
@@ -88,16 +80,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public JwtAccessTokenConverter accessTokenConverter() {
         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
-        converter.setSigningKey(privateKey);
+        converter.setSigningKey(publicKey);
         return converter;
     }
 
     @Bean
     public TokenStore tokenStore() {
         //return new JwtTokenStore(accessTokenConverter());
-        JdbcTokenStore tokenStore = new JdbcTokenStore(dataSource);
         return new JdbcTokenStore(dataSource);
     }
+
 
     @Bean
     @Primary

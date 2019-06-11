@@ -1,6 +1,5 @@
 package ts.tsc.authentication.service;
 
-import org.springframework.http.ResponseEntity;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.system.service.named.NamedServiceInterface;
 

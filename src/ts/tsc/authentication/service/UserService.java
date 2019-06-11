@@ -4,17 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
-import org.springframework.security.oauth2.common.OAuth2RefreshToken;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.authentication.entity.Role;
 import ts.tsc.authentication.entity.RoleName;
 import ts.tsc.authentication.entity.User;
-import ts.tsc.authentication.error.UserError;
 import ts.tsc.authentication.repository.RoleRepository;
 import ts.tsc.authentication.repository.UserRepository;
 import ts.tsc.system.service.named.NamedService;
@@ -93,7 +88,7 @@ public class UserService extends NamedService<User, Long> implements UserInterfa
 
     @Override
     public int validateUpdatingPassword(User user, String oldPassword) {
-        if((user.getPassword()).equals(passwordEncoder.encode(oldPassword))) {
+        if(!(passwordEncoder.matches(oldPassword, user.getPassword()))) {
             return INVALID_PASSWORD.getCode();
         }
         return  VALID_USER.getCode();

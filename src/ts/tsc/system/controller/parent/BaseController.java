@@ -9,7 +9,6 @@ import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.parent.NamedEntity;
 import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.named.NamedServiceInterface;
-import ts.tsc.system.service.product.ProductService;
 
 import java.util.Optional;
 

@@ -27,8 +27,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import test.config.RestClientConfig;
-import test.config.TestDataServiceConfig;
 import ts.tsc.authentication.entity.User;
+import ts.tsc.system.config.web.DataServiceConfig;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.service.product.ProductServiceInterface;
 import static test.token.TokenFabric.*;
@@ -39,7 +39,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {RestClientConfig.class, TestDataServiceConfig.class})
+@ContextConfiguration(classes = {RestClientConfig.class, DataServiceConfig.class})
 @WebAppConfiguration
 public class RestClientTest {
 
@@ -200,7 +200,7 @@ public class RestClientTest {
         assertNotNull(refreshToken);
 
         response = obtainAccessTokenByRefreshToken(clientID, secret, refreshToken, mockMvc, OAUTH_URL);
-        assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatus());
         System.out.print(response.getContentAsString());
     }
 
@@ -241,16 +241,6 @@ public class RestClientTest {
     @Test
     public void testUserListAccessByAdmin() throws Exception {
         logger.info("Начало теста");
-
-        MockHttpServletResponse response = obtainAccessToken(
-                clientID,
-                secret,
-                "Admin",
-                "admin",
-                mockMvc,
-                OAUTH_URL);
-
-        assertNotNull(response);
 
         ResponseEntity<List<User>> userResponseEntity = restTemplate.exchange(URL_GET_ALL_USERS,
                         HttpMethod.GET, getHeaderWithAccessToken(

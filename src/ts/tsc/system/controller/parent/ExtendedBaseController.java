@@ -1,17 +1,11 @@
 package ts.tsc.system.controller.parent;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.system.controller.aspect.IDValidation;
-import ts.tsc.system.controller.response.BaseResponseBuilder;
-import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.entity.parent.NamedEntity;
-import ts.tsc.system.service.base.BaseService;
 import ts.tsc.system.service.named.NamedServiceInterface;
 import ts.tsc.system.service.product.ProductService;
-
-import java.util.Optional;
 
 public abstract class ExtendedBaseController
         <ENTITY extends NamedEntity<ID>, SERVICE extends NamedServiceInterface<ENTITY, ID>, ID>
