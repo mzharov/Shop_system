@@ -20,6 +20,7 @@ public class Delivery implements Serializable, OrderEntity {
     private Long id;
 
     @Column(name = "orderStatus")
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
     @ManyToOne

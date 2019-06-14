@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
+import ts.tsc.system.dto.DeliveryReportDTO;
 import ts.tsc.system.entity.delivery.Delivery;
 import ts.tsc.system.entity.delivery.DeliveryProduct;
 import ts.tsc.system.entity.delivery.DeliveryProductPrimaryKey;
@@ -621,6 +622,15 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
         return supplierStorageOptional.<ResponseEntity<?>>map(supplierStorageR ->
                 new ResponseEntity<>(supplierStorageR, HttpStatus.OK)).orElseGet(()
                 -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
+    }
+
+    @Override
+    public ResponseEntity<?> getPurchaseReport() {
+        List<DeliveryReportDTO> list = deliveryRepository.getPurchaseReport();
+        if(list.size() < 1) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND+"", HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
     private Delivery isExist(Long id) {

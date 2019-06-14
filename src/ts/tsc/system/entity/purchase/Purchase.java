@@ -28,6 +28,7 @@ public class Purchase implements Serializable, OrderEntity {
     private Set<PurchaseProduct> purchaseProducts = new HashSet<>();
 
     @Column(name = "orderStatus")
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
     public Long getId() {

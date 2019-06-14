@@ -8,4 +8,5 @@ public interface OrderInterface<T extends NamedEntity, ID> extends NamedServiceI
     ResponseEntity<?> deliverOrder(ID id);
     ResponseEntity<?> completeOrder(ID id);
     ResponseEntity<?> cancelOrder(ID id);
+    ResponseEntity<?> getPurchaseReport();
 }

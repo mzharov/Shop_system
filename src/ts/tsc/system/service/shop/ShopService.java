@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import ts.tsc.system.controller.status.ErrorStatus;
 import ts.tsc.system.controller.status.OrderStatus;
+import ts.tsc.system.dto.PurchaseReportDTO;
 import ts.tsc.system.entity.product.Product;
 import ts.tsc.system.entity.purchase.Purchase;
 import ts.tsc.system.entity.purchase.PurchaseProduct;
@@ -518,6 +519,15 @@ public class ShopService extends NamedService<Shop, Long> implements ShopInterfa
         return shopStorageRepository.findById(targetShopStorageID)
                 .<ResponseEntity<?>>map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND));
+    }
+
+    @Override
+    public ResponseEntity<?> getPurchaseReport() {
+        List<PurchaseReportDTO> list = purchaseRepository.getPurchaseReport();
+        if(list.size() < 1) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
     private Purchase isPurchaseExist(Long id) {

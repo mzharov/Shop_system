@@ -93,6 +93,11 @@ public class SupplierController
         return supplierService.addProductsToStorage(id, productIDList, countList, stringPriceList);
     }
 
+    @GetMapping(value = "/order/report")
+    ResponseEntity<?> getPurchaseReport() {
+        return getService().getPurchaseReport();
+    }
+
     @Override
     protected StorageServiceInterface<SupplierStorage, Long> getStorageService() {
         return supplierStorageService;
