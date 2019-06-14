@@ -12,6 +12,7 @@ import java.util.List;
 public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     @Query("select new ts.tsc.system.dto.PurchaseReportDTO(p.orderStatus, p.shop.id, sum(pp.sumPrice)) " +
             "from Purchase p " +
-            "join PurchaseProduct pp on p.id=pp.primaryKey.purchase.id group by p.orderStatus, p.shop.id")
+            "join PurchaseProduct pp on p.id=pp.primaryKey.purchase.id where p.orderStatus = 'COMPLETED' " +
+            "group by p.orderStatus, p.shop.id")
     List<PurchaseReportDTO> getPurchaseReport();
 }

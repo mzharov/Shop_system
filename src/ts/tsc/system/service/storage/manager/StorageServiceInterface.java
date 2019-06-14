@@ -9,4 +9,5 @@ public interface StorageServiceInterface<STORAGE, ID>
         extends BaseServiceInterface<STORAGE, ID> {
     List<STORAGE> findStoragesByOwnerId(ID id);
     ResponseEntity<?> addStorage(ID id, STORAGE storage);
+    ResponseEntity<?> getOwnerProductReport();
 }

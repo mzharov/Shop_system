@@ -124,10 +124,5 @@ public class ShopController
     protected ShopInterface getService() {
         return shopService;
     }
-
-    @GetMapping(value = "/order/report")
-    ResponseEntity<?> getPurchaseReport() {
-        return getService().getPurchaseReport();
-    }
 }
 

@@ -12,7 +12,7 @@ import java.util.List;
 public interface DeliveryRepository extends JpaRepository<Delivery, Long> {
     @Query("select new ts.tsc.system.dto.DeliveryReportDTO(p.orderStatus, p.supplierStorage.id, sum(pp.sumPrice)) " +
             "from Delivery p " +
-            "join DeliveryProduct pp on p.id=pp.primaryKey.delivery.id " +
+            "join DeliveryProduct pp on p.id=pp.primaryKey.delivery.id where p.orderStatus = 'COMPLETED' " +
             "group by p.orderStatus, p.supplierStorage.id")
     List<DeliveryReportDTO> getPurchaseReport();
 }

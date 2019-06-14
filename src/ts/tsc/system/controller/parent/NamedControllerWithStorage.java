@@ -89,7 +89,7 @@ public abstract class NamedControllerWithStorage
     /**
      * Получение списка продуктов со склада
      * @param id идентификтаор склада
-     * @return 1) склад с указанным идентификатором найден возвращается список товаров с колом 200,
+     * @return 1) склад с указанным идентификатором найден возвращается список товаров с кодом 200,
      *         2) если товаров на складе нет возвращается код 404 с сообщением NO_PRODUCTS_IN_STORAGE,
      *         3) если склад с указанным идентификатором не найден код 404 c сообщением ELEMENT_NOT_FOUND
      */
@@ -155,6 +155,25 @@ public abstract class NamedControllerWithStorage
         return new ResponseEntity<>(ErrorStatus.WRONG_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Запрос отчета о количестве товаров на всех складах
+     * @return 1) код 200 и необходимый список в теле ответа, если удалось сформировать отчет
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND, если не удалось сформировать отчет
+     */
+    @GetMapping("/storage/report")
+    ResponseEntity<?> getOwnerProductReport() {
+        return getStorageService().getOwnerProductReport();
+    }
+
+    /**
+     * Запрос отчета по казазам товаров на всех складах
+     * @return 1) код 200 и необходимый список в теле ответа, если удалось сформировать отчет
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND, если не удалось сформировать отчет
+     */
+    @GetMapping(value = "/order/report")
+    ResponseEntity<?> getPurchaseReport() {
+        return getService().getPurchaseReport();
+    }
 
     abstract protected StorageServiceInterface<STORAGE, ID> getStorageService();
     abstract protected BaseResponseBuilder<STORAGE> getStorageResponseBuilder();

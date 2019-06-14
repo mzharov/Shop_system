@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ts.tsc.system.controller.status.ErrorStatus;
+import ts.tsc.system.dto.OwnerProductReportDTO;
 import ts.tsc.system.entity.shop.Shop;
 import ts.tsc.system.entity.shop.ShopStorage;
 import ts.tsc.system.entity.shop.ShopStorageProduct;
@@ -52,6 +53,20 @@ public class ShopStorageService
                     HttpStatus.BAD_REQUEST);
         }
         return super.addStorage(shopID, storage);
+    }
+
+    /**
+     * Запрос отчета о количестве товаров на всех складах
+     * @return 1) код 200 и необходимый список в теле ответа, если удалось сформировать отчет
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND, если не удалось сформировать отчет
+     */
+    @Override
+    public ResponseEntity<?> getOwnerProductReport() {
+        List<OwnerProductReportDTO> list = getRepository().getOwnerProductReportDTO();
+        if(list.size() < 1) {
+            return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
     @Override
