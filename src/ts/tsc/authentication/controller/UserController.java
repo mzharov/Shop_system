@@ -3,11 +3,8 @@ package ts.tsc.authentication.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 import org.springframework.web.bind.annotation.*;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.authentication.error.UserError;
@@ -55,13 +52,6 @@ public class UserController extends BaseController<User, UserInterface, Long> {
         Optional<User> userOptional =
                 userService.findUserByName(SecurityContextHolder.getContext().getAuthentication().getName());
 
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        OAuth2Authentication oauth = (OAuth2Authentication)securityContext.getAuthentication();
-        OAuth2AuthenticationDetails details = (OAuth2AuthenticationDetails) oauth.getDetails();
-        String accessToken = details.getTokenValue();
-
-        System.out.println("PRT " + accessToken);
-
         if(!userOptional.isPresent()) {
             return new ResponseEntity<>(UserError.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
@@ -74,7 +64,8 @@ public class UserController extends BaseController<User, UserInterface, Long> {
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         userService.revokeToken(user.getName());
-        return super.update(user.getId(), user);
+
+        return getResponseBuilder().save(getService().update(user.getId(), user));
     }
 
     @Override

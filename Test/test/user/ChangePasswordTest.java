@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.common.util.JacksonJsonParser;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,9 +23,11 @@ import test.config.RestClientConfig;
 import test.config.TestDataServiceConfig;
 import ts.tsc.authentication.entity.User;
 import ts.tsc.authentication.error.UserError;
+import ts.tsc.authentication.repository.UserRepository;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import java.util.Optional;
+
+import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,6 +50,10 @@ public class ChangePasswordTest {
     @Autowired
     @SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection"})
     protected FilterChainProxy springSecurityFilterChain;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
 
     private MockMvc mockMvc;
     private final String GET_PRODUCT_LIST = "http://localhost:8080/app/product/list";
@@ -67,7 +74,9 @@ public class ChangePasswordTest {
 
        String firstUsername = "User1";
        String firstUserValidPassword = "password";
-       String CHANGE_VALID_PASSWORD_URL = "http://localhost:8080/user/password/pass";
+       String firstUserNewPassword = "pass";
+       String CHANGE_VALID_PASSWORD_URL
+               = "http://localhost:8080/user/"+firstUserValidPassword+"/"+firstUserNewPassword;
 
 
         MockHttpServletResponse response = obtainAccessToken(clientID,
@@ -93,6 +102,11 @@ public class ChangePasswordTest {
         User user = new ObjectMapper().readValue(json, User.class);
         assertNotNull(user);
         assertEquals(firstUsername, user.getName());
+
+        Optional<User> userOptional = userRepository.findUserByName(user.getName());
+        assertTrue(userOptional.isPresent());
+        user = userOptional.get();
+        assertTrue(passwordEncoder.matches(firstUserNewPassword, user.getPassword()));
 
         mockMvc.perform(get(GET_PRODUCT_LIST)
                 .header("Authorization", "Bearer " + accessToken)

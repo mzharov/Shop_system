@@ -31,10 +31,10 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
     public void configure(HttpSecurity http) throws Exception {
         http.
                 anonymous().disable()
-                .requestMatchers().antMatchers("/app/**", "/user/list", "/user/*/*")
+                .requestMatchers().antMatchers("/app/**", "/user/list", "/user/*/*", "/user/*")
                 .and().authorizeRequests()
                 .antMatchers("/app/**").access("hasRole('ADMIN') or hasRole('USER')")
-                .antMatchers("/user/list").access("hasRole('ADMIN')")
+                .antMatchers("/user/list", "/user/*").access("hasRole('ADMIN')")
                 .antMatchers(HttpMethod.PUT,"/user/*/*").authenticated()
                 .and().exceptionHandling().accessDeniedHandler(new OAuth2AccessDeniedHandler());
     }

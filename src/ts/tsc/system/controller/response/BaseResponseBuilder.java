@@ -19,9 +19,9 @@ public class BaseResponseBuilder<T> {
 
     public ResponseEntity<?> save(T entity) {
         if(entity !=null) {
-            return ResponseEntity.ok().body(entity);
+            return new ResponseEntity<>(entity, HttpStatus.OK);
         } else {
-            return ResponseEntity.unprocessableEntity().body(ErrorStatus.ERROR_WHILE_SAVING);
+            return new ResponseEntity<>(ErrorStatus.ERROR_WHILE_SAVING, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
