@@ -59,7 +59,7 @@ public class UserController extends BaseController<User, UserInterface, Long> {
         User user = userOptional.get();
 
         int code = userService.validateUpdatingPassword(user, oldPassword);
-        if(code == -2) {
+        if(code == UserError.INVALID_PASSWORD.getCode()) {
             return new ResponseEntity<>(UserError.INVALID_PASSWORD, HttpStatus.BAD_REQUEST);
         }
         user.setPassword(passwordEncoder.encode(newPassword));
