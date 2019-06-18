@@ -2,7 +2,7 @@ package ts.tsc.system.error.frame;
 
 import java.io.Serializable;
 
-class SingleError implements ErrorFrame, Serializable {
+public class SingleError implements ErrorFrame, Serializable {
     private String error;
 
     public SingleError(String error) {

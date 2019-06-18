@@ -76,6 +76,8 @@
           <element id="library" level="project" name="Maven: org.springframework.data:spring-data-jpa:2.1.8.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-jdbc:5.1.7.RELEASE" />
           <element id="library" level="project" name="Maven: org.springframework:spring-orm:5.1.7.RELEASE" />
+          <element id="library" level="project" name="Maven: javax.validation:validation-api:2.0.1.Final" />
+          <element id="library" level="project" name="Maven: org.hibernate.validator:hibernate-validator:6.0.17.Final" />
         </element>
       </element>
     </root>

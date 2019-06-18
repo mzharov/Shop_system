@@ -46,7 +46,7 @@ public class SupplierController
 
     /**
      * Обработка поступившего заказа
-     * @param supplierID идентификатор склада поставщика
+     * @param supplierStorageID идентификатор склада поставщика
      * @param shopStorageID идентификатор склада магазина
      * @param productIdList список идентификаторов товаров
      * @param countList список количества товаров
@@ -63,12 +63,12 @@ public class SupplierController
      *         10) {@see ts.tsc.system.service.supplier.SupplierService#transfer(List, List, SupplierStorage, Delivery, Shop)}
      *
      */
-    @PostMapping(value = "/order/{supplierID}/{shopStorageID}/{productIdList}/{countList}")
-    public ResponseEntity<?> receiveOrder(@PathVariable Long supplierID,
+    @PostMapping(value = "/storage/{supplierStorageID}/order/{shopStorageID}/{productIdList}/{countList}")
+    public ResponseEntity<?> receiveOrder(@PathVariable Long supplierStorageID,
                              @PathVariable Long shopStorageID,
                              @PathVariable List<Long> productIdList,
                              @PathVariable List<Integer> countList) {
-        return supplierService.receiveOrder(supplierID, shopStorageID, productIdList, countList);
+        return supplierService.receiveOrder(supplierStorageID, shopStorageID, productIdList, countList);
     }
 
     /**

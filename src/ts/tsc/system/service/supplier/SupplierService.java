@@ -392,7 +392,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
 
     /**
      * Обработка поступившего заказа
-     * @param supplierID идентификатор склада поставщика
+     * @param supplierStorageID идентификатор склада поставщика
      * @param shopStorageID идентификатор склада магазина
      * @param productIdList список идентификаторов товаров
      * @param countList список количества товаров
@@ -410,7 +410,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
      *
      */
     @Override
-    public ResponseEntity<?> receiveOrder(Long supplierID,
+    public ResponseEntity<?> receiveOrder(Long supplierStorageID,
                                           Long shopStorageID,
                                           List<Long> productIdList,
                                           List<Integer> countList) {
@@ -420,7 +420,7 @@ public class SupplierService extends NamedService<Supplier, Long> implements Sup
         }
 
         Optional<SupplierStorage> supplierStorageOptional
-                = supplierStorageRepository.findById(supplierID);
+                = supplierStorageRepository.findById(supplierStorageID);
         if(!supplierStorageOptional.isPresent()) {
             return new ResponseEntity<>(ErrorStatus.ELEMENT_NOT_FOUND + ":supplier_storage",
                     HttpStatus.NOT_FOUND);

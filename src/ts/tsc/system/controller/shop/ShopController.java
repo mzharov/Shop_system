@@ -63,7 +63,7 @@ public class ShopController
      *         6) код 500 с сообщением ERROR_WHILE_SAVING - если не удалось сохранить заказ
      *         7) {@see ShopService#transfer(List, List, ShopStorage, Purchase, Shop)}
      */
-    @PostMapping (value = "/order/{shopID}/{productIdList}/{countList}")
+    @PostMapping (value = "/{shopID}/order/{productIdList}/{countList}")
     public ResponseEntity<?> receiveOrder(@PathVariable Long shopID,
                                           @PathVariable List<Long> productIdList,
                                           @PathVariable List<Integer> countList) {
@@ -92,7 +92,7 @@ public class ShopController
         return shopService.transferProducts(shopStorageID, targetShopStorageID, productIDList, countList);
     }
 
-    @PutMapping(value = "/budget/{id}/{budgetString:.+}")
+    @PutMapping(value = "/{id}/budget/{budgetString:.+}")
     public ResponseEntity<?> addBudget(@PathVariable Long id, @PathVariable String budgetString) {
         return shopService.addBudget(id, budgetString);
     }
