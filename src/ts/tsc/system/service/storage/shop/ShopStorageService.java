@@ -42,6 +42,7 @@ public class ShopStorageService
         return shopStorageRepository.findByOwnerId(id);
     }
 
+
     @Override
     public ResponseEntity<?> addStorage(Long shopID,
                                         ShopStorage storage) {
@@ -51,6 +52,9 @@ public class ShopStorageService
         if(shopStorageOptional.isPresent() && storage.getType() == 1) {
             return new ResponseEntity<>(ErrorStatus.MAIN_STORAGE_ALREADY_EXISTS,
                     HttpStatus.BAD_REQUEST);
+        }
+        if(storage.getType() != 1 && storage.getType() !=0) {
+            return new ResponseEntity<>(ErrorStatus.STORAGE_TYPE_MUST_BE_0_OR_1, HttpStatus.BAD_REQUEST);
         }
         return super.addStorage(shopID, storage);
     }

@@ -123,7 +123,7 @@ public abstract class NamedControllerWithStorage
      * @param id идентификатор заказа
      * @param status новое состояние
      * @return 1) объект заказа с кодом 200, если успешно,
-     *         2) код 400 с описанием UNKNOWN_DELIVER_STATUS, если передано неизвестное состояние,
+     *         2) код 400 с описанием UNKNOWN_DELIVERY_STATUS, если передано неизвестное состояние,
      *         3) Возможные значения, возвращаемые из методов:
      *                      3.1) {@link ts.tsc.system.service.shop.ShopService#deliverOrder(Long)}
      *                      3.2) {@link ts.tsc.system.service.supplier.SupplierService#deliverOrder(Long)}
@@ -140,7 +140,7 @@ public abstract class NamedControllerWithStorage
         try {
             orderStatus = OrderStatus.valueOf(status);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(ErrorStatus.UNKNOWN_DELIVER_STATUS, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ErrorStatus.UNKNOWN_DELIVERY_STATUS, HttpStatus.BAD_REQUEST);
         }
 
         if(orderStatus.equals(OrderStatus.DELIVERING)) {
