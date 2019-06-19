@@ -1,7 +1,6 @@
 package ts.tsc.authentication.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.token.TokenStore;
@@ -14,6 +13,9 @@ import ts.tsc.authentication.repository.RoleRepository;
 import ts.tsc.authentication.repository.UserRepository;
 import ts.tsc.system.service.named.NamedService;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +31,8 @@ public class UserService extends NamedService<User, Long> implements UserInterfa
     private final PasswordEncoder passwordEncoder;
     private final TokenStore tokenStore;
 
-    @Value("${security.client-id}")
-    private List<String> clientIDList;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public UserService(UserRepository userRepository,
@@ -91,7 +93,7 @@ public class UserService extends NamedService<User, Long> implements UserInterfa
         if(!(passwordEncoder.matches(oldPassword, user.getPassword()))) {
             return INVALID_PASSWORD.getCode();
         }
-        return  VALID_USER.getCode();
+        return  SUCCEED.getCode();
     }
 
     @Override
@@ -100,15 +102,39 @@ public class UserService extends NamedService<User, Long> implements UserInterfa
     }
 
     @Override
-    public void revokeToken(String username) {
-        for(String clientID: clientIDList) {
-            Collection<OAuth2AccessToken> oAuth2AccessTokenCollection
-                    = tokenStore.findTokensByClientIdAndUserName(clientID, username);
-            System.out.println(oAuth2AccessTokenCollection.size());
-            for(OAuth2AccessToken oAuth2AccessToken : oAuth2AccessTokenCollection) {
-                tokenStore.removeRefreshToken(oAuth2AccessToken.getRefreshToken());
-                tokenStore.removeAccessToken(oAuth2AccessToken);
+    public int revokeToken(String username) {
+        try {
+
+            @SuppressWarnings("all")
+            Query typedQuery =
+                    entityManager.createNativeQuery("select client_id from oauth_client_details");
+
+            @SuppressWarnings("unchecked")
+            List<String> clientIDList = typedQuery.getResultList();
+
+            for(String clientID: clientIDList) {
+                Collection<OAuth2AccessToken> oAuth2AccessTokenCollection
+                        = tokenStore.findTokensByClientIdAndUserName(clientID, username);
+                System.out.println(oAuth2AccessTokenCollection.size());
+                for(OAuth2AccessToken oAuth2AccessToken : oAuth2AccessTokenCollection) {
+                    tokenStore.removeRefreshToken(oAuth2AccessToken.getRefreshToken());
+                    tokenStore.removeAccessToken(oAuth2AccessToken);
+                }
             }
+
+            return SUCCEED.getCode();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+            //return ERROR_WHILE_CHANGING_PASSWORD.getCode();
         }
+    }
+
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 }

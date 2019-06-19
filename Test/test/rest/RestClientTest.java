@@ -8,7 +8,6 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -49,10 +48,8 @@ public class RestClientTest {
     private static final String URL_GET_ALL_USERS = "http://localhost:8080/user/list";
     private static final String OAUTH_URL = "http://localhost:8080/oauth/token";
 
-    @Value("${security.client-id}")
-    private String clientID;
-    @Value("${security.token.secret-key}")
-    private String secret;
+    private final String clientID = "rest_client";
+    private final String secret = "secret";
 
     @Autowired
     RestTemplate restTemplate;

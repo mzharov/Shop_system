@@ -24,20 +24,6 @@ import java.util.Arrays;
 public class AuthorisationServerConfig
         extends AuthorizationServerConfigurerAdapter {
 
-    @Value("${security.client-id}")
-    private String clientID;
-    @Value("${security.token.secret-key}")
-    private String secret;
-    @Value("${security.token.grant-types}")
-    private String[] grantTypes;
-    @Value("${security.token.authorities}")
-    private String[] authorities;
-    @Value("${security.token.scopes}")
-    private String[] scopes;
-    @Value("${security.token.access.expire-length}")
-    private int accessTokenExpireLength;
-    @Value("${security.token.refresh.expire-length}")
-    private int refreshTokenExpireLength;
     @Value("${security.token.realm}")
     private String realm;
 

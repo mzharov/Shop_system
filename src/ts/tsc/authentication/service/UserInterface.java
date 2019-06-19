@@ -10,5 +10,5 @@ public interface UserInterface extends NamedServiceInterface<User, Long> {
     boolean validateCreatingUser(User user);
     int validateUpdatingPassword(User user, String oldPassword);
     Optional<User> findUserByName(String username);
-    void revokeToken(String username);
+    int revokeToken(String username);
 }

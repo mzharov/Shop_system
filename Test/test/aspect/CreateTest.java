@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
@@ -35,10 +34,8 @@ import static test.token.TokenFabric.getAccessToken;
 @WebAppConfiguration
 public abstract class CreateTest<ENTITY> {
 
-    @Value("${security.client-id}")
-    String clientID;
-    @Value("${security.token.secret-key}")
-    String secret;
+    final String clientID = "rest_client";
+    final String secret = "secret";
     final String validUsername = "User1";
     final String validPassword = "password";
 

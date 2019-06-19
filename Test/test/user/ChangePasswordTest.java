@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,10 +38,8 @@ import static test.token.TokenFabric.*;
 @WebAppConfiguration
 public class ChangePasswordTest {
 
-    @Value("${security.client-id}")
-    String clientID;
-    @Value("${security.token.secret-key}")
-    String secret;
+    private final String clientID = "rest_client";
+    private final String secret = "secret";
 
     @Autowired
     WebApplicationContext wac;
@@ -117,6 +114,24 @@ public class ChangePasswordTest {
 
         response = obtainAccessTokenByRefreshToken(clientID, secret, refreshToken, mockMvc, OAUTH_URL);
         assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatus());
+
+        response = obtainAccessToken(clientID, secret, firstUsername,firstUserNewPassword, mockMvc, OAUTH_URL);
+        resultString = response.getContentAsString();
+        jsonParser = new JacksonJsonParser();
+        accessToken = jsonParser.parseMap(resultString).get("access_token").toString();
+        refreshToken = jsonParser.parseMap(resultString).get("refresh_token").toString();
+        assertNotNull(refreshToken);
+        assertNotNull(accessToken);
+
+        mockMvc.perform(get(GET_PRODUCT_LIST)
+                .header("Authorization", "Bearer " + accessToken)
+                .accept("application/json;charset=UTF-8"))
+                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(status().isOk());
+
+        response = obtainAccessTokenByRefreshToken(clientID, secret, refreshToken, mockMvc, OAUTH_URL);
+        assertEquals(HttpStatus.OK.value(), response.getStatus());
+
     }
 
     @Test

@@ -158,7 +158,7 @@ public abstract class NamedControllerWithStorage
     /**
      * Запрос отчета о количестве товаров на всех складах
      * @return 1) код 200 и необходимый список в теле ответа, если удалось сформировать отчет
-     *         2) код 404 с сообщением ELEMENT_NOT_FOUND, если не удалось сформировать отчет
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND, если не удалось сформировать отчет (нет данных)
      */
     @GetMapping("/storage/report")
     ResponseEntity<?> getOwnerProductReport() {
@@ -168,7 +168,7 @@ public abstract class NamedControllerWithStorage
     /**
      * Запрос отчета по казазам товаров на всех складах
      * @return 1) код 200 и необходимый список в теле ответа, если удалось сформировать отчет
-     *         2) код 404 с сообщением ELEMENT_NOT_FOUND, если не удалось сформировать отчет
+     *         2) код 404 с сообщением ELEMENT_NOT_FOUND, если не удалось сформировать отчет (нет данных)
      */
     @GetMapping(value = "/order/report")
     ResponseEntity<?> getPurchaseReport() {
